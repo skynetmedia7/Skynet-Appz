@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "1.6.0",
+  version: "1.7.0",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -31,14 +31,14 @@ const manifest = {
   types: ["movie", "series"],
 
   catalogs: [
-    { type: "movie", id: "skynet-trending-movies", name: "Skynet Trending Movies" },
-    { type: "movie", id: "skynet-popular-movies", name: "Skynet Popular Movies" },
-    { type: "movie", id: "skynet-top-rated-movies", name: "Skynet Top Rated Movies" },
-    { type: "movie", id: "skynet-now-playing-movies", name: "Skynet Now Playing" },
-    { type: "series", id: "skynet-trending-series", name: "Skynet Trending Series" },
-    { type: "series", id: "skynet-popular-series", name: "Skynet Popular Series" },
-    { type: "series", id: "skynet-top-rated-series", name: "Skynet Top Rated Series" },
-    { type: "series", id: "skynet-on-air-series", name: "Skynet On Air" }
+    { type: "movie", id: "skynet-trending-movies", name: "Trending" },
+    { type: "movie", id: "skynet-popular-movies", name: "Popular" },
+    { type: "movie", id: "skynet-top-rated-movies", name: "Top Rated" },
+    { type: "movie", id: "skynet-now-playing-movies", name: "Now Playing" },
+    { type: "series", id: "skynet-trending-series", name: "Trending" },
+    { type: "series", id: "skynet-popular-series", name: "Popular" },
+    { type: "series", id: "skynet-top-rated-series", name: "Top Rated" },
+    { type: "series", id: "skynet-on-air-series", name: "On Air" }
   ],
 
   behaviorHints: {
@@ -101,8 +101,6 @@ async function sendCatalog(res, path, type) {
   } catch (e) {
     console.error("CATALOG ERROR " + type + " " + path + " " + e.message);
 
-    // Always return a valid HTTP 200 Stremio catalogue response.
-    // This prevents strict TV clients from discarding the addon on an upstream error.
     res.status(200).json({
       metas: [],
       cacheMaxAge: 60,
@@ -166,13 +164,13 @@ app.get("/meta/series/:id.json", (req, res) =>
   sendMeta(res, "series", req.params.id)
 );
 
-app.get("/health", (_req, res) =>
+app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     name: "Skynet",
-    version: "1.6.0",
+    version: "1.7.0",
     tmdbConfigured: Boolean(TMDB_KEY)
-  })
-);
+  });
+});
 
 app.listen(PORT, () => console.log("Skynet listening on " + PORT));
