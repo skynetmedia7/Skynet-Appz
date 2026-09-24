@@ -11,12 +11,11 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "1.5.0",
+  version: "1.6.0",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
 
-  // Explicit Stremio resource definitions for stricter clients such as TiviGlass.
   resources: [
     {
       name: "catalog",
@@ -87,13 +86,29 @@ function meta(item, type) {
 async function sendCatalog(res, path, type) {
   try {
     const data = await tmdb(path);
-    res.json({
-      metas: (data.results || [])
-        .filter(x => x.poster_path)
-        .map(x => meta(x, type))
+    const metas = (data.results || [])
+      .filter(x => x.poster_path)
+      .map(x => meta(x, type));
+
+    console.log("CATALOG " + type + " " + path + " results=" + metas.length);
+
+    res.status(200).json({
+      metas,
+      cacheMaxAge: 300,
+      staleRevalidate: 3600,
+      staleError: 86400
     });
   } catch (e) {
-    res.status(503).json({ metas: [], error: e.message });
+    console.error("CATALOG ERROR " + type + " " + path + " " + e.message);
+
+    // Always return a valid HTTP 200 Stremio catalogue response.
+    // This prevents strict TV clients from discarding the addon on an upstream error.
+    res.status(200).json({
+      metas: [],
+      cacheMaxAge: 60,
+      staleRevalidate: 300,
+      staleError: 600
+    });
   }
 }
 
@@ -155,7 +170,7 @@ app.get("/health", (_req, res) =>
   res.json({
     ok: true,
     name: "Skynet",
-    version: "1.5.0",
+    version: "1.6.0",
     tmdbConfigured: Boolean(TMDB_KEY)
   })
 );
