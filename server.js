@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "1.9.0",
+  version: "1.9.1",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -31,10 +31,7 @@ const manifest = {
   types: ["movie", "series"],
 
   catalogs: [
-    { type: "movie", id: "skynet-trending-movies", name: "Trending" },
-    { type: "movie", id: "skynet-popular-movies", name: "Popular" },
-    { type: "movie", id: "skynet-top-rated-movies", name: "Top Rated" },
-    { type: "movie", id: "skynet-now-playing-movies", name: "Now Playing" },
+    { type: "movie", id: "skynet-latest-movies", name: "Latest" },
     { type: "movie", id: "skynet-action-movies", name: "Action" },
     { type: "movie", id: "skynet-adventure-movies", name: "Adventure" },
     { type: "movie", id: "skynet-animation-movies", name: "Animation" },
@@ -130,53 +127,10 @@ async function sendCatalog(res, paths, type, limit = 50) {
   }
 }
 
-app.get("/catalog/movie/skynet-trending-movies.json", (_req, res) =>
+app.get("/catalog/movie/skynet-latest-movies.json", (_req, res) =>
   sendCatalog(
     res,
-    [
-      "/trending/movie/week?language=en-US&page=1",
-      "/trending/movie/week?language=en-US&page=2",
-      "/trending/movie/week?language=en-US&page=3"
-    ],
-    "movie",
-    50
-  )
-);
-
-app.get("/catalog/movie/skynet-popular-movies.json", (_req, res) =>
-  sendCatalog(
-    res,
-    [
-      "/movie/popular?language=en-US&page=1",
-      "/movie/popular?language=en-US&page=2",
-      "/movie/popular?language=en-US&page=3"
-    ],
-    "movie",
-    50
-  )
-);
-
-app.get("/catalog/movie/skynet-top-rated-movies.json", (_req, res) =>
-  sendCatalog(
-    res,
-    [
-      "/movie/top_rated?language=en-US&page=1",
-      "/movie/top_rated?language=en-US&page=2",
-      "/movie/top_rated?language=en-US&page=3"
-    ],
-    "movie",
-    50
-  )
-);
-
-app.get("/catalog/movie/skynet-now-playing-movies.json", (_req, res) =>
-  sendCatalog(
-    res,
-    [
-      "/movie/now_playing?language=en-US&region=GB&page=1",
-      "/movie/now_playing?language=en-US&region=GB&page=2",
-      "/movie/now_playing?language=en-US&region=GB&page=3"
-    ],
+    [1, 2, 3].map(page => "/discover/movie?language=en-US&region=GB&sort_by=primary_release_date.desc&release_date.lte=2026-09-24&page=" + page),
     "movie",
     50
   )
@@ -278,7 +232,7 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     name: "Skynet",
-    version: "1.8.1",
+    version: "1.9.1",
     tmdbConfigured: Boolean(TMDB_KEY)
   });
 });
