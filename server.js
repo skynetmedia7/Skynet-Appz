@@ -98,8 +98,13 @@ function meta(item, type, idOverride) {
 
 async function sendCatalog(res, path, type, page = 1) {
   try {
-    const data = await tmdb(path + (path.includes("?") ? "&" : "?") + "page=" + page);
-    const results = data.results || [];
+    const startPage = ((page - 1) * 3) + 1;
+    const pages = await Promise.all(
+      [startPage, startPage + 1, startPage + 2].map(p =>
+        tmdb(path + (path.includes("?") ? "&" : "?") + "page=" + p)
+      )
+    );
+    const results = pages.flatMap(x => x.results || []).slice(0, 50);
     const metas = await Promise.all(results.map(async x => {
       const imdb = await imdbId(type, x.id);
       return meta(x, type, imdb || ("tmdb:" + x.id));
@@ -129,7 +134,7 @@ app.get("/catalog/:type/:id/:extra.json", (req, res) => {
   const { type, id, extra } = req.params;
   const match = extra.match(/skip=(\d+)/);
   const skip = match ? Number(match[1]) : 0;
-  const page = Math.floor(skip / 20) + 1;
+  const page = Math.floor(skip / 50) + 1;
 
   const paths = {
     "skynet-trending-movies": "/trending/movie/week?language=en-US",
