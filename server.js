@@ -11,9 +11,9 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "2.0.6",
+  version: "2.1.0",
   name: "Skynet",
-  description: "Skynet catalogue addon for Stremio",
+  description: "Skynet catalogue addon for Stremio. Streaming availability data by JustWatch via TMDB.",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
 
   resources: [
@@ -52,6 +52,17 @@ const manifest = {
     { type: "movie", id: "skynet-war-movies", name: "War" },
     { type: "movie", id: "skynet-western-movies", name: "Western" },
     { type: "movie", id: "skynet-kids-movies", name: "Kids" },
+    { type: "movie", id: "skynet-netflix-movies", name: "Netflix" },
+    { type: "movie", id: "skynet-prime-video-movies", name: "Prime Video" },
+    { type: "movie", id: "skynet-disney-plus-movies", name: "Disney+" },
+    { type: "movie", id: "skynet-hulu-movies", name: "Hulu" },
+    { type: "movie", id: "skynet-apple-tv-plus-movies", name: "Apple TV+" },
+    { type: "movie", id: "skynet-paramount-plus-movies", name: "Paramount+" },
+    { type: "movie", id: "skynet-max-movies", name: "Max" },
+    { type: "movie", id: "skynet-peacock-movies", name: "Peacock" },
+    { type: "movie", id: "skynet-bbc-iplayer-movies", name: "BBC iPlayer" },
+    { type: "movie", id: "skynet-itvx-movies", name: "ITVX" },
+    { type: "movie", id: "skynet-channel-4-movies", name: "Channel 4" },
     { type: "series", id: "skynet-trending-series", name: "Trending" },
     { type: "series", id: "skynet-popular-series", name: "Popular" },
     { type: "series", id: "skynet-top-rated-series", name: "Top Rated" },
@@ -71,7 +82,18 @@ const manifest = {
     { type: "series", id: "skynet-soap-series", name: "Soap" },
     { type: "series", id: "skynet-talk-series", name: "Talk" },
     { type: "series", id: "skynet-war-politics-series", name: "War & Politics" },
-    { type: "series", id: "skynet-western-series", name: "Western" }
+    { type: "series", id: "skynet-western-series", name: "Western" },
+    { type: "series", id: "skynet-netflix-series", name: "Netflix" },
+    { type: "series", id: "skynet-prime-video-series", name: "Prime Video" },
+    { type: "series", id: "skynet-disney-plus-series", name: "Disney+" },
+    { type: "series", id: "skynet-hulu-series", name: "Hulu" },
+    { type: "series", id: "skynet-apple-tv-plus-series", name: "Apple TV+" },
+    { type: "series", id: "skynet-paramount-plus-series", name: "Paramount+" },
+    { type: "series", id: "skynet-max-series", name: "Max" },
+    { type: "series", id: "skynet-peacock-series", name: "Peacock" },
+    { type: "series", id: "skynet-bbc-iplayer-series", name: "BBC iPlayer" },
+    { type: "series", id: "skynet-itvx-series", name: "ITVX" },
+    { type: "series", id: "skynet-channel-4-series", name: "Channel 4" }
   ],
 
   behaviorHints: {
@@ -321,6 +343,52 @@ for (const [slug, genreId] of Object.entries(seriesGenres)) {
       50,
       "skynet-" + slug + "-series",
       seriesGenreNames[genreId] || slug
+    )
+  );
+}
+
+
+const streamingProviders = {
+  netflix: { name: "Netflix", ids: [8] },
+  "prime-video": { name: "Prime Video", ids: [119] },
+  "disney-plus": { name: "Disney+", ids: [337] },
+  hulu: { name: "Hulu", ids: [15] },
+  "apple-tv-plus": { name: "Apple TV+", ids: [350] },
+  "paramount-plus": { name: "Paramount+", ids: [531] },
+  max: { name: "Max", ids: [1899] },
+  peacock: { name: "Peacock", ids: [386] },
+  "bbc-iplayer": { name: "BBC iPlayer", ids: [39] },
+  itvx: { name: "ITVX", ids: [41] },
+  "channel-4": { name: "Channel 4", ids: [103] }
+};
+
+for (const [slug, provider] of Object.entries(streamingProviders)) {
+  const providerIds = provider.ids.join("|");
+  app.get("/catalog/movie/skynet-" + slug + "-movies.json", (_req, res) =>
+    sendCatalog(
+      res,
+      [1, 2, 3, 4, 5].map(page =>
+        "/discover/movie?language=en-US&watch_region=GB&with_watch_monetization_types=flatrate&with_watch_providers=" +
+        providerIds + "&sort_by=popularity.desc&page=" + page
+      ),
+      "movie",
+      50,
+      "skynet-" + slug + "-movies",
+      provider.name
+    )
+  );
+
+  app.get("/catalog/series/skynet-" + slug + "-series.json", (_req, res) =>
+    sendCatalog(
+      res,
+      [1, 2, 3, 4, 5].map(page =>
+        "/discover/tv?language=en-US&watch_region=GB&with_watch_monetization_types=flatrate&with_watch_providers=" +
+        providerIds + "&sort_by=popularity.desc&page=" + page
+      ),
+      "series",
+      50,
+      "skynet-" + slug + "-series",
+      provider.name
     )
   );
 }
