@@ -207,7 +207,8 @@ for (const [slug, genreId] of Object.entries(movieGenres)) {
     )
   );
 }
-\nasync function sendMeta(res, type, id) {
+
+async function sendMeta(res, type, id) {
   try {
     const cleanId = decodeURIComponent(id).replace(/^tmdb:/, "");
     const data = await tmdb(
