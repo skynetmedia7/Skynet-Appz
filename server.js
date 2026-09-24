@@ -6,33 +6,21 @@ const TMDB_KEY = process.env.TMDB_API_KEY || "";
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "1.1.0",
+  version: "1.2.0",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
   resources: ["catalog"],
   types: ["movie", "series"],
   catalogs: [
-    { type: "movie", id: "skynet-trending-movies", name: "🔥 Skynet Trending Movies" },
-    { type: "movie", id: "skynet-popular-movies", name: "🎬 Skynet Popular Movies" },
-    { type: "movie", id: "skynet-top-rated-movies", name: "⭐ Skynet Top Rated Movies" },
-    { type: "movie", id: "skynet-now-playing-movies", name: "🆕 Skynet Now Playing" },
-    { type: "series", id: "skynet-trending-series", name: "🔥 Skynet Trending Series" },
-    { type: "series", id: "skynet-popular-series", name: "📺 Skynet Popular Series" },
-    { type: "series", id: "skynet-top-rated-series", name: "⭐ Skynet Top Rated Series" },
-    { type: "series", id: "skynet-on-air-series", name: "🆕 Skynet On Air" },
-    {
-      type: "movie",
-      id: "skynet-search-movies",
-      name: "🔎 Skynet Movie Search",
-      extra: [{ name: "search", isRequired: true }]
-    },
-    {
-      type: "series",
-      id: "skynet-search-series",
-      name: "🔎 Skynet Series Search",
-      extra: [{ name: "search", isRequired: true }]
-    }
+    { type: "movie", id: "skynet-trending-movies", name: "Skynet Trending Movies" },
+    { type: "movie", id: "skynet-popular-movies", name: "Skynet Popular Movies" },
+    { type: "movie", id: "skynet-top-rated-movies", name: "Skynet Top Rated Movies" },
+    { type: "movie", id: "skynet-now-playing-movies", name: "Skynet Now Playing" },
+    { type: "series", id: "skynet-trending-series", name: "Skynet Trending Series" },
+    { type: "series", id: "skynet-popular-series", name: "Skynet Popular Series" },
+    { type: "series", id: "skynet-top-rated-series", name: "Skynet Top Rated Series" },
+    { type: "series", id: "skynet-on-air-series", name: "Skynet On Air" }
   ],
   behaviorHints: { configurable: false }
 };
@@ -86,7 +74,6 @@ async function sendCatalog(res, path, type) {
   }
 }
 
-// Movies
 app.get("/catalog/movie/skynet-trending-movies.json", (_req, res) =>
   sendCatalog(res, "/trending/movie/week?language=en-US", "movie")
 );
@@ -103,7 +90,6 @@ app.get("/catalog/movie/skynet-now-playing-movies.json", (_req, res) =>
   sendCatalog(res, "/movie/now_playing?language=en-US&region=GB&page=1", "movie")
 );
 
-// Series
 app.get("/catalog/series/skynet-trending-series.json", (_req, res) =>
   sendCatalog(res, "/trending/tv/week?language=en-US", "series")
 );
@@ -120,25 +106,8 @@ app.get("/catalog/series/skynet-on-air-series.json", (_req, res) =>
   sendCatalog(res, "/tv/on_the_air?language=en-US&page=1", "series")
 );
 
-// Search
-app.get(/^\/catalog\/(movie|series)\/skynet-search-(movie|series)\/search=(.*)\.json$/, async (req, res) => {
-  const type = req.params[1];
-  const requestedKind = req.params[2];
-  const query = decodeURIComponent(req.params[3] || "").trim();
-
-  if (!query) return res.json({ metas: [] });
-  if ((type === "movie" && requestedKind !== "movie") ||
-      (type === "series" && requestedKind !== "series")) {
-    return res.status(400).json({ metas: [], error: "Invalid search type" });
-  }
-
-  const endpoint = type === "movie" ? "/search/movie" : "/search/tv";
-  const path = endpoint + "?language=en-US&include_adult=false&page=1&query=" + encodeURIComponent(query);
-  return sendCatalog(res, path, type);
-});
-
 app.get("/health", (_req, res) =>
-  res.json({ ok: true, name: "Skynet", version: "1.1.0", tmdbConfigured: Boolean(TMDB_KEY) })
+  res.json({ ok: true, name: "Skynet", version: "1.2.0", tmdbConfigured: Boolean(TMDB_KEY) })
 );
 
 app.listen(PORT, () => console.log("Skynet listening on " + PORT));
