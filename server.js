@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "1.9.1",
+  version: "1.9.2",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -46,6 +46,7 @@ const manifest = {
     { type: "movie", id: "skynet-thriller-movies", name: "Thriller" },
     { type: "movie", id: "skynet-war-movies", name: "War" },
     { type: "movie", id: "skynet-western-movies", name: "Western" },
+    { type: "movie", id: "skynet-kids-movies", name: "Kids" },
     { type: "series", id: "skynet-trending-series", name: "Trending" },
     { type: "series", id: "skynet-popular-series", name: "Popular" },
     { type: "series", id: "skynet-top-rated-series", name: "Top Rated" },
@@ -193,7 +194,7 @@ const movieGenres = {
   "action": 28, "adventure": 12, "animation": 16, "comedy": 35,
   "crime": 80, "drama": 18, "fantasy": 14, "horror": 27,
   "mystery": 9648, "romance": 10749, "sci-fi": 878, "thriller": 53,
-  "war": 10752, "western": 37
+  "war": 10752, "western": 37, "kids": 10751
 };
 
 for (const [slug, genreId] of Object.entries(movieGenres)) {
@@ -232,7 +233,7 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     name: "Skynet",
-    version: "1.9.1",
+    version: "1.9.2",
     tmdbConfigured: Boolean(TMDB_KEY)
   });
 });
