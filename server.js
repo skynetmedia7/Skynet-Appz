@@ -4,6 +4,11 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 const TMDB_KEY = process.env.TMDB_API_KEY || "";
 
+app.use((req, _res, next) => {
+  console.log("REQUEST " + req.method + " " + req.originalUrl);
+  next();
+});
+
 const manifest = {
   id: "com.skynet.stremio",
   version: "1.3.0",
@@ -120,7 +125,7 @@ app.get("/meta/movie/:id.json", (req, res) => sendMeta(res, "movie", req.params.
 app.get("/meta/series/:id.json", (req, res) => sendMeta(res, "series", req.params.id));
 
 app.get("/health", (_req, res) =>
-  res.json({ ok: true, name: "Skynet", version: "1.2.0", tmdbConfigured: Boolean(TMDB_KEY) })
+  res.json({ ok: true, name: "Skynet", version: "1.3.0", tmdbConfigured: Boolean(TMDB_KEY) })
 );
 
 app.listen(PORT, () => console.log("Skynet listening on " + PORT));
