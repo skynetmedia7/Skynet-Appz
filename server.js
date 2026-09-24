@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "2.0.4",
+  version: "2.0.5",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -139,6 +139,28 @@ function meta(item, type) {
   };
 }
 
+function catalogMeta(item, type) {
+  const genreNames = type === "movie" ? movieGenreNames : seriesGenreNames;
+  const genres = Array.isArray(item.genre_ids)
+    ? item.genre_ids.map(id => genreNames[id]).filter(Boolean)
+    : [];
+
+  return {
+    id: "tmdb:" + item.id,
+    type,
+    name: item.title || item.name,
+    poster: item.poster_path
+      ? "https://image.tmdb.org/t/p/w185" + item.poster_path
+      : undefined,
+    posterShape: "poster",
+    genres: genres.length ? genres : undefined,
+    releaseInfo: (item.release_date || item.first_air_date || "").slice(0, 4),
+    imdbRating: item.vote_average != null
+      ? Number(item.vote_average.toFixed(1))
+      : undefined
+  };
+}
+
 async function sendCatalog(res, paths, type, limit = 50, catalogId = "unknown") {
   try {
     const pagePaths = Array.isArray(paths) ? paths : [paths];
@@ -155,7 +177,7 @@ async function sendCatalog(res, paths, type, limit = 50, catalogId = "unknown") 
       if (uniqueResults.length >= limit) break;
     }
 
-    const metas = uniqueResults.map(x => meta(x, type));
+    const metas = uniqueResults.map(x => catalogMeta(x, type));
 
     console.log(
       "CATALOG " + catalogId + " type=" + type + " pages=" + pagePaths.length + " results=" + metas.length
@@ -323,7 +345,7 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     name: "Skynet",
-    version: "2.0.4",
+    version: "2.0.5",
     tmdbConfigured: Boolean(TMDB_KEY)
   });
 });
