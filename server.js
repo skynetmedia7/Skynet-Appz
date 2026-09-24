@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "2.0.3",
+  version: "2.0.4",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -124,7 +124,7 @@ function meta(item, type) {
     type,
     name: item.title || item.name,
     poster: item.poster_path
-      ? "https://image.tmdb.org/t/p/w500" + item.poster_path
+      ? "https://image.tmdb.org/t/p/w342" + item.poster_path
       : undefined,
     posterShape: "poster",
     genres: genres.length ? genres : undefined,
@@ -323,7 +323,7 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     name: "Skynet",
-    version: "2.0.3",
+    version: "2.0.4",
     tmdbConfigured: Boolean(TMDB_KEY)
   });
 });
