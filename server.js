@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "2.0.2",
+  version: "2.0.3",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -139,7 +139,7 @@ function meta(item, type) {
   };
 }
 
-async function sendCatalog(res, paths, type, limit = 50) {
+async function sendCatalog(res, paths, type, limit = 50, catalogId = "unknown") {
   try {
     const pagePaths = Array.isArray(paths) ? paths : [paths];
     const pages = await Promise.all(pagePaths.map(path => tmdb(path)));
@@ -158,14 +158,15 @@ async function sendCatalog(res, paths, type, limit = 50) {
     const metas = uniqueResults.map(x => meta(x, type));
 
     console.log(
-      "CATALOG " + type + " pages=" + pagePaths.length + " results=" + metas.length
+      "CATALOG " + catalogId + " type=" + type + " pages=" + pagePaths.length + " results=" + metas.length
     );
 
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.status(200).json({
       metas,
-      cacheMaxAge: 300,
-      staleRevalidate: 3600,
-      staleError: 86400
+      cacheMaxAge: 0,
+      staleRevalidate: 0,
+      staleError: 0
     });
   } catch (e) {
     console.error("CATALOG ERROR " + type + " " + e.message);
@@ -322,7 +323,7 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     name: "Skynet",
-    version: "2.0.2",
+    version: "2.0.3",
     tmdbConfigured: Boolean(TMDB_KEY)
   });
 });
