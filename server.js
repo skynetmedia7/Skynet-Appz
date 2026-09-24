@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "1.4.0",
+  version: "1.5.0",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -72,6 +72,7 @@ function meta(item, type) {
     poster: item.poster_path
       ? "https://image.tmdb.org/t/p/w500" + item.poster_path
       : undefined,
+    posterShape: "poster",
     background: item.backdrop_path
       ? "https://image.tmdb.org/t/p/w1280" + item.backdrop_path
       : undefined,
@@ -88,7 +89,7 @@ async function sendCatalog(res, path, type) {
     const data = await tmdb(path);
     res.json({
       metas: (data.results || [])
-        .filter(x => x.poster_path || x.backdrop_path)
+        .filter(x => x.poster_path)
         .map(x => meta(x, type))
     });
   } catch (e) {
@@ -154,7 +155,7 @@ app.get("/health", (_req, res) =>
   res.json({
     ok: true,
     name: "Skynet",
-    version: "1.4.0",
+    version: "1.5.0",
     tmdbConfigured: Boolean(TMDB_KEY)
   })
 );
