@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio.v21",
-  version: "2.1.2",
+  version: "2.2.0",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio. Streaming availability data by JustWatch via TMDB.",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -32,6 +32,7 @@ const manifest = {
 
   catalogs: [
     { type: "movie", id: "skynet-latest-movies", name: "Latest" },
+    { type: "movie", id: "skynet-new-releases-movies", name: "New Releases" },
     { type: "movie", id: "skynet-action-movies", name: "Action" },
     { type: "movie", id: "skynet-adventure-movies", name: "Adventure" },
     { type: "movie", id: "skynet-animation-movies", name: "Animation" },
@@ -228,6 +229,18 @@ app.get("/catalog/movie/skynet-latest-movies.json", (_req, res) =>
     [1, 2, 3].map(page => "/discover/movie?language=en-US&region=GB&sort_by=primary_release_date.desc&release_date.lte=2026-09-24&page=" + page),
     "movie",
     50
+  )
+);
+
+
+app.get("/catalog/movie/skynet-new-releases-movies.json", (_req, res) =>
+  sendCatalog(
+    res,
+    [1, 2, 3, 4, 5].map(page => "/discover/movie?language=en-US&region=GB&sort_by=primary_release_date.desc&primary_release_date.gte=2026-06-26&primary_release_date.lte=2026-09-24&page=" + page),
+    "movie",
+    50,
+    "skynet-new-releases-movies",
+    "New Releases"
   )
 );
 
