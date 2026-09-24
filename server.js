@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "1.8.0",
+  version: "1.8.1",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -83,7 +83,7 @@ function meta(item, type) {
   };
 }
 
-async function sendCatalog(res, paths, type) {
+async function sendCatalog(res, paths, type, limit = 50) {
   try {
     const pagePaths = Array.isArray(paths) ? paths : [paths];
     const pages = await Promise.all(pagePaths.map(path => tmdb(path)));
@@ -92,7 +92,7 @@ async function sendCatalog(res, paths, type) {
     const metas = results
       .filter(x => x.poster_path)
       .map(x => meta(x, type))
-      .slice(0, 50);
+      .slice(0, limit);
 
     console.log(
       "CATALOG " + type + " pages=" + pagePaths.length + " results=" + metas.length
@@ -124,7 +124,8 @@ app.get("/catalog/movie/skynet-trending-movies.json", (_req, res) =>
       "/trending/movie/week?language=en-US&page=2",
       "/trending/movie/week?language=en-US&page=3"
     ],
-    "movie"
+    "movie",
+    20
   )
 );
 
@@ -136,7 +137,8 @@ app.get("/catalog/movie/skynet-popular-movies.json", (_req, res) =>
       "/movie/popular?language=en-US&page=2",
       "/movie/popular?language=en-US&page=3"
     ],
-    "movie"
+    "movie",
+    40
   )
 );
 
@@ -148,7 +150,8 @@ app.get("/catalog/movie/skynet-top-rated-movies.json", (_req, res) =>
       "/movie/top_rated?language=en-US&page=2",
       "/movie/top_rated?language=en-US&page=3"
     ],
-    "movie"
+    "movie",
+    50
   )
 );
 
@@ -160,7 +163,8 @@ app.get("/catalog/movie/skynet-now-playing-movies.json", (_req, res) =>
       "/movie/now_playing?language=en-US&region=GB&page=2",
       "/movie/now_playing?language=en-US&region=GB&page=3"
     ],
-    "movie"
+    "movie",
+    50
   )
 );
 
@@ -172,7 +176,8 @@ app.get("/catalog/series/skynet-trending-series.json", (_req, res) =>
       "/trending/tv/week?language=en-US&page=2",
       "/trending/tv/week?language=en-US&page=3"
     ],
-    "series"
+    "series",
+    50
   )
 );
 
@@ -184,7 +189,8 @@ app.get("/catalog/series/skynet-popular-series.json", (_req, res) =>
       "/tv/popular?language=en-US&page=2",
       "/tv/popular?language=en-US&page=3"
     ],
-    "series"
+    "series",
+    50
   )
 );
 
@@ -196,7 +202,8 @@ app.get("/catalog/series/skynet-top-rated-series.json", (_req, res) =>
       "/tv/top_rated?language=en-US&page=2",
       "/tv/top_rated?language=en-US&page=3"
     ],
-    "series"
+    "series",
+    50
   )
 );
 
@@ -208,7 +215,8 @@ app.get("/catalog/series/skynet-on-air-series.json", (_req, res) =>
       "/tv/on_the_air?language=en-US&page=2",
       "/tv/on_the_air?language=en-US&page=3"
     ],
-    "series"
+    "series",
+    50
   )
 );
 
@@ -238,7 +246,7 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     name: "Skynet",
-    version: "1.8.0",
+    version: "1.8.1",
     tmdbConfigured: Boolean(TMDB_KEY)
   });
 });
