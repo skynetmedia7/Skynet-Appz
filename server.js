@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio.v21",
-  version: "2.1.1",
+  version: "2.1.2",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio. Streaming availability data by JustWatch via TMDB.",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -55,11 +55,9 @@ const manifest = {
     { type: "movie", id: "skynet-netflix-movies", name: "Netflix" },
     { type: "movie", id: "skynet-prime-video-movies", name: "Prime Video" },
     { type: "movie", id: "skynet-disney-plus-movies", name: "Disney+" },
-    { type: "movie", id: "skynet-hulu-movies", name: "Hulu" },
     { type: "movie", id: "skynet-apple-tv-plus-movies", name: "Apple TV+" },
     { type: "movie", id: "skynet-paramount-plus-movies", name: "Paramount+" },
     { type: "movie", id: "skynet-max-movies", name: "Max" },
-    { type: "movie", id: "skynet-peacock-movies", name: "Peacock" },
     { type: "movie", id: "skynet-bbc-iplayer-movies", name: "BBC iPlayer" },
     { type: "movie", id: "skynet-itvx-movies", name: "ITVX" },
     { type: "movie", id: "skynet-channel-4-movies", name: "Channel 4" },
@@ -86,11 +84,9 @@ const manifest = {
     { type: "series", id: "skynet-netflix-series", name: "Netflix" },
     { type: "series", id: "skynet-prime-video-series", name: "Prime Video" },
     { type: "series", id: "skynet-disney-plus-series", name: "Disney+" },
-    { type: "series", id: "skynet-hulu-series", name: "Hulu" },
     { type: "series", id: "skynet-apple-tv-plus-series", name: "Apple TV+" },
     { type: "series", id: "skynet-paramount-plus-series", name: "Paramount+" },
     { type: "series", id: "skynet-max-series", name: "Max" },
-    { type: "series", id: "skynet-peacock-series", name: "Peacock" },
     { type: "series", id: "skynet-bbc-iplayer-series", name: "BBC iPlayer" },
     { type: "series", id: "skynet-itvx-series", name: "ITVX" },
     { type: "series", id: "skynet-channel-4-series", name: "Channel 4" }
@@ -352,11 +348,9 @@ const streamingProviders = {
   netflix: { name: "Netflix", ids: [8] },
   "prime-video": { name: "Prime Video", ids: [119] },
   "disney-plus": { name: "Disney+", ids: [337] },
-  hulu: { name: "Hulu", ids: [15] },
   "apple-tv-plus": { name: "Apple TV+", ids: [350] },
   "paramount-plus": { name: "Paramount+", ids: [531] },
   max: { name: "Max", ids: [1899] },
-  peacock: { name: "Peacock", ids: [386] },
   "bbc-iplayer": { name: "BBC iPlayer", ids: [39] },
   itvx: { name: "ITVX", ids: [41] },
   "channel-4": { name: "Channel 4", ids: [103] }
@@ -419,7 +413,7 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     name: "Skynet",
-    version: "2.1.1",
+    version: "2.1.2",
     tmdbConfigured: Boolean(TMDB_KEY)
   });
 });
