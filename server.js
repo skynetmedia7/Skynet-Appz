@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "2.0.5",
+  version: "2.0.6",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -139,11 +139,13 @@ function meta(item, type) {
   };
 }
 
-function catalogMeta(item, type) {
+function catalogMeta(item, type, forcedGenre = null) {
   const genreNames = type === "movie" ? movieGenreNames : seriesGenreNames;
-  const genres = Array.isArray(item.genre_ids)
-    ? item.genre_ids.map(id => genreNames[id]).filter(Boolean)
-    : [];
+  const genres = forcedGenre
+    ? [forcedGenre]
+    : Array.isArray(item.genre_ids)
+      ? item.genre_ids.map(id => genreNames[id]).filter(Boolean)
+      : [];
 
   return {
     id: "tmdb:" + item.id,
@@ -161,7 +163,7 @@ function catalogMeta(item, type) {
   };
 }
 
-async function sendCatalog(res, paths, type, limit = 50, catalogId = "unknown") {
+async function sendCatalog(res, paths, type, limit = 50, catalogId = "unknown", forcedGenre = null) {
   try {
     const pagePaths = Array.isArray(paths) ? paths : [paths];
     const pages = await Promise.all(pagePaths.map(path => tmdb(path)));
@@ -177,7 +179,7 @@ async function sendCatalog(res, paths, type, limit = 50, catalogId = "unknown") 
       if (uniqueResults.length >= limit) break;
     }
 
-    const metas = uniqueResults.map(x => catalogMeta(x, type));
+    const metas = uniqueResults.map(x => catalogMeta(x, type, forcedGenre));
 
     console.log(
       "CATALOG " + catalogId + " type=" + type + " pages=" + pagePaths.length + " results=" + metas.length
@@ -303,7 +305,9 @@ for (const [slug, genreId] of Object.entries(movieGenres)) {
       res,
       [1, 2, 3, 4, 5].map(page => "/discover/movie?language=en-US&with_genres=" + genreId + "&sort_by=popularity.desc&page=" + page),
       "movie",
-      50
+      50,
+      "skynet-" + slug + "-movies",
+      movieGenreNames[genreId] || (slug === "kids" ? "Kids" : slug)
     )
   );
 }
@@ -314,7 +318,9 @@ for (const [slug, genreId] of Object.entries(seriesGenres)) {
       res,
       [1, 2, 3, 4, 5].map(page => "/discover/tv?language=en-US&with_genres=" + genreId + "&sort_by=popularity.desc&page=" + page),
       "series",
-      50
+      50,
+      "skynet-" + slug + "-series",
+      seriesGenreNames[genreId] || slug
     )
   );
 }
@@ -345,7 +351,7 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     name: "Skynet",
-    version: "2.0.5",
+    version: "2.0.6",
     tmdbConfigured: Boolean(TMDB_KEY)
   });
 });
