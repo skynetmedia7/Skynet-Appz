@@ -6,11 +6,11 @@ const TMDB_KEY = process.env.TMDB_API_KEY || "";
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "1.2.0",
+  version: "1.3.0",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
-  resources: ["catalog"],
+  resources: ["catalog", "meta"],
   types: ["movie", "series"],
   catalogs: [
     { type: "movie", id: "skynet-trending-movies", name: "Skynet Trending Movies" },
@@ -105,6 +105,19 @@ app.get("/catalog/series/skynet-top-rated-series.json", (_req, res) =>
 app.get("/catalog/series/skynet-on-air-series.json", (_req, res) =>
   sendCatalog(res, "/tv/on_the_air?language=en-US&page=1", "series")
 );
+
+async function sendMeta(res, type, id) {
+  try {
+    const cleanId = decodeURIComponent(id).replace(/^tmdb:/, "");
+    const data = await tmdb(type === "movie" ? "/movie/" + cleanId + "?language=en-US" : "/tv/" + cleanId + "?language=en-US");
+    res.json({ meta: meta(data, type) });
+  } catch (e) {
+    res.status(404).json({ meta: null, error: e.message });
+  }
+}
+
+app.get("/meta/movie/:id.json", (req, res) => sendMeta(res, "movie", req.params.id));
+app.get("/meta/series/:id.json", (req, res) => sendMeta(res, "series", req.params.id));
 
 app.get("/health", (_req, res) =>
   res.json({ ok: true, name: "Skynet", version: "1.2.0", tmdbConfigured: Boolean(TMDB_KEY) })
