@@ -99,7 +99,7 @@ function meta(item, type, idOverride) {
 async function sendCatalog(res, path, type, page = 1) {
   try {
     const data = await tmdb(path + (path.includes("?") ? "&" : "?") + "page=" + page);
-    const results = (data.results || []).filter(x => x.poster_path);
+    const results = data.results || [];
     const metas = await Promise.all(results.map(async x => {
       const imdb = await imdbId(type, x.id);
       return meta(x, type, imdb || ("tmdb:" + x.id));
@@ -127,7 +127,7 @@ async function sendCatalog(res, path, type, page = 1) {
 
 app.get("/catalog/:type/:id/:extra.json", (req, res) => {
   const { type, id, extra } = req.params;
-  const match = extra.match(/skip=(\\d+)/);
+  const match = extra.match(/skip=(\d+)/);
   const skip = match ? Number(match[1]) : 0;
   const page = Math.floor(skip / 20) + 1;
 
@@ -219,7 +219,7 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     name: "Skynet",
-    version: "1.7.0",
+    version: "1.9.0",
     tmdbConfigured: Boolean(TMDB_KEY)
   });
 });
