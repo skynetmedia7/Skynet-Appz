@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "1.8.1",
+  version: "1.9.0",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -35,6 +35,20 @@ const manifest = {
     { type: "movie", id: "skynet-popular-movies", name: "Popular" },
     { type: "movie", id: "skynet-top-rated-movies", name: "Top Rated" },
     { type: "movie", id: "skynet-now-playing-movies", name: "Now Playing" },
+    { type: "movie", id: "skynet-action-movies", name: "Action" },
+    { type: "movie", id: "skynet-adventure-movies", name: "Adventure" },
+    { type: "movie", id: "skynet-animation-movies", name: "Animation" },
+    { type: "movie", id: "skynet-comedy-movies", name: "Comedy" },
+    { type: "movie", id: "skynet-crime-movies", name: "Crime" },
+    { type: "movie", id: "skynet-drama-movies", name: "Drama" },
+    { type: "movie", id: "skynet-fantasy-movies", name: "Fantasy" },
+    { type: "movie", id: "skynet-horror-movies", name: "Horror" },
+    { type: "movie", id: "skynet-mystery-movies", name: "Mystery" },
+    { type: "movie", id: "skynet-romance-movies", name: "Romance" },
+    { type: "movie", id: "skynet-sci-fi-movies", name: "Sci-Fi" },
+    { type: "movie", id: "skynet-thriller-movies", name: "Thriller" },
+    { type: "movie", id: "skynet-war-movies", name: "War" },
+    { type: "movie", id: "skynet-western-movies", name: "Western" },
     { type: "series", id: "skynet-trending-series", name: "Trending" },
     { type: "series", id: "skynet-popular-series", name: "Popular" },
     { type: "series", id: "skynet-top-rated-series", name: "Top Rated" },
@@ -220,7 +234,25 @@ app.get("/catalog/series/skynet-on-air-series.json", (_req, res) =>
   )
 );
 
-async function sendMeta(res, type, id) {
+
+const movieGenres = {
+  "action": 28, "adventure": 12, "animation": 16, "comedy": 35,
+  "crime": 80, "drama": 18, "fantasy": 14, "horror": 27,
+  "mystery": 9648, "romance": 10749, "sci-fi": 878, "thriller": 53,
+  "war": 10752, "western": 37
+};
+
+for (const [slug, genreId] of Object.entries(movieGenres)) {
+  app.get("/catalog/movie/skynet-" + slug + "-movies.json", (_req, res) =>
+    sendCatalog(
+      res,
+      [1, 2, 3].map(page => "/discover/movie?language=en-US&with_genres=" + genreId + "&sort_by=popularity.desc&page=" + page),
+      "movie",
+      50
+    )
+  );
+}
+\nasync function sendMeta(res, type, id) {
   try {
     const cleanId = decodeURIComponent(id).replace(/^tmdb:/, "");
     const data = await tmdb(
