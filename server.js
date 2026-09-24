@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "1.7.0",
+  version: "1.8.0",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -63,9 +63,22 @@ async function tmdb(path) {
   return r.json();
 }
 
-function meta(item, type) {
+async function imdbId(type, tmdbId) {
+  try {
+    const data = await tmdb(
+      type === "movie"
+        ? "/movie/" + tmdbId + "/external_ids"
+        : "/tv/" + tmdbId + "/external_ids"
+    );
+    return data.imdb_id || null;
+  } catch {
+    return null;
+  }
+}
+
+function meta(item, type, idOverride) {
   return {
-    id: "tmdb:" + item.id,
+    id: idOverride || ("tmdb:" + item.id),
     type,
     name: item.title || item.name,
     poster: item.poster_path
@@ -86,9 +99,11 @@ function meta(item, type) {
 async function sendCatalog(res, path, type) {
   try {
     const data = await tmdb(path);
-    const metas = (data.results || [])
-      .filter(x => x.poster_path)
-      .map(x => meta(x, type));
+    const results = (data.results || []).filter(x => x.poster_path);
+    const metas = await Promise.all(results.map(async x => {
+      const imdb = await imdbId(type, x.id);
+      return meta(x, type, imdb || ("tmdb:" + x.id));
+    }));
 
     console.log("CATALOG " + type + " " + path + " results=" + metas.length);
 
@@ -145,12 +160,24 @@ app.get("/catalog/series/skynet-on-air-series.json", (_req, res) =>
 async function sendMeta(res, type, id) {
   try {
     const cleanId = decodeURIComponent(id).replace(/^tmdb:/, "");
-    const data = await tmdb(
-      type === "movie"
-        ? "/movie/" + cleanId + "?language=en-US"
-        : "/tv/" + cleanId + "?language=en-US"
-    );
-    res.json({ meta: meta(data, type) });
+    let data;
+    if (cleanId.startsWith("tt")) {
+      const found = await tmdb("/find/" + cleanId + "?external_source=imdb_id&language=en-US");
+      const results = type === "movie" ? found.movie_results : found.tv_results;
+      if (!results || !results.length) throw new Error("IMDb ID not found");
+      data = await tmdb(
+        type === "movie"
+          ? "/movie/" + results[0].id + "?language=en-US"
+          : "/tv/" + results[0].id + "?language=en-US"
+      );
+    } else {
+      data = await tmdb(
+        type === "movie"
+          ? "/movie/" + cleanId + "?language=en-US"
+          : "/tv/" + cleanId + "?language=en-US"
+      );
+    }
+    res.json({ meta: meta(data, type, cleanId.startsWith("tt") ? cleanId : undefined) });
   } catch (e) {
     res.status(404).json({ meta: null, error: e.message });
   }
