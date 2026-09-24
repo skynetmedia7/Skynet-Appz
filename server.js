@@ -10,8 +10,8 @@ app.use((req, _res, next) => {
 });
 
 const manifest = {
-  id: "com.skynet.stremio",
-  version: "2.1.0",
+  id: "com.skynet.stremio.v21",
+  version: "2.1.1",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio. Streaming availability data by JustWatch via TMDB.",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -419,7 +419,7 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     name: "Skynet",
-    version: "2.0.6",
+    version: "2.1.1",
     tmdbConfigured: Boolean(TMDB_KEY)
   });
 });
