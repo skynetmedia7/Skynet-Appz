@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "1.7.0",
+  version: "1.8.0",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -83,14 +83,20 @@ function meta(item, type) {
   };
 }
 
-async function sendCatalog(res, path, type) {
+async function sendCatalog(res, paths, type) {
   try {
-    const data = await tmdb(path);
-    const metas = (data.results || [])
-      .filter(x => x.poster_path)
-      .map(x => meta(x, type));
+    const pagePaths = Array.isArray(paths) ? paths : [paths];
+    const pages = await Promise.all(pagePaths.map(path => tmdb(path)));
+    const results = pages.flatMap(data => data.results || []);
 
-    console.log("CATALOG " + type + " " + path + " results=" + metas.length);
+    const metas = results
+      .filter(x => x.poster_path)
+      .map(x => meta(x, type))
+      .slice(0, 50);
+
+    console.log(
+      "CATALOG " + type + " pages=" + pagePaths.length + " results=" + metas.length
+    );
 
     res.status(200).json({
       metas,
@@ -99,7 +105,7 @@ async function sendCatalog(res, path, type) {
       staleError: 86400
     });
   } catch (e) {
-    console.error("CATALOG ERROR " + type + " " + path + " " + e.message);
+    console.error("CATALOG ERROR " + type + " " + e.message);
 
     res.status(200).json({
       metas: [],
@@ -111,35 +117,99 @@ async function sendCatalog(res, path, type) {
 }
 
 app.get("/catalog/movie/skynet-trending-movies.json", (_req, res) =>
-  sendCatalog(res, "/trending/movie/week?language=en-US", "movie")
+  sendCatalog(
+    res,
+    [
+      "/trending/movie/week?language=en-US&page=1",
+      "/trending/movie/week?language=en-US&page=2",
+      "/trending/movie/week?language=en-US&page=3"
+    ],
+    "movie"
+  )
 );
 
 app.get("/catalog/movie/skynet-popular-movies.json", (_req, res) =>
-  sendCatalog(res, "/movie/popular?language=en-US&page=1", "movie")
+  sendCatalog(
+    res,
+    [
+      "/movie/popular?language=en-US&page=1",
+      "/movie/popular?language=en-US&page=2",
+      "/movie/popular?language=en-US&page=3"
+    ],
+    "movie"
+  )
 );
 
 app.get("/catalog/movie/skynet-top-rated-movies.json", (_req, res) =>
-  sendCatalog(res, "/movie/top_rated?language=en-US&page=1", "movie")
+  sendCatalog(
+    res,
+    [
+      "/movie/top_rated?language=en-US&page=1",
+      "/movie/top_rated?language=en-US&page=2",
+      "/movie/top_rated?language=en-US&page=3"
+    ],
+    "movie"
+  )
 );
 
 app.get("/catalog/movie/skynet-now-playing-movies.json", (_req, res) =>
-  sendCatalog(res, "/movie/now_playing?language=en-US&region=GB&page=1", "movie")
+  sendCatalog(
+    res,
+    [
+      "/movie/now_playing?language=en-US&region=GB&page=1",
+      "/movie/now_playing?language=en-US&region=GB&page=2",
+      "/movie/now_playing?language=en-US&region=GB&page=3"
+    ],
+    "movie"
+  )
 );
 
 app.get("/catalog/series/skynet-trending-series.json", (_req, res) =>
-  sendCatalog(res, "/trending/tv/week?language=en-US", "series")
+  sendCatalog(
+    res,
+    [
+      "/trending/tv/week?language=en-US&page=1",
+      "/trending/tv/week?language=en-US&page=2",
+      "/trending/tv/week?language=en-US&page=3"
+    ],
+    "series"
+  )
 );
 
 app.get("/catalog/series/skynet-popular-series.json", (_req, res) =>
-  sendCatalog(res, "/tv/popular?language=en-US&page=1", "series")
+  sendCatalog(
+    res,
+    [
+      "/tv/popular?language=en-US&page=1",
+      "/tv/popular?language=en-US&page=2",
+      "/tv/popular?language=en-US&page=3"
+    ],
+    "series"
+  )
 );
 
 app.get("/catalog/series/skynet-top-rated-series.json", (_req, res) =>
-  sendCatalog(res, "/tv/top_rated?language=en-US&page=1", "series")
+  sendCatalog(
+    res,
+    [
+      "/tv/top_rated?language=en-US&page=1",
+      "/tv/top_rated?language=en-US&page=2",
+      "/tv/top_rated?language=en-US&page=3"
+    ],
+    "series"
+  )
 );
 
 app.get("/catalog/series/skynet-on-air-series.json", (_req, res) =>
-  sendCatalog(res, "/tv/on_the_air?language=en-US&page=1", "series")
+  sendCatalog(
+    res,
+    [
+      "/tv/on_the_air?language=en-US&page=1",
+      "/tv/on_the_air?language=en-US&page=2",
+      "/tv/on_the_air?language=en-US&page=3"
+    ],
+    "series"
+  )
 );
 
 async function sendMeta(res, type, id) {
@@ -168,7 +238,7 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     name: "Skynet",
-    version: "1.7.0",
+    version: "1.8.0",
     tmdbConfigured: Boolean(TMDB_KEY)
   });
 });
