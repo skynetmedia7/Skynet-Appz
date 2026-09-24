@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "1.8.0",
+  version: "1.9.0",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -31,13 +31,13 @@ const manifest = {
   types: ["movie", "series"],
 
   catalogs: [
-    { type: "movie", id: "skynet-trending-movies", name: "Trending" },
-    { type: "movie", id: "skynet-popular-movies", name: "Popular" },
-    { type: "movie", id: "skynet-top-rated-movies", name: "Top Rated" },
-    { type: "movie", id: "skynet-now-playing-movies", name: "Now Playing" },
-    { type: "series", id: "skynet-trending-series", name: "Trending" },
-    { type: "series", id: "skynet-popular-series", name: "Popular" },
-    { type: "series", id: "skynet-top-rated-series", name: "Top Rated" },
+    { type: "movie", id: "skynet-trending-movies", name: "Trending", extra: [{ name: "skip", isRequired: false }] },
+    { type: "movie", id: "skynet-popular-movies", name: "Popular", extra: [{ name: "skip", isRequired: false }] },
+    { type: "movie", id: "skynet-top-rated-movies", name: "Top Rated", extra: [{ name: "skip", isRequired: false }] },
+    { type: "movie", id: "skynet-now-playing-movies", name: "Now Playing", extra: [{ name: "skip", isRequired: false }] },
+    { type: "series", id: "skynet-trending-series", name: "Trending", extra: [{ name: "skip", isRequired: false }] },
+    { type: "series", id: "skynet-popular-series", name: "Popular", extra: [{ name: "skip", isRequired: false }] },
+    { type: "series", id: "skynet-top-rated-series", name: "Top Rated", extra: [{ name: "skip", isRequired: false }] },
     { type: "series", id: "skynet-on-air-series", name: "On Air" }
   ],
 
@@ -96,9 +96,9 @@ function meta(item, type, idOverride) {
   };
 }
 
-async function sendCatalog(res, path, type) {
+async function sendCatalog(res, path, type, page = 1) {
   try {
-    const data = await tmdb(path);
+    const data = await tmdb(path + (path.includes("?") ? "&" : "?") + "page=" + page);
     const results = (data.results || []).filter(x => x.poster_path);
     const metas = await Promise.all(results.map(async x => {
       const imdb = await imdbId(type, x.id);
@@ -124,6 +124,30 @@ async function sendCatalog(res, path, type) {
     });
   }
 }
+
+app.get("/catalog/:type/:id/:extra.json", (req, res) => {
+  const { type, id, extra } = req.params;
+  const match = extra.match(/skip=(\\d+)/);
+  const skip = match ? Number(match[1]) : 0;
+  const page = Math.floor(skip / 20) + 1;
+
+  const paths = {
+    "skynet-trending-movies": "/trending/movie/week?language=en-US",
+    "skynet-popular-movies": "/movie/popular?language=en-US",
+    "skynet-top-rated-movies": "/movie/top_rated?language=en-US",
+    "skynet-now-playing-movies": "/movie/now_playing?language=en-US&region=GB",
+    "skynet-trending-series": "/trending/tv/week?language=en-US",
+    "skynet-popular-series": "/tv/popular?language=en-US",
+    "skynet-top-rated-series": "/tv/top_rated?language=en-US",
+    "skynet-on-air-series": "/tv/on_the_air?language=en-US"
+  };
+
+  if ((type !== "movie" && type !== "series") || !paths[id]) {
+    return res.status(404).json({ metas: [] });
+  }
+
+  sendCatalog(res, paths[id], type, page);
+});
 
 app.get("/catalog/movie/skynet-trending-movies.json", (_req, res) =>
   sendCatalog(res, "/trending/movie/week?language=en-US", "movie")
