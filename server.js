@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "2.0.1",
+  version: "2.0.2",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -96,7 +96,29 @@ async function tmdb(path) {
   return r.json();
 }
 
+const movieGenreNames = {
+  28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
+  80: "Crime", 99: "Documentary", 18: "Drama", 10751: "Family",
+  14: "Fantasy", 36: "History", 27: "Horror", 10402: "Music",
+  9648: "Mystery", 10749: "Romance", 878: "Sci-Fi", 53: "Thriller",
+  10770: "TV Movie", 10752: "War", 37: "Western"
+};
+
+const seriesGenreNames = {
+  10759: "Action & Adventure", 16: "Animation", 35: "Comedy", 80: "Crime",
+  99: "Documentary", 18: "Drama", 10751: "Family", 10762: "Kids",
+  9648: "Mystery", 10763: "News", 10764: "Reality", 10765: "Sci-Fi & Fantasy",
+  10766: "Soap", 10767: "Talk", 10768: "War & Politics", 37: "Western"
+};
+
 function meta(item, type) {
+  const genreNames = type === "movie" ? movieGenreNames : seriesGenreNames;
+  const genres = Array.isArray(item.genres)
+    ? item.genres.map(g => g.name).filter(Boolean)
+    : Array.isArray(item.genre_ids)
+      ? item.genre_ids.map(id => genreNames[id]).filter(Boolean)
+      : [];
+
   return {
     id: "tmdb:" + item.id,
     type,
@@ -105,12 +127,13 @@ function meta(item, type) {
       ? "https://image.tmdb.org/t/p/w500" + item.poster_path
       : undefined,
     posterShape: "poster",
+    genres: genres.length ? genres : undefined,
     background: item.backdrop_path
       ? "https://image.tmdb.org/t/p/w1280" + item.backdrop_path
       : undefined,
     description: item.overview || undefined,
     releaseInfo: (item.release_date || item.first_air_date || "").slice(0, 4),
-    imdbRating: item.vote_average
+    imdbRating: item.vote_average != null
       ? Number(item.vote_average.toFixed(1))
       : undefined
   };
@@ -122,10 +145,17 @@ async function sendCatalog(res, paths, type, limit = 50) {
     const pages = await Promise.all(pagePaths.map(path => tmdb(path)));
     const results = pages.flatMap(data => data.results || []);
 
-    const metas = results
-      .filter(x => x.poster_path)
-      .map(x => meta(x, type))
-      .slice(0, limit);
+    const uniqueResults = [];
+    const seenIds = new Set();
+
+    for (const item of results) {
+      if (!item || !item.id || !item.poster_path || seenIds.has(item.id)) continue;
+      seenIds.add(item.id);
+      uniqueResults.push(item);
+      if (uniqueResults.length >= limit) break;
+    }
+
+    const metas = uniqueResults.map(x => meta(x, type));
 
     console.log(
       "CATALOG " + type + " pages=" + pagePaths.length + " results=" + metas.length
@@ -292,7 +322,7 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     name: "Skynet",
-    version: "1.9.2",
+    version: "2.0.2",
     tmdbConfigured: Boolean(TMDB_KEY)
   });
 });
