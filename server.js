@@ -3,6 +3,20 @@ import express from "express";
 const app = express();
 const PORT = process.env.PORT || 10000;
 const TMDB_KEY = process.env.TMDB_API_KEY || "";
+const movieGenres = [
+  [28,"Action"],[12,"Adventure"],[16,"Animation"],[35,"Comedy"],[80,"Crime"],
+  [99,"Documentary"],[18,"Drama"],[10751,"Family"],[14,"Fantasy"],[36,"History"],
+  [27,"Horror"],[10402,"Music"],[9648,"Mystery"],[10749,"Romance"],
+  [878,"Science Fiction"],[10770,"TV Movie"],[53,"Thriller"],[10752,"War"],[37,"Western"]
+];
+const tvGenres = [
+  [10759,"Action & Adventure"],[16,"Animation"],[35,"Comedy"],[80,"Crime"],
+  [99,"Documentary"],[18,"Drama"],[10751,"Family"],[10762,"Kids"],[9648,"Mystery"],
+  [10763,"News"],[10764,"Reality"],[10765,"Sci-Fi & Fantasy"],[10766,"Soap"],
+  [10767,"Talk"],[10768,"War & Politics"],[37,"Western"]
+];
+
+
 
 app.use((req, _res, next) => {
   console.log("REQUEST " + req.method + " " + req.originalUrl);
@@ -11,7 +25,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "1.9.0",
+  version: "2.0.0",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -38,7 +52,9 @@ const manifest = {
     { type: "series", id: "skynet-trending-series", name: "Trending", extra: [{ name: "skip", isRequired: false }] },
     { type: "series", id: "skynet-popular-series", name: "Popular", extra: [{ name: "skip", isRequired: false }] },
     { type: "series", id: "skynet-top-rated-series", name: "Top Rated", extra: [{ name: "skip", isRequired: false }] },
-    { type: "series", id: "skynet-on-air-series", name: "On Air" }
+    { type: "series", id: "skynet-on-air-series", name: "On Air", extra: [{ name: "skip", isRequired: false }] },
+    ...movieGenres.map(([id,name]) => ({ type: "movie", id: "skynet-genre-movie-"+id, name, extra: [{ name: "skip", isRequired: false }] })),
+    ...tvGenres.map(([id,name]) => ({ type: "series", id: "skynet-genre-series-"+id, name, extra: [{ name: "skip", isRequired: false }] }))
   ],
 
   behaviorHints: {
@@ -136,6 +152,9 @@ app.get("/catalog/:type/:id/:extra.json", (req, res) => {
   const skip = match ? Number(match[1]) : 0;
   const page = Math.floor(skip / 50) + 1;
 
+  const genreMovie = movieGenres.find(([genreId]) => "skynet-genre-movie-"+genreId === id);
+  const genreTv = tvGenres.find(([genreId]) => "skynet-genre-series-"+genreId === id);
+
   const paths = {
     "skynet-trending-movies": "/trending/movie/week?language=en-US",
     "skynet-popular-movies": "/movie/popular?language=en-US",
@@ -146,6 +165,9 @@ app.get("/catalog/:type/:id/:extra.json", (req, res) => {
     "skynet-top-rated-series": "/tv/top_rated?language=en-US",
     "skynet-on-air-series": "/tv/on_the_air?language=en-US"
   };
+
+  if (genreMovie) paths[id] = "/discover/movie?language=en-US&region=GB&sort_by=popularity.desc&with_genres="+genreMovie[0];
+  if (genreTv) paths[id] = "/discover/tv?language=en-US&sort_by=popularity.desc&with_genres="+genreTv[0];
 
   if ((type !== "movie" && type !== "series") || !paths[id]) {
     return res.status(404).json({ metas: [] });
@@ -224,7 +246,7 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     name: "Skynet",
-    version: "1.9.0",
+    version: "2.0.0",
     tmdbConfigured: Boolean(TMDB_KEY)
   });
 });
