@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio",
-  version: "1.9.2",
+  version: "2.0.0",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -37,20 +37,41 @@ const manifest = {
     { type: "movie", id: "skynet-animation-movies", name: "Animation" },
     { type: "movie", id: "skynet-comedy-movies", name: "Comedy" },
     { type: "movie", id: "skynet-crime-movies", name: "Crime" },
+    { type: "movie", id: "skynet-documentary-movies", name: "Documentary" },
     { type: "movie", id: "skynet-drama-movies", name: "Drama" },
+    { type: "movie", id: "skynet-family-movies", name: "Family" },
     { type: "movie", id: "skynet-fantasy-movies", name: "Fantasy" },
+    { type: "movie", id: "skynet-history-movies", name: "History" },
     { type: "movie", id: "skynet-horror-movies", name: "Horror" },
+    { type: "movie", id: "skynet-music-movies", name: "Music" },
     { type: "movie", id: "skynet-mystery-movies", name: "Mystery" },
     { type: "movie", id: "skynet-romance-movies", name: "Romance" },
     { type: "movie", id: "skynet-sci-fi-movies", name: "Sci-Fi" },
     { type: "movie", id: "skynet-thriller-movies", name: "Thriller" },
+    { type: "movie", id: "skynet-tv-movie-movies", name: "TV Movie" },
     { type: "movie", id: "skynet-war-movies", name: "War" },
     { type: "movie", id: "skynet-western-movies", name: "Western" },
     { type: "movie", id: "skynet-kids-movies", name: "Kids" },
     { type: "series", id: "skynet-trending-series", name: "Trending" },
     { type: "series", id: "skynet-popular-series", name: "Popular" },
     { type: "series", id: "skynet-top-rated-series", name: "Top Rated" },
-    { type: "series", id: "skynet-on-air-series", name: "On Air" }
+    { type: "series", id: "skynet-on-air-series", name: "On Air" },
+    { type: "series", id: "skynet-action-adventure-series", name: "Action & Adventure" },
+    { type: "series", id: "skynet-animation-series", name: "Animation" },
+    { type: "series", id: "skynet-comedy-series", name: "Comedy" },
+    { type: "series", id: "skynet-crime-series", name: "Crime" },
+    { type: "series", id: "skynet-documentary-series", name: "Documentary" },
+    { type: "series", id: "skynet-drama-series", name: "Drama" },
+    { type: "series", id: "skynet-family-series", name: "Family" },
+    { type: "series", id: "skynet-kids-series", name: "Kids" },
+    { type: "series", id: "skynet-mystery-series", name: "Mystery" },
+    { type: "series", id: "skynet-news-series", name: "News" },
+    { type: "series", id: "skynet-reality-series", name: "Reality" },
+    { type: "series", id: "skynet-sci-fi-fantasy-series", name: "Sci-Fi & Fantasy" },
+    { type: "series", id: "skynet-soap-series", name: "Soap" },
+    { type: "series", id: "skynet-talk-series", name: "Talk" },
+    { type: "series", id: "skynet-war-politics-series", name: "War & Politics" },
+    { type: "series", id: "skynet-western-series", name: "Western" }
   ],
 
   behaviorHints: {
@@ -209,9 +230,18 @@ app.get("/catalog/series/skynet-on-air-series.json", (_req, res) =>
 
 const movieGenres = {
   "action": 28, "adventure": 12, "animation": 16, "comedy": 35,
-  "crime": 80, "drama": 18, "fantasy": 14, "horror": 27,
+  "crime": 80, "documentary": 99, "drama": 18, "family": 10751,
+  "fantasy": 14, "history": 36, "horror": 27, "music": 10402,
   "mystery": 9648, "romance": 10749, "sci-fi": 878, "thriller": 53,
-  "war": 10752, "western": 37, "kids": 10751
+  "tv-movie": 10770, "war": 10752, "western": 37, "kids": 10751
+};
+
+const seriesGenres = {
+  "action-adventure": 10759, "animation": 16, "comedy": 35, "crime": 80,
+  "documentary": 99, "drama": 18, "family": 10751, "kids": 10762,
+  "mystery": 9648, "news": 10763, "reality": 10764,
+  "sci-fi-fantasy": 10765, "soap": 10766, "talk": 10767,
+  "war-politics": 10768, "western": 37
 };
 
 for (const [slug, genreId] of Object.entries(movieGenres)) {
@@ -220,6 +250,17 @@ for (const [slug, genreId] of Object.entries(movieGenres)) {
       res,
       [1, 2, 3].map(page => "/discover/movie?language=en-US&with_genres=" + genreId + "&sort_by=popularity.desc&page=" + page),
       "movie",
+      50
+    )
+  );
+}
+
+for (const [slug, genreId] of Object.entries(seriesGenres)) {
+  app.get("/catalog/series/skynet-" + slug + "-series.json", (_req, res) =>
+    sendCatalog(
+      res,
+      [1, 2, 3].map(page => "/discover/tv?language=en-US&with_genres=" + genreId + "&sort_by=popularity.desc&page=" + page),
+      "series",
       50
     )
   );
