@@ -137,6 +137,23 @@ app.get("/catalog/movie/skynet-latest-movies.json", (_req, res) =>
   )
 );
 
+// Backward-compatible movie endpoints for older Stremio/TiviGlass installs that still cache the previous manifest IDs.
+app.get("/catalog/movie/skynet-trending-movies.json", (_req, res) =>
+  sendCatalog(res, [1, 2, 3].map(page => "/trending/movie/week?language=en-US&page=" + page), "movie", 50)
+);
+
+app.get("/catalog/movie/skynet-popular-movies.json", (_req, res) =>
+  sendCatalog(res, [1, 2, 3].map(page => "/movie/popular?language=en-US&region=GB&page=" + page), "movie", 50)
+);
+
+app.get("/catalog/movie/skynet-top-rated-movies.json", (_req, res) =>
+  sendCatalog(res, [1, 2, 3].map(page => "/movie/top_rated?language=en-US&region=GB&page=" + page), "movie", 50)
+);
+
+app.get("/catalog/movie/skynet-now-playing-movies.json", (_req, res) =>
+  sendCatalog(res, [1, 2, 3].map(page => "/movie/now_playing?language=en-US&region=GB&page=" + page), "movie", 50)
+);
+
 app.get("/catalog/series/skynet-trending-series.json", (_req, res) =>
   sendCatalog(
     res,
