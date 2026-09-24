@@ -125,7 +125,7 @@ app.get("/catalog/movie/skynet-trending-movies.json", (_req, res) =>
       "/trending/movie/week?language=en-US&page=3"
     ],
     "movie",
-    20
+    50
   )
 );
 
@@ -138,7 +138,7 @@ app.get("/catalog/movie/skynet-popular-movies.json", (_req, res) =>
       "/movie/popular?language=en-US&page=3"
     ],
     "movie",
-    40
+    50
   )
 );
 
