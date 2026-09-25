@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio.v21",
-  version: "2.3.1",
+  version: "2.3.2",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio. Streaming availability data by JustWatch via TMDB.",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -352,7 +352,7 @@ for (const [slug, genreId] of Object.entries(movieGenres)) {
       "movie",
       50,
       "skynet-" + slug + "-movies",
-      movieGenreNames[genreId] || (slug === "kids" ? "Kids" : slug)
+      slug === "kids" ? "Kids" : (movieGenreNames[genreId] || slug)
     )
   );
 }
