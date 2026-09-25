@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio.v21",
-  version: "2.3.2",
+  version: "2.3.3",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio. Streaming availability data by JustWatch via TMDB.",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -175,6 +175,10 @@ function catalogMeta(item, type, forcedGenre = null) {
       : undefined,
     posterShape: "poster",
     genres: genres.length ? genres : undefined,
+    description: item.overview || undefined,
+    background: item.backdrop_path
+      ? "https://image.tmdb.org/t/p/w780" + item.backdrop_path
+      : undefined,
     releaseInfo: (item.release_date || item.first_air_date || "").slice(0, 4),
     imdbRating: item.vote_average != null
       ? Number(item.vote_average.toFixed(1))
