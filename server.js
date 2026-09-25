@@ -11,7 +11,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio.v21",
-  version: "2.3.0",
+  version: "2.3.1",
   name: "Skynet",
   description: "Skynet catalogue addon for Stremio. Streaming availability data by JustWatch via TMDB.",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -33,7 +33,7 @@ const manifest = {
   catalogs: [
     { type: "movie", id: "skynet-latest-movies", name: "🆕 New & Latest" },
     { type: "movie", id: "skynet-new-releases-movies", name: "🆕 New Releases" },
-    { type: "movie", id: "skynet-action-movies", name: "💥 Action" },
+    { type: "movie", id: "skynet-action-movies-v2", name: "💥 Action" },
     { type: "movie", id: "skynet-adventure-movies", name: "🗺️ Adventure" },
     { type: "movie", id: "skynet-animation-movies", name: "✨ Animation" },
     { type: "movie", id: "skynet-comedy-movies", name: "😂 Comedy" },
@@ -329,6 +329,20 @@ const seriesGenres = {
   "sci-fi-fantasy": 10765, "soap": 10766, "talk": 10767,
   "war-politics": 10768, "western": 37
 };
+
+
+app.get("/catalog/movie/skynet-action-movies-v2.json", (_req, res) =>
+  sendCatalog(
+    res,
+    [1, 2, 3, 4, 5].map(page =>
+      "/discover/movie?language=en-US&region=GB&with_genres=28&sort_by=popularity.desc&page=" + page
+    ),
+    "movie",
+    50,
+    "skynet-action-movies-v2",
+    "Action"
+  )
+);
 
 for (const [slug, genreId] of Object.entries(movieGenres)) {
   app.get("/catalog/movie/skynet-" + slug + "-movies.json", (_req, res) =>
