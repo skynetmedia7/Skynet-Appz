@@ -442,7 +442,7 @@ app.get("/meta/series/:id.json", (req, res) =>
 
 app.get("/install", (_req, res) => {
   const manifestUrl = "https://skynet-stremio-addon.onrender.com/manifest.json";
-  const stremioUrl = "stremio://" + manifestUrl.replace(/^https?:\\/\\//, "");
+  const stremioUrl = "stremio://" + manifestUrl.replace(/^https?:\/\//, "");
   const html = `<!doctype html>
 <html lang="en">
 <head>
