@@ -481,3 +481,12 @@ app.get("/health", (_req, res) => {
 });
 
 app.listen(PORT, () => console.log("Skynet listening on " + PORT));
+app.get("/aio-install", (_req, res) => {
+  const manifestUrl = "https://aiostreams.elfhosted.com/stremio/fe2a7402-8285-4348-8a28-0d9a9b4dd1e5/eyJpIjoiSHRTQ21YeDdzSlN1aXF4YU9ZcThrdz09IiwiZSI6IjNBbk4rR0x3c3hkcllwQ2ZDa2xSSnp1elZCRU93cEJjMThYN0ZWTER4Mk09IiwidCI6ImEifQ/manifest.json";
+  const stremioUrl = "stremio://" + manifestUrl.replace(/^https?:\/\//, "");
+  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Install AIOStreams</title>
+<style>body{margin:0;background:#0b0b0f;color:#fff;font-family:Arial,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center}.card{width:min(520px,90%);text-align:center;background:#17171d;border-radius:22px;padding:30px;box-sizing:border-box;box-shadow:0 10px 40px #0008}h1{font-size:30px}.btn{display:block;text-decoration:none;background:#fff;color:#000;font-weight:700;font-size:19px;padding:16px;border-radius:12px;margin:20px 0}.alt{display:block;color:#fff;border:1px solid #555;padding:13px;border-radius:10px;text-decoration:none}p{color:#bbb;line-height:1.5}small{display:block;color:#888;margin-top:18px;word-break:break-all}</style></head>
+<body><div class="card"><h1>AIOStreams</h1><p>Tap below to open Stremio and install your AIOStreams addon.</p><a class="btn" href="${stremioUrl}">INSTALL AIOSTREAMS</a><a class="alt" href="${manifestUrl}">Open AIOStreams manifest</a><small>If the install button does not open Stremio, use the manifest link above.</small></div></body></html>`;
+  res.set("Content-Type","text/html; charset=utf-8"); res.send(html);
+});
+
