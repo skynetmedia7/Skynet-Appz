@@ -440,6 +440,37 @@ app.get("/meta/series/:id.json", (req, res) =>
   sendMeta(res, "series", req.params.id)
 );
 
+app.get("/install", (_req, res) => {
+  const manifestUrl = "https://skynet-stremio-addon.onrender.com/manifest.json";
+  const stremioUrl = "stremio://" + manifestUrl.replace(/^https?:\\/\\//, "");
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Install Skynet</title>
+<style>
+body{margin:0;background:#0b0b0f;color:#fff;font-family:Arial,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center}
+.card{width:min(520px,90%);text-align:center;background:#17171d;border-radius:22px;padding:30px;box-sizing:border-box;box-shadow:0 10px 40px #0008}
+.logo{max-width:190px;max-height:90px;object-fit:contain;margin-bottom:15px}
+h1{margin:5px 0 10px;font-size:32px}p{color:#bbb;line-height:1.5}
+.btn{display:block;text-decoration:none;background:#fff;color:#000;font-weight:700;font-size:19px;padding:16px;border-radius:12px;margin:20px 0}
+.alt{display:block;color:#fff;border:1px solid #555;padding:13px;border-radius:10px;text-decoration:none;margin-top:10px}
+small{display:block;color:#888;margin-top:18px;word-break:break-all}
+</style>
+</head>
+<body><div class="card">
+<img class="logo" src="https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png" alt="Skynet">
+<h1>Install Skynet</h1>
+<p>Tap the button below to open Stremio and install Skynet.</p>
+<a class="btn" href="${stremioUrl}">INSTALL SKYNET</a>
+<a class="alt" href="${manifestUrl}">Open manifest</a>
+<small>Works with Stremio on Android TV, Google TV, Android, Fire TV and other supported devices. If the button does not open Stremio, use the manifest link above.</small>
+</div></body></html>`;
+  res.set("Content-Type","text/html; charset=utf-8");
+  res.send(html);
+});
+
 app.get("/health", (_req, res) => {
   res.json({
     ok: true,
