@@ -508,9 +508,7 @@ async function sendMeta(res, type, id) {
       const service = serviceIcons.find(x => x.slug === slug);
       if (!service) return res.status(404).json({ meta: null });
 
-      const manifestUrl = type === "movie"
-        ? "https://skynet-stremio-addon.onrender.com/movies/manifest.json"
-        : "https://skynet-stremio-addon.onrender.com/series/manifest.json";
+      const manifestUrl = "https://skynet-stremio-addon.onrender.com/manifest.json";
       const catalogId = "skynet-" + slug + "-" + (type === "movie" ? "movies" : "series");
 
       return res.json({
