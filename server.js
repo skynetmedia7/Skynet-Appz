@@ -779,6 +779,59 @@ main{padding:0 4vw 70px}
 <div class="detailOverlay" id="streamsOverlay"><div class="modal"><button class="closeBtn" id="closeStreams">×</button><h2 id="streamsTitle">Available Streams</h2><div id="streamsList"></div></div></div>
 
 <script>
+(function(){
+  var root=location.origin;
+  function esc(s){return String(s||"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]||c;});}
+  function card(x){
+    return '<article class="card" tabindex="0" data-id="'+esc(x.id||"")+'" data-type="'+esc(x.type||"movie")+'"><img class="poster" loading="lazy" src="'+esc(x.poster||"")+'"><div class="card-name">'+esc(x.name||"Untitled")+'</div><div class="card-year">'+esc(x.releaseInfo||"")+'</div></article>';
+  }
+  function row(title,items){
+    if(!items.length)return "";
+    return '<section class="section"><div class="section-head"><h2>'+esc(title)+'</h2></div><div class="row">'+items.slice(0,20).map(card).join("")+'</div></section>';
+  }
+  function boot(){
+    fetch(root+"/app/api/vod-catalog/movie/skynet-trending-movies.json",{cache:"no-store"})
+      .then(function(r){return r.json();})
+      .then(function(t){
+        var trending=t.metas||[];
+        if(trending[0]){
+          var x=trending[0];
+          document.getElementById("heroBg").style.backgroundImage="url('"+(x.background||x.poster||"")+"')";
+          document.getElementById("heroTitle").textContent=x.name||"Featured";
+          document.getElementById("heroMeta").textContent=x.releaseInfo||"";
+          document.getElementById("heroDesc").textContent=x.description||"";
+        }
+        return Promise.all([
+          fetch(root+"/app/api/vod-catalog/movie/skynet-popular-movies.json",{cache:"no-store"}).then(function(r){return r.json();}),
+          fetch(root+"/app/api/vod-catalog/movie/skynet-top-rated-movies.json",{cache:"no-store"}).then(function(r){return r.json();}),
+          fetch(root+"/app/api/vod-catalog/series/skynet-trending-series.json",{cache:"no-store"}).then(function(r){return r.json();})
+        ]).then(function(a){
+          var p=(a[0].metas||[]), top=(a[1].metas||[]), s=(a[2].metas||[]);
+          var content=document.getElementById("content");
+          content.innerHTML=row("Trending now",trending)+row("Popular films",p)+row("Top rated",top)+row("Popular series",s);
+          content.querySelectorAll(".card").forEach(function(el){
+            el.onclick=function(){
+              var id=el.getAttribute("data-id"), type=el.getAttribute("data-type")||"movie";
+              document.getElementById("detailOverlay").classList.add("show");
+              document.getElementById("detailOverlay").innerHTML='<div class="modal"><p class="help">Loading details…</p></div>';
+              fetch(root+"/app/api/details?type="+encodeURIComponent(type)+"&id="+encodeURIComponent(id),{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){
+                var x=d.meta;if(!x)return;
+                document.getElementById("detailOverlay").innerHTML='<div class="detailBox"><button class="closeBtn" id="bootClose">×</button><div class="detailBg" style="background-image:url(\''+(x.background||x.poster||"")+'\')"><div class="detailCopy"><div class="kicker">'+(type==="series"?"SERIES":"MOVIE")+'</div><h1>'+esc(x.name)+'</h1><div class="meta">'+esc(x.releaseInfo||"")+'</div><p class="desc">'+esc(x.description||"")+'</p><div class="btns"><button class="btn play" id="bootPlay">▶ Play</button><button class="btn list" id="bootList">＋ My List</button></div></div></div></div>';
+                document.getElementById("bootClose").onclick=function(){document.getElementById("detailOverlay").classList.remove("show");};
+              });
+            };
+          });
+        });
+      })
+      .catch(function(e){
+        document.getElementById("heroTitle").textContent="Skynet";
+        document.getElementById("heroDesc").textContent="Catalogue is temporarily unavailable. Please refresh.";
+        console.error("VOD BOOT",e);
+      });
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
+})();
+</script><script>
 (async function(){
   try {
     const get=async u=>{const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);return (await r.json()).metas||[]};
