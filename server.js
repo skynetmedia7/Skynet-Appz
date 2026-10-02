@@ -11,24 +11,24 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio.v21",
-  version: "2.3.3",
-  name: "Skynet",
-  description: "Skynet catalogue addon for Stremio. Streaming availability data by JustWatch via TMDB.",
+  version: "2.4.0",
+  name: "Skynet Movies",
+  description: "Skynet movie catalogue addon. Streaming availability data by JustWatch via TMDB.",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
 
   resources: [
     {
       name: "catalog",
-      types: ["movie", "series"]
+      types: ["movie"]
     },
     {
       name: "meta",
-      types: ["movie", "series"],
+      types: ["movie"],
       idPrefixes: ["tmdb:"]
     }
   ],
 
-  types: ["movie", "series"],
+  types: ["movie"],
 
   catalogs: [
     { type: "movie", id: "skynet-netflix-movies", name: "Netflix" },
@@ -39,7 +39,36 @@ const manifest = {
     { type: "movie", id: "skynet-max-movies", name: "Max" },
     { type: "movie", id: "skynet-bbc-iplayer-movies", name: "BBC iPlayer" },
     { type: "movie", id: "skynet-itvx-movies", name: "ITVX" },
-    { type: "movie", id: "skynet-channel-4-movies", name: "Channel 4" },
+    { type: "movie", id: "skynet-channel-4-movies", name: "Channel 4" }
+  ],
+
+  behaviorHints: {
+    configurable: false
+  }
+};
+
+const seriesManifest = {
+  id: "com.skynet.stremio.series",
+  version: "1.0.0",
+  name: "Skynet Series",
+  description: "Skynet series catalogue addon. Streaming availability data by JustWatch via TMDB.",
+  logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
+
+  resources: [
+    {
+      name: "catalog",
+      types: ["series"]
+    },
+    {
+      name: "meta",
+      types: ["series"],
+      idPrefixes: ["tmdb:"]
+    }
+  ],
+
+  types: ["series"],
+
+  catalogs: [
     { type: "series", id: "skynet-netflix-series", name: "Netflix" },
     { type: "series", id: "skynet-prime-video-series", name: "Prime Video" },
     { type: "series", id: "skynet-disney-plus-series", name: "Disney+" },
@@ -58,6 +87,8 @@ const manifest = {
 
 app.get("/", (_req, res) => res.json(manifest));
 app.get("/manifest.json", (_req, res) => res.json(manifest));
+app.get("/movies/manifest.json", (_req, res) => res.json(manifest));
+app.get("/series/manifest.json", (_req, res) => res.json(seriesManifest));
 
 async function tmdb(path) {
   if (!TMDB_KEY) throw new Error("TMDB_API_KEY is not configured");
@@ -388,8 +419,10 @@ app.get("/meta/series/:id.json", (req, res) =>
 );
 
 app.get("/install", (_req, res) => {
-  const manifestUrl = "https://skynet-stremio-addon.onrender.com/manifest.json";
+  const manifestUrl = "https://skynet-stremio-addon.onrender.com/movies/manifest.json";
+  const seriesManifestUrl = "https://skynet-stremio-addon.onrender.com/series/manifest.json";
   const stremioUrl = "stremio://" + manifestUrl.replace(/^https?:\/\//, "");
+  const seriesStremioUrl = "stremio://" + seriesManifestUrl.replace(/^https?:\/\//, "");
   const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -409,10 +442,12 @@ small{display:block;color:#888;margin-top:18px;word-break:break-all}
 <body><div class="card">
 <img class="logo" src="https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png" alt="Skynet">
 <h1>Install Skynet</h1>
-<p>Tap the button below to open Stremio and install Skynet.</p>
-<a class="btn" href="${stremioUrl}">INSTALL SKYNET</a>
-<a class="alt" href="${manifestUrl}">Open manifest</a>
-<small>Works with Stremio on Android TV, Google TV, Android, Fire TV and other supported devices. If the button does not open Stremio, use the manifest link above.</small>
+<p>Install Movies and Series separately in Stremio.</p>
+<a class="btn" href="${stremioUrl}">INSTALL SKYNET MOVIES</a>
+<a class="alt" href="${manifestUrl}">Open Movies manifest</a>
+<a class="btn" href="${seriesStremioUrl}">INSTALL SKYNET SERIES</a>
+<a class="alt" href="${seriesManifestUrl}">Open Series manifest</a>
+<small>Movies and Series are separate addons, so they appear separately in Stremio.</small>
 </div></body></html>`;
   res.set("Content-Type","text/html; charset=utf-8");
   res.send(html);
