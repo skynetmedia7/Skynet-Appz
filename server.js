@@ -569,7 +569,7 @@ body{margin:0;background:#0b0b0f;color:#fff;font-family:Arial,sans-serif;display
 .logo{max-width:190px;max-height:90px;object-fit:contain;margin-bottom:15px}
 h1{margin:5px 0 10px;font-size:32px}p{color:#bbb;line-height:1.5}
 .btn{display:block;text-decoration:none;background:#ffd400;color:#000;font-weight:700;font-size:19px;padding:16px;border-radius:12px;margin:20px 0}
-.alt{display:block;color:#fff;border:1px solid #555;padding:13px;border-radius:10px;text-decoration:none;margin-top:10px}
+.alt{display:block;color:#fff;border:1px solid #555;padding:13px;border-radius:10px;text-decoration:none;margin-top:10px}.aiometa{background:#e53935;border-color:#e53935;color:#fff;font-weight:700}.aiostreams{background:#1976d2;border-color:#1976d2;color:#fff;font-weight:700}
 small{display:block;color:#888;margin-top:18px;word-break:break-all}
 </style>
 </head>
@@ -580,9 +580,9 @@ small{display:block;color:#888;margin-top:18px;word-break:break-all}
 <a class="btn" href="${stremioUrl}">1. INSTALL SKYNET ALL IN ONE ADDON</a>
 <hr style="border:0;border-top:1px solid #333;margin:24px 0">
 <p style="font-size:14px;font-weight:700;color:#fff;margin-top:24px">2. INSTALL AIOMETADATA</p>
-<a class="alt" href="https://aiometadata.elfhosted.com/configure/">INSTALL AIOMETADATA</a>
+<a class="alt aiometa" href="https://aiometadata.elfhosted.com/configure/">INSTALL AIOMETADATA</a>
 <p style="font-size:14px;font-weight:700;color:#fff;margin-top:18px">3. INSTALL AIOSTREAMS</p>
-<a class="alt" href="https://aiostreams.elfhosted.com/stremio/configure">INSTALL AIOSTREAMS</a>
+<a class="alt aiostreams" href="https://aiostreams.elfhosted.com/stremio/configure">INSTALL AIOSTREAMS</a>
 <div style="margin-top:24px;padding:16px;border:1px solid #555;border-radius:12px;background:#111118">
 <strong style="color:#fff;font-size:18px">⚠️ IMPORTANT</strong>
 <p style="margin:8px 0 0;color:#fff;font-weight:700">YOU MUST INSTALL ALL 3 ADDONS BELOW.</p>
