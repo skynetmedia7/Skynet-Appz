@@ -618,7 +618,7 @@ app.get("/app/api/search", async (req, res) => {
 
 app.get("/app", (_req, res) => {
   res.set("Content-Type", "text/html; charset=utf-8");
-  res.send(String.raw\`<!doctype html>
+  res.send(`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -726,7 +726,7 @@ document.getElementById("settingsBtn").addEventListener("click",()=>alert("Skyne
 function tick(){document.getElementById("clock").textContent=new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});}tick();setInterval(tick,30000);loadHome();
 </script>
 </body>
-</html>\`);
+</html>`);
 });
 
 app.get("/health", (_req, res) => {
