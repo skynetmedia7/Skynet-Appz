@@ -773,9 +773,24 @@ main{padding:0 4vw 70px}
       document.getElementById("heroDesc").textContent=x.description||"";
     }
     const esc2=s=>String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-    const make=(title,items)=>items.length?'<section class="section"><div class="section-head"><h2>'+esc2(title)+'</h2></div><div class="row">'+items.slice(0,20).map(x=>'<article class="card"><img class="poster" loading="lazy" src="'+esc2(x.poster||"")+'"><div class="card-name">'+esc2(x.name||"Untitled")+'</div><div class="card-year">'+esc2(x.releaseInfo||"")+'</div></article>').join("")+'</div></section>':"";
+    const make=(title,items,type)=>items.length?'<section class="section"><div class="section-head"><h2>'+esc2(title)+'</h2></div><div class="row">'+items.slice(0,20).map(x=>'<article class="card" tabindex="0" data-id="'+esc2(x.id||"")+'" data-type="'+esc2(type||x.type||"movie")+'"><img class="poster" loading="lazy" src="'+esc2(x.poster||"")+'"><div class="card-name">'+esc2(x.name||"Untitled")+'</div><div class="card-year">'+esc2(x.releaseInfo||"")+'</div></article>').join("")+'</div></section>':"";
     const content=document.getElementById("content");
-    if(content) content.innerHTML=make("Trending now",trending)+make("Popular films",popular)+make("Popular series",series);
+    if(content) {
+      content.innerHTML=make("Trending now",trending,"movie")+make("Popular films",popular,"movie")+make("Popular series",series,"series");
+      content.querySelectorAll(".card").forEach(card=>card.addEventListener("click",()=>{
+        const id=card.dataset.id,type=card.dataset.type||"movie";
+        fetch(location.origin+"/app/api/details?type="+encodeURIComponent(type)+"&id="+encodeURIComponent(id),{cache:"no-store"})
+          .then(r=>r.json()).then(d=>{
+            const x=d.meta;if(!x)return;
+            const o=document.getElementById("detailOverlay");
+            o.classList.add("show");
+            o.innerHTML='<div class="detailBox"><button class="closeBtn" id="fallbackClose">×</button><div class="detailBg" style="background-image:url(\''+esc2(x.background||x.poster||"")+'\')"><div class="detailCopy"><div class="kicker">'+(type==="series"?"SERIES":"MOVIE")+'</div><h1>'+esc2(x.name)+'</h1><div class="meta">'+esc2(x.releaseInfo||"")+'</div><p class="desc">'+esc2(x.description||"")+'</p><div class="btns"><button class="btn play" id="fallbackPlay">▶ Play</button><button class="btn list" id="fallbackList">＋ My List</button></div></div></div></div>';
+            document.getElementById("fallbackClose").onclick=()=>o.classList.remove("show");
+            document.getElementById("fallbackPlay").onclick=()=>window.playTitle&&window.playTitle(type,x.id,x.name);
+            document.getElementById("fallbackList").onclick=()=>window.toggleList&&window.toggleList(x);
+          }).catch(e=>console.error("DETAIL FALLBACK FAILED",e));
+      }));
+    }
   } catch(e) {
     console.error("SKYNET FALLBACK LOAD FAILED",e);
   }
