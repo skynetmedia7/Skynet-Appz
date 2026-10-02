@@ -594,6 +594,141 @@ small{display:block;color:#888;margin-top:18px;word-break:break-all}
   res.send(html);
 });
 
+
+/* -------------------------------------------------------------------------- */
+/* Skynet standalone app UI                                                   */
+/* -------------------------------------------------------------------------- */
+
+app.get("/app/api/search", async (req, res) => {
+  try {
+    const q = String(req.query.q || "").trim();
+    if (!q) return res.json({ results: [] });
+    const data = await tmdb("/search/multi?language=en-US&query=" + encodeURIComponent(q) + "&include_adult=false&page=1");
+    const results = (data.results || [])
+      .filter(x => x.media_type === "movie" || x.media_type === "tv")
+      .filter(x => x.poster_path)
+      .slice(0, 30)
+      .map(x => catalogMeta(x, x.media_type));
+    res.json({ results });
+  } catch (e) {
+    console.error("APP SEARCH ERROR " + e.message);
+    res.status(200).json({ results: [] });
+  }
+});
+
+app.get("/app", (_req, res) => {
+  res.set("Content-Type", "text/html; charset=utf-8");
+  res.send(String.raw\`<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07090d">
+<title>SKYNET</title>
+<style>
+:root{--bg:#07090d;--panel:#11151c;--muted:#9ba3ad;--red:#e50914;--white:#fff}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--white);font-family:Arial,Helvetica,sans-serif}
+body{min-height:100vh;overflow-x:hidden}
+button,input{font:inherit}
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;padding:12px 28px;background:rgba(7,9,13,.94);backdrop-filter:blur(14px);border-bottom:1px solid #202630}
+.logo{font-size:34px;font-weight:900;letter-spacing:-1.5px;color:#e50914;margin-right:18px;text-shadow:0 4px 20px #e5091450}
+.nav{display:flex;gap:10px;align-items:center;flex:1}
+.tab{border:0;background:#1b222c;color:#f5f5f5;padding:13px 22px;border-radius:28px;font-weight:800;cursor:pointer;white-space:nowrap}
+.tab.active{background:#e50914}
+.actions{display:flex;gap:9px;align-items:center}
+.icon{border:0;background:#1b222c;color:white;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:21px}
+.clock{font-weight:700;color:#ddd;min-width:48px;text-align:right}
+.hero{position:relative;min-height:510px;display:flex;align-items:flex-end;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}
+.hero-bg:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#07090df5 0%,#07090dbb 42%,#07090d22 78%,#07090d 100%),linear-gradient(0deg,#07090d 0%,transparent 42%)}
+.hero-copy{position:relative;z-index:2;width:min(650px,90%);padding:80px 5vw 54px}
+.kicker{color:#e50914;font-weight:900;letter-spacing:2px;text-transform:uppercase}
+.hero h1{font-size:clamp(42px,6vw,78px);line-height:.95;margin:10px 0 18px}
+.meta{color:#ddd;font-weight:700;margin-bottom:14px}
+.desc{color:#d2d5da;line-height:1.55;font-size:17px;max-width:600px}
+.btns{display:flex;gap:12px;margin-top:24px}
+.btn{border:0;border-radius:8px;padding:14px 25px;font-weight:900;cursor:pointer}
+.play{background:#fff;color:#000}.list{background:#303640;color:#fff}
+main{padding:0 28px 60px}
+.section{margin:28px 0}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section h2{font-size:23px;margin:0}
+.see{color:#aaa;font-weight:700}
+.row{display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none}
+.row::-webkit-scrollbar{display:none}
+.card{flex:0 0 150px;cursor:pointer}
+.poster{width:150px;height:225px;object-fit:cover;border-radius:8px;background:#1a2028;display:block}
+.card-name{font-weight:700;font-size:14px;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-year{color:#8f97a1;font-size:12px;margin-top:3px}
+.page-title{font-size:34px;margin:32px 0 4px}
+.page-sub{color:#969eaa;margin:0 0 24px}
+.searchbar{display:none;position:absolute;right:28px;top:72px;background:#151a22;padding:10px;border:1px solid #333a44;border-radius:12px}
+.searchbar.open{display:flex}
+.searchbar input{width:min(70vw,360px);background:#0b0e13;color:#fff;border:1px solid #343b46;border-radius:8px;padding:11px 13px;outline:0}
+.empty{padding:80px 20px;text-align:center;color:#8f97a1}
+@media(max-width:900px){
+ .top{padding:10px 12px;gap:8px;overflow-x:auto}.logo{font-size:25px;margin-right:3px}.nav{order:3;flex-basis:100%;overflow-x:auto}.top{flex-wrap:wrap}.tab{padding:10px 15px}.clock{display:none}.hero{min-height:450px}.hero-copy{padding:70px 22px 35px}.hero h1{font-size:46px}main{padding:0 14px 40px}.poster{width:125px;height:188px}.card{flex-basis:125px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">SKYNET</div>
+  <nav class="nav" aria-label="Main navigation">
+    <button class="tab active" data-page="home">⌂ Home</button>
+    <button class="tab" data-page="series">▣ Series</button>
+    <button class="tab" data-page="films">▤ Films</button>
+    <button class="tab" data-page="games">🎮 Games</button>
+    <button class="tab" data-page="new">♨ New</button>
+  </nav>
+  <div class="actions">
+    <button class="icon" id="searchBtn" aria-label="Search">⌕</button>
+    <button class="icon" id="settingsBtn" aria-label="Settings">⚙</button>
+    <div class="clock" id="clock"></div>
+  </div>
+  <div class="searchbar" id="searchbar">
+    <input id="searchInput" placeholder="Search films & series..." autocomplete="off">
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-bg" id="heroBg"></div>
+  <div class="hero-copy">
+    <div class="kicker">SKYNET FEATURED</div>
+    <h1 id="heroTitle">Loading…</h1>
+    <div class="meta" id="heroMeta"></div>
+    <div class="desc" id="heroDesc"></div>
+    <div class="btns">
+      <button class="btn play" id="heroPlay">▶ Play</button>
+      <button class="btn list">＋ My List</button>
+    </div>
+  </div>
+</section>
+
+<main id="content"></main>
+
+<script>
+const base = location.origin;
+const state = {page:"home", hero:null};
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function titleOf(x){return x?.name||"Untitled";}
+function posterOf(x){return x?.poster||"";}
+async function getCatalog(type,id){const r=await fetch(base+"/catalog/"+type+"/"+id+".json",{cache:"no-store"});if(!r.ok)return[];const d=await r.json();return d.metas||[];}
+function row(title,items){if(!items.length)return"";return '<section class="section"><div class="section-head"><h2>'+esc(title)+'</h2><span class="see">See all ›</span></div><div class="row">'+items.map(x=>'<article class="card"><img class="poster" loading="lazy" src="'+esc(posterOf(x))+'" alt="'+esc(titleOf(x))+'"><div class="card-name">'+esc(titleOf(x))+'</div><div class="card-year">'+esc(x.releaseInfo||"")+'</div></article>').join("")+'</div></section>';}
+function setHero(x){if(!x)return;state.hero=x;document.getElementById("heroBg").style.backgroundImage="url('"+(x.background||x.poster||"")+"')";document.getElementById("heroTitle").textContent=titleOf(x);document.getElementById("heroMeta").textContent=[x.releaseInfo,x.imdbRating?("★ "+x.imdbRating):"",x.genres?.slice(0,3).join(" • ")].filter(Boolean).join("  •  ");document.getElementById("heroDesc").textContent=x.description||"";}
+async function loadHome(){const [trending,popular,top,series,newMovies]=await Promise.all([getCatalog("movie","skynet-trending-movies"),getCatalog("movie","skynet-popular-movies"),getCatalog("movie","skynet-top-rated-movies"),getCatalog("series","skynet-trending-series"),getCatalog("movie","skynet-new-releases-movies")]);setHero(trending[0]);document.getElementById("content").innerHTML=row("Trending",trending.slice(0,20))+row("Popular",popular.slice(0,20))+row("Top Rated",top.slice(0,20))+row("Series",series.slice(0,20))+row("New Releases",newMovies.slice(0,20));}
+async function loadPage(page){state.page=page;document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.page===page));if(page==="home")return loadHome();if(page==="games"){document.getElementById("heroBg").style.backgroundImage="";document.getElementById("heroTitle").textContent="Games";document.getElementById("heroMeta").textContent="SKYNET GAMES";document.getElementById("heroDesc").textContent="The Games tab is ready for the games catalogue to be connected.";document.getElementById("content").innerHTML='<div class="empty">Games catalogue coming next.</div>';return;}const content=document.getElementById("content");content.innerHTML='<div class="empty">Loading '+esc(page)+'…</div>';let rows=[];if(page==="films"){const[a,b,c,n]=await Promise.all([getCatalog("movie","skynet-trending-movies"),getCatalog("movie","skynet-popular-movies"),getCatalog("movie","skynet-top-rated-movies"),getCatalog("movie","skynet-new-releases-movies")]);setHero(a[0]);rows=[row("Trending",a.slice(0,30)),row("Popular",b.slice(0,30)),row("Top Rated",c.slice(0,30)),row("New Releases",n.slice(0,30))];}else if(page==="series"){const[a,b,c]=await Promise.all([getCatalog("series","skynet-trending-series"),getCatalog("series","skynet-popular-series"),getCatalog("series","skynet-top-rated-series")]);setHero(a[0]);rows=[row("Trending",a.slice(0,30)),row("Popular",b.slice(0,30)),row("Top Rated",c.slice(0,30))];}else{const n=await getCatalog("movie","skynet-new-releases-movies");setHero(n[0]);rows=[row("New Releases",n.slice(0,50))];}content.innerHTML=rows.join("");}
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>loadPage(b.dataset.page)));
+document.getElementById("searchBtn").addEventListener("click",()=>{const box=document.getElementById("searchbar");box.classList.toggle("open");if(box.classList.contains("open"))document.getElementById("searchInput").focus();});
+document.getElementById("searchInput").addEventListener("keydown",async e=>{if(e.key!=="Enter")return;const q=e.target.value.trim();if(!q)return;const r=await fetch(base+"/app/api/search?q="+encodeURIComponent(q));const d=await r.json();document.getElementById("content").innerHTML='<h1 class="page-title">Search</h1><p class="page-sub">Results for “'+esc(q)+'”</p><div class="row">'+(d.results||[]).map(x=>'<article class="card"><img class="poster" src="'+esc(posterOf(x))+'"><div class="card-name">'+esc(titleOf(x))+'</div><div class="card-year">'+esc(x.releaseInfo||"")+'</div></article>').join("")+'</div>';});
+document.getElementById("settingsBtn").addEventListener("click",()=>alert("Skynet settings will be added here."));
+function tick(){document.getElementById("clock").textContent=new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});}tick();setInterval(tick,30000);loadHome();
+</script>
+</body>
+</html>\`);
+});
+
 app.get("/health", (_req, res) => {
   res.json({
     ok: true,
