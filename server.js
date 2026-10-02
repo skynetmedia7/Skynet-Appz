@@ -98,8 +98,45 @@ const seriesManifest = {
   }
 };
 
-app.get("/", (_req, res) => res.json(manifest));
-app.get("/manifest.json", (_req, res) => res.json(manifest));
+
+const allInOneManifest = {
+  id: "com.skynet.stremio.all",
+  version: "1.0.0",
+  name: "Skynet",
+  description: "Skynet Movies and Series in one Stremio addon. Streaming availability data by JustWatch via TMDB.",
+  logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
+  resources: [
+    { name: "catalog", types: ["movie", "series"] },
+    { name: "meta", types: ["movie", "series"], idPrefixes: ["tmdb:"] }
+  ],
+  types: ["movie", "series"],
+  catalogs: [
+    { type: "movie", id: "skynet-services-movies", name: "Streaming Services" },
+    { type: "movie", id: "skynet-netflix-movies", name: "Netflix" },
+    { type: "movie", id: "skynet-prime-video-movies", name: "Prime Video" },
+    { type: "movie", id: "skynet-disney-plus-movies", name: "Disney+" },
+    { type: "movie", id: "skynet-apple-tv-plus-movies", name: "Apple TV+" },
+    { type: "movie", id: "skynet-paramount-plus-movies", name: "Paramount+" },
+    { type: "movie", id: "skynet-max-movies", name: "Max" },
+    { type: "movie", id: "skynet-bbc-iplayer-movies", name: "BBC iPlayer" },
+    { type: "movie", id: "skynet-itvx-movies", name: "ITVX" },
+    { type: "movie", id: "skynet-channel-4-movies", name: "Channel 4" },
+    { type: "series", id: "skynet-services-series", name: "Streaming Services" },
+    { type: "series", id: "skynet-netflix-series", name: "Netflix" },
+    { type: "series", id: "skynet-prime-video-series", name: "Prime Video" },
+    { type: "series", id: "skynet-disney-plus-series", name: "Disney+" },
+    { type: "series", id: "skynet-apple-tv-plus-series", name: "Apple TV+" },
+    { type: "series", id: "skynet-paramount-plus-series", name: "Paramount+" },
+    { type: "series", id: "skynet-max-series", name: "Max" },
+    { type: "series", id: "skynet-bbc-iplayer-series", name: "BBC iPlayer" },
+    { type: "series", id: "skynet-itvx-series", name: "ITVX" },
+    { type: "series", id: "skynet-channel-4-series", name: "Channel 4" }
+  ],
+  behaviorHints: { configurable: false }
+};
+
+app.get("/", (_req, res) => res.json(allInOneManifest));
+app.get("/manifest.json", (_req, res) => res.json(allInOneManifest));
 app.get("/movies/manifest.json", (_req, res) => res.json(manifest));
 app.get("/series/manifest.json", (_req, res) => res.json(seriesManifest));
 
@@ -414,11 +451,11 @@ async function sendServiceCatalog(res, type, manifestUrl) {
 }
 
 app.get("/catalog/movie/skynet-services-movies.json", (_req, res) =>
-  sendServiceCatalog(res, "movie", "https://skynet-stremio-addon.onrender.com/movies/manifest.json")
+  sendServiceCatalog(res, "movie", "https://skynet-stremio-addon.onrender.com/manifest.json")
 );
 
 app.get("/catalog/series/skynet-services-series.json", (_req, res) =>
-  sendServiceCatalog(res, "series", "https://skynet-stremio-addon.onrender.com/series/manifest.json")
+  sendServiceCatalog(res, "series", "https://skynet-stremio-addon.onrender.com/manifest.json")
 );
 
 const streamingProviders = {
@@ -516,9 +553,11 @@ app.get("/meta/series/:id.json", (req, res) =>
 );
 
 app.get("/install", (_req, res) => {
-  const manifestUrl = "https://skynet-stremio-addon.onrender.com/movies/manifest.json";
+  const manifestUrl = "https://skynet-stremio-addon.onrender.com/manifest.json";
+  const moviesManifestUrl = "https://skynet-stremio-addon.onrender.com/movies/manifest.json";
   const seriesManifestUrl = "https://skynet-stremio-addon.onrender.com/series/manifest.json";
   const stremioUrl = "stremio://" + manifestUrl.replace(/^https?:\/\//, "");
+  const moviesStremioUrl = "stremio://" + moviesManifestUrl.replace(/^https?:\/\//, "");
   const seriesStremioUrl = "stremio://" + seriesManifestUrl.replace(/^https?:\/\//, "");
   const html = `<!doctype html>
 <html lang="en">
@@ -539,12 +578,14 @@ small{display:block;color:#888;margin-top:18px;word-break:break-all}
 <body><div class="card">
 <img class="logo" src="https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png" alt="Skynet">
 <h1>Install Skynet</h1>
-<p>Install Movies and Series separately in Stremio.</p>
-<a class="btn" href="${stremioUrl}">INSTALL SKYNET MOVIES</a>
-<a class="alt" href="${manifestUrl}">Open Movies manifest</a>
-<a class="btn" href="${seriesStremioUrl}">INSTALL SKYNET SERIES</a>
-<a class="alt" href="${seriesManifestUrl}">Open Series manifest</a>
-<small>Movies and Series are separate addons, so they appear separately in Stremio.</small>
+<p>Install everything in one addon — Movies and Series together.</p>
+<a class="btn" href="${stremioUrl}">INSTALL SKYNET ALL-IN-ONE</a>
+<a class="alt" href="${manifestUrl}">Open All-in-One manifest</a>
+<hr style="border:0;border-top:1px solid #333;margin:24px 0">
+<p style="font-size:14px">Already using the separate versions?</p>
+<a class="alt" href="${moviesStremioUrl}">Install Movies only</a>
+<a class="alt" href="${seriesStremioUrl}">Install Series only</a>
+<small>All-in-One is the recommended install for new users.</small>
 </div></body></html>`;
   res.set("Content-Type","text/html; charset=utf-8");
   res.send(html);
