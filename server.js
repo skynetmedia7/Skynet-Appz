@@ -22,7 +22,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio.v21",
-  version: "2.4.1",
+  version: "2.5.0",
   name: "Skynet Movies",
   description: "Skynet movie catalogue addon. Streaming availability data by JustWatch via TMDB.",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -42,6 +42,7 @@ const manifest = {
   types: ["movie"],
 
   catalogs: [
+    { type: "movie", id: "skynet-services-movies", name: "Streaming Services" },
     { type: "movie", id: "skynet-netflix-movies", name: "Netflix" },
     { type: "movie", id: "skynet-prime-video-movies", name: "Prime Video" },
     { type: "movie", id: "skynet-disney-plus-movies", name: "Disney+" },
@@ -60,7 +61,7 @@ const manifest = {
 
 const seriesManifest = {
   id: "com.skynet.stremio.series",
-  version: "1.0.1",
+  version: "1.1.0",
   name: "Skynet Series",
   description: "Skynet series catalogue addon. Streaming availability data by JustWatch via TMDB.",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -80,6 +81,7 @@ const seriesManifest = {
   types: ["series"],
 
   catalogs: [
+    { type: "series", id: "skynet-services-series", name: "Streaming Services" },
     { type: "series", id: "skynet-netflix-series", name: "Netflix" },
     { type: "series", id: "skynet-prime-video-series", name: "Prime Video" },
     { type: "series", id: "skynet-disney-plus-series", name: "Disney+" },
@@ -366,6 +368,59 @@ for (const [slug, genreId] of Object.entries(seriesGenres)) {
 }
 
 
+const serviceIcons = [
+  { slug: "netflix", name: "Netflix", ids: [8] },
+  { slug: "prime-video", name: "Prime Video", ids: [119] },
+  { slug: "disney-plus", name: "Disney+", ids: [337] },
+  { slug: "apple-tv-plus", name: "Apple TV+", ids: [350] },
+  { slug: "paramount-plus", name: "Paramount+", ids: [531] },
+  { slug: "max", name: "Max", ids: [1899] },
+  { slug: "bbc-iplayer", name: "BBC iPlayer", ids: [39] },
+  { slug: "itvx", name: "ITVX", ids: [41] },
+  { slug: "channel-4", name: "Channel 4", ids: [103] }
+];
+
+async function sendServiceCatalog(res, type, manifestUrl) {
+  try {
+    const providerData = await tmdb("/watch/providers/" + (type === "movie" ? "movie" : "tv") + "?language=en-US&watch_region=GB");
+    const providers = providerData.results || [];
+
+    const metas = serviceIcons.map(service => {
+      const p = providers.find(x => service.ids.includes(x.provider_id));
+      return {
+        id: "skynet-service:" + service.slug,
+        type,
+        name: service.name,
+        poster: p?.logo_path
+          ? "https://image.tmdb.org/t/p/w185" + p.logo_path
+          : undefined,
+        posterShape: "square",
+        description: "Browse " + service.name + " on Skynet.",
+        links: [
+          {
+            name: "Browse " + service.name,
+            category: "catalog",
+            url: "stremio:///discover/" + encodeURIComponent(manifestUrl) + "/" + type + "/skynet-" + service.slug + "-" + (type === "movie" ? "movies" : "series")
+          }
+        ]
+      };
+    }).filter(x => x.poster);
+
+    res.json({ metas, cacheMaxAge: 3600 });
+  } catch (e) {
+    console.error("SERVICE ICON ERROR " + type + " " + e.message);
+    res.status(200).json({ metas: [] });
+  }
+}
+
+app.get("/catalog/movie/skynet-services-movies.json", (_req, res) =>
+  sendServiceCatalog(res, "movie", "https://skynet-stremio-addon.onrender.com/movies/manifest.json")
+);
+
+app.get("/catalog/series/skynet-services-series.json", (_req, res) =>
+  sendServiceCatalog(res, "series", "https://skynet-stremio-addon.onrender.com/series/manifest.json")
+);
+
 const streamingProviders = {
   netflix: { name: "Netflix", ids: [8] },
   "prime-video": { name: "Prime Video", ids: [119] },
@@ -409,11 +464,42 @@ for (const [slug, provider] of Object.entries(streamingProviders)) {
 
 async function sendMeta(res, type, id) {
   try {
-    const cleanId = decodeURIComponent(id).replace(/^tmdb:/, "");
+    const cleanId = decodeURIComponent(id);
+
+    if (cleanId.startsWith("skynet-service:")) {
+      const slug = cleanId.replace(/^skynet-service:/, "");
+      const service = serviceIcons.find(x => x.slug === slug);
+      if (!service) return res.status(404).json({ meta: null });
+
+      const manifestUrl = type === "movie"
+        ? "https://skynet-stremio-addon.onrender.com/movies/manifest.json"
+        : "https://skynet-stremio-addon.onrender.com/series/manifest.json";
+      const catalogId = "skynet-" + slug + "-" + (type === "movie" ? "movies" : "series");
+
+      return res.json({
+        meta: {
+          id: cleanId,
+          type,
+          name: service.name,
+          poster: undefined,
+          posterShape: "square",
+          description: "Browse " + service.name + " on Skynet.",
+          links: [
+            {
+              name: "Browse " + service.name,
+              category: "catalog",
+              url: "stremio:///discover/" + encodeURIComponent(manifestUrl) + "/" + type + "/" + catalogId
+            }
+          ]
+        }
+      });
+    }
+
+    const tmdbId = cleanId.replace(/^tmdb:/, "");
     const data = await tmdb(
       type === "movie"
-        ? "/movie/" + cleanId + "?language=en-US"
-        : "/tv/" + cleanId + "?language=en-US"
+        ? "/movie/" + tmdbId + "?language=en-US"
+        : "/tv/" + tmdbId + "?language=en-US"
     );
     res.json({ meta: meta(data, type) });
   } catch (e) {
