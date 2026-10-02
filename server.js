@@ -636,6 +636,29 @@ app.get("/app/api/details", async (req, res) => {
   } catch(e) { console.error("APP DETAILS ERROR "+e.message); res.status(200).json({meta:null,seasons:[],error:e.message}); }
 });
 
+app.get("/app/api/vod-catalog/:type/:id.json", async (req, res) => {
+  try {
+    const id = String(req.params.id || "");
+    const type = req.params.type === "series" ? "series" : "movie";
+    const routes = {
+      "skynet-trending-movies": "/trending/movie/week?language=en-US&page=1",
+      "skynet-popular-movies": "/movie/popular?language=en-US&region=GB&page=1",
+      "skynet-top-rated-movies": "/movie/top_rated?language=en-US&region=GB&page=1",
+      "skynet-trending-series": "/trending/tv/week?language=en-US&page=1",
+      "skynet-popular-series": "/tv/popular?language=en-US&page=1",
+      "skynet-new-releases-movies": "/movie/now_playing?language=en-US&region=GB&page=1"
+    };
+    if (!routes[id]) return res.status(404).json({ metas: [] });
+    const data = await tmdb(routes[id]);
+    const metas = (data.results || []).slice(0, 50).map(x => catalogMeta(x, type));
+    res.set("Cache-Control", "no-store");
+    res.json({ metas });
+  } catch (e) {
+    console.error("VOD CATALOG ERROR " + e.message);
+    res.status(200).json({ metas: [] });
+  }
+});
+
 app.get(["/app", "/app-v2"], (_req, res) => {
   res.set({
     "Content-Type": "text/html; charset=utf-8",
@@ -760,9 +783,9 @@ main{padding:0 4vw 70px}
   try {
     const get=async u=>{const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);return (await r.json()).metas||[]};
     const [trending,popular,series]=await Promise.all([
-      get(location.origin+"/catalog/movie/skynet-trending-movies.json"),
-      get(location.origin+"/catalog/movie/skynet-popular-movies.json"),
-      get(location.origin+"/catalog/series/skynet-popular-series.json")
+      get(location.origin+"/app/api/vod-catalog/movie/skynet-trending-movies.json"),
+      get(location.origin+"/app/api/vod-catalog/movie/skynet-popular-movies.json"),
+      get(location.origin+"/app/api/vod-catalog/series/skynet-popular-series.json")
     ]);
     if(trending.length){
       const x=trending[0];
@@ -802,7 +825,7 @@ const state = {page:"home", hero:null, featuredPool:[], featuredTimer:null};
 function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function titleOf(x){return x?.name||"Untitled";}
 function posterOf(x){return x?.poster||"";}
-async function getCatalog(type,id){try{const r=await fetch(base+"/catalog/"+type+"/"+id+".json",{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);const d=await r.json();return Array.isArray(d.metas)?d.metas:[];}catch(e){console.error("CATALOG LOAD FAILED",type,id,e);return[];}}
+async function getCatalog(type,id){try{const r=await fetch(base+"/app/api/vod-catalog/"+type+"/"+id+".json",{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);const d=await r.json();return Array.isArray(d.metas)?d.metas:[];}catch(e){console.error("CATALOG LOAD FAILED",type,id,e);return[];}}
 function row(title,items){if(!items.length)return"";return '<section class="section"><div class="section-head"><h2>'+esc(title)+'</h2><span class="see">See all ›</span></div><div class="row">'+items.map((x,i)=>'<article class="card" tabindex="0" data-id="'+esc(x.id||'')+'" data-type="'+esc(x.type||'movie')+'" aria-label="'+esc(titleOf(x))+'"><img class="poster" loading="lazy" src="'+esc(posterOf(x))+'" alt="'+esc(titleOf(x))+'"><div class="card-name">'+esc(titleOf(x))+'</div><div class="card-year">'+esc(x.releaseInfo||"")+'</div></article>').join("")+'</div></section>';}
 function setHero(x){if(!x)return;state.hero=x;document.getElementById("heroBg").style.backgroundImage="url('"+(x.background||x.poster||"")+"')";document.getElementById("heroTitle").textContent=titleOf(x);document.getElementById("heroMeta").textContent=[x.releaseInfo,x.imdbRating?("★ "+x.imdbRating):"",x.genres?.slice(0,3).join(" • ")].filter(Boolean).join("  •  ");document.getElementById("heroDesc").textContent=x.description||"";}
 function startFeaturedRotation(items){
