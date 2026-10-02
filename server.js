@@ -636,8 +636,13 @@ app.get("/app/api/details", async (req, res) => {
   } catch(e) { console.error("APP DETAILS ERROR "+e.message); res.status(200).json({meta:null,seasons:[],error:e.message}); }
 });
 
-app.get("/app", (_req, res) => {
-  res.set("Content-Type", "text/html; charset=utf-8");
+app.get(["/app", "/app-v2"], (_req, res) => {
+  res.set({
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0"
+  });
   res.send(`<!doctype html>
 <html lang="en">
 <head>
