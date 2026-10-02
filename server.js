@@ -747,3 +747,41 @@ app.get("/aio-install", (_req, res) => {
   res.set("Content-Type","text/html; charset=utf-8"); res.send(html);
 });
 
+
+
+app.get("/vod", (_req, res) => {
+  const page = `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Skynet VOD</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#08090d;color:#fff;font-family:Arial,sans-serif;overflow-x:hidden}
+header{height:72px;display:flex;align-items:center;padding:0 28px;gap:28px;background:#0d0f15;position:sticky;top:0;z-index:5}
+.logo{font-size:26px;font-weight:900;letter-spacing:2px}.logo span{color:#2d8cff}
+nav{display:flex;gap:20px;color:#aaa;font-weight:700}nav b{color:#fff}
+.search{margin-left:auto;background:#181b23;border:1px solid #333;color:#fff;border-radius:22px;padding:10px 16px;width:220px}
+.hero{min-height:390px;padding:70px 45px;display:flex;align-items:center;background:linear-gradient(90deg,#08090d 0%,rgba(8,9,13,.78) 42%,rgba(8,9,13,.1)),linear-gradient(180deg,transparent 70%,#08090d),url('https://image.tmdb.org/t/p/w1280/6Wdl9N6dD7t4J9V3qvM6zQ3M0sV.jpg') center/cover}
+.hero h1{font-size:54px;margin:0 0 12px}.hero p{max-width:560px;color:#bbb;font-size:18px;line-height:1.5}.play{background:#fff;color:#000;border:0;border-radius:8px;padding:13px 22px;font-size:17px;font-weight:800}
+section{padding:8px 28px 18px}h2{font-size:22px;margin:14px 0}.row{display:flex;gap:14px;overflow-x:auto;padding-bottom:10px}.card{min-width:145px;width:145px;cursor:pointer}.card img{width:145px;height:215px;object-fit:cover;border-radius:8px;background:#151820}.card div{font-size:14px;font-weight:700;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tag{font-size:11px;color:#ffd400;margin-top:3px}.empty{color:#777;padding:20px}
+@media(max-width:700px){nav{display:none}.search{width:150px}.hero{padding:45px 24px;min-height:330px}.hero h1{font-size:38px}section{padding-left:18px}.card{min-width:120px;width:120px}.card img{width:120px;height:178px}}
+</style></head>
+<body>
+<header><div class="logo">SKY<span>NET</span></div><nav><b>Home</b><span>Movies</span><span>Series</span><span>My List</span></nav><input id="q" class="search" placeholder="Search"></header>
+<div class="hero"><div><div style="color:#2d8cff;font-weight:800">SKYNET VOD TEST</div><h1>Movies & Series</h1><p>This is the first working test of the Skynet VOD interface. Catalogue data is being pulled from your existing Skynet service.</p><button class="play" onclick="document.getElementById('movies').scrollIntoView({behavior:'smooth'})">Browse Movies</button></div></div>
+<section><h2>🔥 Trending Movies</h2><div id="movies" class="row"><div class="empty">Loading...</div></div></section>
+<section><h2>📺 Popular Series</h2><div id="series" class="row"><div class="empty">Loading...</div></div></section>
+<section><h2>🎬 More Movies</h2><div id="more" class="row"><div class="empty">Loading...</div></div></section>
+<script>
+async function load(url,id){
+ const el=document.getElementById(id); try{
+  const d=await fetch(url).then(r=>r.json()); el.innerHTML='';
+  (d.metas||[]).forEach(x=>{const a=document.createElement('div');a.className='card';a.innerHTML='<img src="'+(x.poster||'')+'" loading="lazy"><div>'+x.name+'</div><div class="tag">'+(x.releaseInfo||'')+'</div>';el.appendChild(a)});
+  if(!el.children.length)el.innerHTML='<div class="empty">No titles found</div>';
+ }catch(e){el.innerHTML='<div class="empty">Could not load catalogue</div>'}
+}
+load('/catalog/movie/skynet-trending-movies.json','movies');
+load('/catalog/series/skynet-popular-series.json','series');
+load('/catalog/movie/skynet-popular-movies.json','more');
+</script></body></html>`;
+  res.set("Content-Type","text/html; charset=utf-8");
+  res.send(page);
+});
