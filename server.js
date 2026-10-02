@@ -578,7 +578,6 @@ small{display:block;color:#888;margin-top:18px;word-break:break-all}
 <h1>Install Skynet</h1>
 <p>Install everything in one addon — Movies and Series together.</p>
 <a class="btn" href="${stremioUrl}">1. INSTALL SKYNET ALL IN ONE ADDON</a>
-<a class="alt" href="${manifestUrl}">Open All-in-One manifest</a>
 <hr style="border:0;border-top:1px solid #333;margin:24px 0">
 <p style="font-size:14px;font-weight:700;color:#fff;margin-top:24px">2. INSTALL AIOMETADATA</p>
 <a class="alt" href="https://aiometadata.elfhosted.com/configure/">INSTALL AIOMETADATA</a>
