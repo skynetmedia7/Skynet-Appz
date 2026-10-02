@@ -568,7 +568,7 @@ body{margin:0;background:#0b0b0f;color:#fff;font-family:Arial,sans-serif;display
 .card{width:min(520px,90%);text-align:center;background:#17171d;border-radius:22px;padding:30px;box-sizing:border-box;box-shadow:0 10px 40px #0008}
 .logo{max-width:190px;max-height:90px;object-fit:contain;margin-bottom:15px}
 h1{margin:5px 0 10px;font-size:32px}p{color:#bbb;line-height:1.5}
-.btn{display:block;text-decoration:none;background:#fff;color:#000;font-weight:700;font-size:19px;padding:16px;border-radius:12px;margin:20px 0}
+.btn{display:block;text-decoration:none;background:#ffd400;color:#000;font-weight:700;font-size:19px;padding:16px;border-radius:12px;margin:20px 0}
 .alt{display:block;color:#fff;border:1px solid #555;padding:13px;border-radius:10px;text-decoration:none;margin-top:10px}
 small{display:block;color:#888;margin-top:18px;word-break:break-all}
 </style>
