@@ -583,7 +583,10 @@ small{display:block;color:#888;margin-top:18px;word-break:break-all}
 <p style="font-size:14px">Optional addons</p>
 <a class="alt" href="https://aiometadata.elfhosted.com/configure/">INSTALL AIOMETADATA</a>
 <a class="alt" href="https://aiostreams.elfhosted.com/stremio/configure">INSTALL AIOSTREAMS</a>
-<small>Set up AIOMetadata and AIOStreams, then add their generated Stremio manifests.</small>
+<div style="margin-top:24px;padding:16px;border:1px solid #555;border-radius:12px;background:#111118">
+<strong style="color:#fff">INFO</strong>
+<p style="margin:8px 0 0;color:#bbb">For Skynet to work correctly, please install all 3 addons: Skynet All in One, AIOMetadata and AIOStreams.</p>
+</div>
 </div></body></html>`;
   res.set("Content-Type","text/html; charset=utf-8");
   res.send(html);
