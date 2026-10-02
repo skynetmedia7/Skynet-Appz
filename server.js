@@ -579,7 +579,11 @@ small{display:block;color:#888;margin-top:18px;word-break:break-all}
 <p>Install everything in one addon — Movies and Series together.</p>
 <a class="btn" href="${stremioUrl}">INSTALL SKYNET ALL IN ONE</a>
 <a class="alt" href="${manifestUrl}">Open All-in-One manifest</a>
-<small>One install gives users Movies and Series together.</small>
+<hr style="border:0;border-top:1px solid #333;margin:24px 0">
+<p style="font-size:14px">Optional addons</p>
+<a class="alt" href="https://aiometadata.elfhosted.com/configure/">INSTALL AIOMETADATA</a>
+<a class="alt" href="https://aiostreams.elfhosted.com/stremio/configure">INSTALL AIOSTREAMS</a>
+<small>Set up AIOMetadata and AIOStreams, then add their generated Stremio manifests.</small>
 </div></body></html>`;
   res.set("Content-Type","text/html; charset=utf-8");
   res.send(html);
