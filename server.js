@@ -579,11 +579,7 @@ small{display:block;color:#888;margin-top:18px;word-break:break-all}
 <p>Install everything in one addon — Movies and Series together.</p>
 <a class="btn" href="${stremioUrl}">INSTALL SKYNET ALL IN ONE</a>
 <a class="alt" href="${manifestUrl}">Open All-in-One manifest</a>
-<hr style="border:0;border-top:1px solid #333;margin:24px 0">
-<p style="font-size:14px">Already using the separate versions?</p>
-<a class="alt" href="${moviesStremioUrl}">Install Movies only</a>
-<a class="alt" href="${seriesStremioUrl}">Install Series only</a>
-<small>All-in-One is the recommended install for new users.</small>
+<small>One install gives users Movies and Series together.</small>
 </div></body></html>`;
   res.set("Content-Type","text/html; charset=utf-8");
   res.send(html);
