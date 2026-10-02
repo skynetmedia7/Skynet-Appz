@@ -370,7 +370,7 @@ for (const [slug, genreId] of Object.entries(seriesGenres)) {
 
 const serviceIcons = [
   { slug: "netflix", name: "Netflix", ids: [8] },
-  { slug: "prime-video", name: "Prime Video", ids: [119] },
+  { slug: "prime-video", name: "Prime Video", ids: [9, 119, 613, 2100, 1898] },
   { slug: "disney-plus", name: "Disney+", ids: [337] },
   { slug: "apple-tv-plus", name: "Apple TV+", ids: [350] },
   { slug: "paramount-plus", name: "Paramount+", ids: [531] },
@@ -423,7 +423,7 @@ app.get("/catalog/series/skynet-services-series.json", (_req, res) =>
 
 const streamingProviders = {
   netflix: { name: "Netflix", ids: [8] },
-  "prime-video": { name: "Prime Video", ids: [119] },
+  "prime-video": { name: "Prime Video", ids: [9, 119, 613, 2100, 1898] },
   "disney-plus": { name: "Disney+", ids: [337] },
   "apple-tv-plus": { name: "Apple TV+", ids: [350] },
   "paramount-plus": { name: "Paramount+", ids: [531] },
