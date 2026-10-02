@@ -756,6 +756,32 @@ main{padding:0 4vw 70px}
 <div class="detailOverlay" id="streamsOverlay"><div class="modal"><button class="closeBtn" id="closeStreams">×</button><h2 id="streamsTitle">Available Streams</h2><div id="streamsList"></div></div></div>
 
 <script>
+(async function(){
+  try {
+    const get=async u=>{const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);return (await r.json()).metas||[]};
+    const [trending,popular,series]=await Promise.all([
+      get(location.origin+"/catalog/movie/skynet-trending-movies.json"),
+      get(location.origin+"/catalog/movie/skynet-popular-movies.json"),
+      get(location.origin+"/catalog/series/skynet-popular-series.json")
+    ]);
+    if(trending.length){
+      const x=trending[0];
+      const bg=x.background||x.poster||"";
+      document.getElementById("heroBg").style.backgroundImage="url('"+bg+"')";
+      document.getElementById("heroTitle").textContent=x.name||"Featured";
+      document.getElementById("heroMeta").textContent=x.releaseInfo||"";
+      document.getElementById("heroDesc").textContent=x.description||"";
+    }
+    const esc2=s=>String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+    const make=(title,items)=>items.length?'<section class="section"><div class="section-head"><h2>'+esc2(title)+'</h2></div><div class="row">'+items.slice(0,20).map(x=>'<article class="card"><img class="poster" loading="lazy" src="'+esc2(x.poster||"")+'"><div class="card-name">'+esc2(x.name||"Untitled")+'</div><div class="card-year">'+esc2(x.releaseInfo||"")+'</div></article>').join("")+'</div></section>':"";
+    const content=document.getElementById("content");
+    if(content) content.innerHTML=make("Trending now",trending)+make("Popular films",popular)+make("Popular series",series);
+  } catch(e) {
+    console.error("SKYNET FALLBACK LOAD FAILED",e);
+  }
+})();
+</script>
+<script>
 const base = location.origin;
 const state = {page:"home", hero:null, featuredPool:[], featuredTimer:null};
 function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
