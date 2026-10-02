@@ -6,6 +6,17 @@ const TMDB_KEY = process.env.TMDB_API_KEY || "";
 
 app.use((req, _res, next) => {
   console.log("REQUEST " + req.method + " " + req.originalUrl);
+
+  // The Movies and Series manifests live under separate paths.
+  // Stremio uses the manifest's directory as the addon base URL,
+  // so map their catalog/meta requests back to the shared handlers.
+  if (
+    (req.url.startsWith("/movies/") || req.url.startsWith("/series/")) &&
+    !req.url.endsWith("/manifest.json")
+  ) {
+    req.url = req.url.replace(/^\/(movies|series)/, "");
+  }
+
   next();
 });
 
