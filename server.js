@@ -577,11 +577,12 @@ small{display:block;color:#888;margin-top:18px;word-break:break-all}
 <img class="logo" src="https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png" alt="Skynet">
 <h1>Install Skynet</h1>
 <p>Install everything in one addon — Movies and Series together.</p>
-<a class="btn" href="${stremioUrl}">INSTALL SKYNET ALL IN ONE</a>
+<a class="btn" href="${stremioUrl}">1. INSTALL SKYNET ALL IN ONE ADDON</a>
 <a class="alt" href="${manifestUrl}">Open All-in-One manifest</a>
 <hr style="border:0;border-top:1px solid #333;margin:24px 0">
-<p style="font-size:14px">Optional addons</p>
+<p style="font-size:14px;font-weight:700;color:#fff;margin-top:24px">2. INSTALL AIOMETADATA</p>
 <a class="alt" href="https://aiometadata.elfhosted.com/configure/">INSTALL AIOMETADATA</a>
+<p style="font-size:14px;font-weight:700;color:#fff;margin-top:18px">3. INSTALL AIOSTREAMS</p>
 <a class="alt" href="https://aiostreams.elfhosted.com/stremio/configure">INSTALL AIOSTREAMS</a>
 <div style="margin-top:24px;padding:16px;border:1px solid #555;border-radius:12px;background:#111118">
 <strong style="color:#fff;font-size:18px">⚠️ IMPORTANT</strong>
