@@ -820,7 +820,20 @@ function startFeaturedRotation(items){
   choose();
   if(state.featuredPool.length>1) state.featuredTimer=setInterval(choose,7000);
 }
-async function loadHome(){const [trending,popular,top,series,newMovies]=await Promise.all([getCatalog("movie","skynet-trending-movies"),getCatalog("movie","skynet-popular-movies"),getCatalog("movie","skynet-top-rated-movies"),getCatalog("series","skynet-trending-series"),getCatalog("movie","skynet-new-releases-movies")]);startFeaturedRotation(trending);document.getElementById("content").innerHTML=row("Trending now",trending.slice(0,20))+row("Popular films",popular.slice(0,20))+row("Top rated",top.slice(0,20))+row("Popular series",series.slice(0,20))+row("Fresh this week",newMovies.slice(0,20));bindTVCards();}
+async function loadHome(){
+  const trending=await getCatalog("movie","skynet-trending-movies");
+  startFeaturedRotation(trending);
+  document.getElementById("content").innerHTML=row("Trending now",trending.slice(0,20))+'<div class="section"><div class="section-head"><h2>Loading more…</h2></div></div>';
+  bindTVCards();
+  const [popular,top,series,newMovies]=await Promise.all([
+    getCatalog("movie","skynet-popular-movies"),
+    getCatalog("movie","skynet-top-rated-movies"),
+    getCatalog("series","skynet-trending-series"),
+    getCatalog("movie","skynet-new-releases-movies")
+  ]);
+  document.getElementById("content").innerHTML=row("Trending now",trending.slice(0,20))+row("Popular films",popular.slice(0,20))+row("Top rated",top.slice(0,20))+row("Popular series",series.slice(0,20))+row("Fresh this week",newMovies.slice(0,20));
+  bindTVCards();
+}
 setTimeout(()=>loadHome(),250);
 async function loadPage(page){state.page=page;document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.page===page));if(page==="home")return loadHome();const content=document.getElementById("content");if(page==="list"){const items=JSON.parse(localStorage.getItem("skynetMyList")||"[]");content.innerHTML=items.length?row("⭐ My List",items):'<div class="empty"><h2>My List is empty</h2><p>Open a title and add it to your list.</p></div>';bindTVCards();return}content.innerHTML='<div class="empty">Loading '+esc(page)+'…</div>';let rows=[];if(page==="films"){const[a,b,c,n]=await Promise.all([getCatalog("movie","skynet-trending-movies"),getCatalog("movie","skynet-popular-movies"),getCatalog("movie","skynet-top-rated-movies"),getCatalog("movie","skynet-new-releases-movies")]);const first=a[0]||b[0]||c[0]||n[0];setHero(first);rows=[row("Trending",a.slice(0,30)),row("Popular",b.slice(0,30)),row("Top Rated",c.slice(0,30)),row("New Releases",n.slice(0,30))].filter(Boolean);if(!rows.length)content.innerHTML='<div class="empty">Films are temporarily unavailable. Tap Films again to retry.</div>';}else if(page==="series"){const[a,b,c]=await Promise.all([getCatalog("series","skynet-trending-series"),getCatalog("series","skynet-popular-series"),getCatalog("series","skynet-top-rated-series")]);setHero(a[0]||b[0]||c[0]);rows=[row("Trending",a.slice(0,30)),row("Popular",b.slice(0,30)),row("Top Rated",c.slice(0,30))].filter(Boolean);if(!rows.length)content.innerHTML='<div class="empty">Series are temporarily unavailable. Tap Series again to retry.</div>';}else{const n=await getCatalog("movie","skynet-new-releases-movies");setHero(n[0]);rows=[row("New Releases",n.slice(0,50))].filter(Boolean);}if(rows.length){content.innerHTML=rows.join("");bindTVCards();}}
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{document.querySelector(".nav")?.scrollTo({left:0,behavior:"smooth"});loadPage(b.dataset.page);}));
