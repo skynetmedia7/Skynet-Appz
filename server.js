@@ -22,7 +22,7 @@ app.use((req, _res, next) => {
 
 const manifest = {
   id: "com.skynet.stremio.v21",
-  version: "2.4.0",
+  version: "2.4.1",
   name: "Skynet Movies",
   description: "Skynet movie catalogue addon. Streaming availability data by JustWatch via TMDB.",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -60,7 +60,7 @@ const manifest = {
 
 const seriesManifest = {
   id: "com.skynet.stremio.series",
-  version: "1.0.0",
+  version: "1.0.1",
   name: "Skynet Series",
   description: "Skynet series catalogue addon. Streaming availability data by JustWatch via TMDB.",
   logo: "https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png",
@@ -186,7 +186,7 @@ function catalogMeta(item, type, forcedGenre = null) {
   };
 }
 
-async function sendCatalog(res, paths, type, limit = 10, catalogId = "unknown", forcedGenre = null) {
+async function sendCatalog(res, paths, type, limit = 50, catalogId = "unknown", forcedGenre = null) {
   try {
     const pagePaths = Array.isArray(paths) ? paths : [paths];
     const pages = await Promise.all(pagePaths.map(path => tmdb(path)));
@@ -240,7 +240,7 @@ app.get("/catalog/movie/skynet-new-releases-movies.json", (_req, res) =>
   sendCatalog(
     res,
     [1, 2, 3, 4, 5].map(page => "/discover/movie?language=en-US&region=GB&sort_by=primary_release_date.desc&primary_release_date.gte=2026-06-26&primary_release_date.lte=2026-09-24&page=" + page),
-    "movie", 10,
+    "movie", 50,
     "skynet-new-releases-movies",
     "New Releases"
   )
@@ -248,19 +248,19 @@ app.get("/catalog/movie/skynet-new-releases-movies.json", (_req, res) =>
 
 // Backward-compatible movie endpoints for older Stremio/TiviGlass installs that still cache the previous manifest IDs.
 app.get("/catalog/movie/skynet-trending-movies.json", (_req, res) =>
-  sendCatalog(res, [1, 2, 3].map(page => "/trending/movie/week?language=en-US&page=" + page), "movie", 10)
+  sendCatalog(res, [1, 2, 3].map(page => "/trending/movie/week?language=en-US&page=" + page), "movie", 50)
 );
 
 app.get("/catalog/movie/skynet-popular-movies.json", (_req, res) =>
-  sendCatalog(res, [1, 2, 3].map(page => "/movie/popular?language=en-US&region=GB&page=" + page), "movie", 10)
+  sendCatalog(res, [1, 2, 3].map(page => "/movie/popular?language=en-US&region=GB&page=" + page), "movie", 50)
 );
 
 app.get("/catalog/movie/skynet-top-rated-movies.json", (_req, res) =>
-  sendCatalog(res, [1, 2, 3].map(page => "/movie/top_rated?language=en-US&region=GB&page=" + page), "movie", 10)
+  sendCatalog(res, [1, 2, 3].map(page => "/movie/top_rated?language=en-US&region=GB&page=" + page), "movie", 50)
 );
 
 app.get("/catalog/movie/skynet-now-playing-movies.json", (_req, res) =>
-  sendCatalog(res, [1, 2, 3].map(page => "/movie/now_playing?language=en-US&region=GB&page=" + page), "movie", 10)
+  sendCatalog(res, [1, 2, 3].map(page => "/movie/now_playing?language=en-US&region=GB&page=" + page), "movie", 50)
 );
 
 app.get("/catalog/series/skynet-trending-series.json", (_req, res) =>
@@ -335,7 +335,7 @@ app.get("/catalog/movie/skynet-action-movies-v2.json", (_req, res) =>
     [1, 2, 3, 4, 5].map(page =>
       "/discover/movie?language=en-US&region=GB&with_genres=28&sort_by=popularity.desc&page=" + page
     ),
-    "movie", 10,
+    "movie", 50,
     "skynet-action-movies-v2",
     "Action"
   )
@@ -346,7 +346,7 @@ for (const [slug, genreId] of Object.entries(movieGenres)) {
     sendCatalog(
       res,
       [1, 2, 3, 4, 5].map(page => "/discover/movie?language=en-US&with_genres=" + genreId + "&sort_by=popularity.desc&page=" + page),
-      "movie", 10,
+      "movie", 50,
       "skynet-" + slug + "-movies",
       slug === "kids" ? "Kids" : (movieGenreNames[genreId] || slug)
     )
@@ -358,7 +358,7 @@ for (const [slug, genreId] of Object.entries(seriesGenres)) {
     sendCatalog(
       res,
       [1, 2, 3, 4, 5].map(page => "/discover/tv?language=en-US&with_genres=" + genreId + "&sort_by=popularity.desc&page=" + page),
-      "series", 10,
+      "series", 50,
       "skynet-" + slug + "-series",
       seriesGenreNames[genreId] || slug
     )
@@ -387,7 +387,7 @@ for (const [slug, provider] of Object.entries(streamingProviders)) {
         "/discover/movie?language=en-US&watch_region=GB&with_watch_monetization_types=flatrate&with_watch_providers=" +
         providerIds + "&sort_by=popularity.desc&page=" + page
       ),
-      "movie", 10,
+      "movie", 50,
       "skynet-" + slug + "-movies",
       provider.name
     )
@@ -400,7 +400,7 @@ for (const [slug, provider] of Object.entries(streamingProviders)) {
         "/discover/tv?language=en-US&watch_region=GB&with_watch_monetization_types=flatrate&with_watch_providers=" +
         providerIds + "&sort_by=popularity.desc&page=" + page
       ),
-      "series", 10,
+      "series", 50,
       "skynet-" + slug + "-series",
       provider.name
     )
