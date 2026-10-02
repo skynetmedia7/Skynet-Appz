@@ -49,7 +49,7 @@ const manifest = {
     { type: "series", id: "skynet-bbc-iplayer-series", name: "BBC iPlayer" },
     { type: "series", id: "skynet-itvx-series", name: "ITVX" },
     { type: "series", id: "skynet-channel-4-series", name: "Channel 4" }
-
+  ],
 
   behaviorHints: {
     configurable: false
