@@ -692,6 +692,21 @@ main{padding:0 28px 60px}
 @media(min-width:1000px){.top{padding:18px 42px}.logo{font-size:38px}.tab{padding:15px 25px;font-size:17px}.hero{min-height:590px}.hero-copy{padding:100px 5vw 65px}.hero h1{font-size:clamp(54px,5vw,86px)}main{padding:0 42px 70px}.card{flex-basis:180px}.poster{width:180px;height:270px}.section h2{font-size:27px}.card-name{font-size:16px}}\n@media(max-width:900px){
  .top{padding:10px 12px;gap:8px;overflow-x:auto}.logo{font-size:25px;margin-right:3px}.nav{order:3;flex-basis:100%;overflow-x:auto}.top{flex-wrap:wrap}.tab{padding:10px 15px}.clock{display:none}.hero{min-height:450px}.hero-copy{padding:70px 22px 35px}.hero h1{font-size:46px}main{padding:0 14px 40px}.poster{width:125px;height:188px}.card{flex-basis:125px}
 }
+
+.detailOverlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.86);overflow:auto}
+.detailOverlay.show{display:block}
+.detailBox{min-height:100vh;background:#0a0d12}
+.detailBg{min-height:560px;background-size:cover;background-position:center;position:relative}
+.detailBg:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#07090df5 0%,#07090db8 50%,#07090d55),linear-gradient(0deg,#0a0d12,transparent 55%)}
+.detailCopy{position:relative;z-index:2;max-width:760px;padding:100px 6vw 60px}
+.detailCopy h1{font-size:clamp(42px,6vw,76px);margin:10px 0}
+.closeBtn{position:fixed;right:22px;top:18px;z-index:110;border:0;background:#252c36;color:#fff;width:46px;height:46px;border-radius:50%;font-size:25px}
+.modal{max-width:620px;margin:12vh auto;background:#11151c;border:1px solid #303844;border-radius:18px;padding:25px;width:calc(100% - 30px)}
+.field{width:100%;background:#090c11;border:1px solid #3b4350;color:#fff;border-radius:8px;padding:12px;margin:8px 0 14px}
+.help{color:#9ba3ad;font-size:14px;line-height:1.5}
+.stream{display:block;background:#191f28;color:#fff;text-decoration:none;padding:14px;border-radius:10px;margin:9px 0;border:1px solid #303844}
+.stream small{display:block;color:#aab2bd;margin-top:4px}
+@media(max-width:900px){.detailCopy{padding:90px 22px 45px}.detailBg{min-height:520px}.modal{margin:8vh auto}}
 </style>
 </head>
 <body>
