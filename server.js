@@ -721,7 +721,7 @@ main{padding:0 4vw 70px}
 .empty{padding:80px 20px;text-align:center;color:#8f97a1}
 @media(min-width:1000px){.top{padding:18px 4vw}.logo{font-size:38px}.tab{font-size:16px}.hero{min-height:620px}.hero-copy{padding:110px 5vw 72px}.hero h1{font-size:clamp(56px,5vw,88px)}.card{flex-basis:182px}.poster{width:182px;height:273px}.section h2{font-size:27px}.card-name{font-size:15px}}
 @media(max-width:900px){
- .top{padding:10px 14px 0;gap:10px;overflow:visible}.logo{font-size:26px;margin-right:auto}.nav{order:3;flex:0 0 100%;width:100%;max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;gap:16px;padding:2px 0 8px;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.top{flex-wrap:wrap}.tab{padding:8px 0;font-size:14px;flex:0 0 auto}.actions{margin-left:auto}.clock{display:none}.hero{min-height:430px}.hero-copy{padding:70px 22px 34px}.hero h1{font-size:44px}.desc{font-size:15px;line-height:1.5}main{padding:0 14px 44px}.poster{width:110px;height:165px}.card{flex-basis:110px}.row{gap:9px}.section{margin:22px 0}.section h2{font-size:20px}
+ .top{padding:10px 14px;gap:12px;overflow:visible}.logo{font-size:26px;margin-right:auto}.nav{order:3;flex-basis:100%;overflow-x:auto;gap:24px;padding:2px 2px 5px}.top{flex-wrap:wrap}.tab{padding:8px 0;font-size:14px}.actions{margin-left:auto}.clock{display:none}.hero{min-height:470px}.hero-copy{padding:78px 22px 38px}.hero h1{font-size:47px}.desc{font-size:15px}main{padding:0 14px 44px}.poster{width:126px;height:189px}.card{flex-basis:126px}.row{gap:10px}.section{margin:24px 0}.section h2{font-size:20px}
 }
 
 .detailOverlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.86);overflow:auto}
