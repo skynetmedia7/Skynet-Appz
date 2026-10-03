@@ -630,13 +630,53 @@ app.get("/app/api/streams", async (req, res) => {
     const manifest = process.env.AIOSTREAMS_MANIFEST;
     if (!manifest) return res.json({ streams: [] });
     const type = req.query.type === "series" ? "series" : "movie";
-    const id = String(req.query.id || "");
-    if (!id) return res.json({ streams: [] });
-    const root = manifest.split("/manifest.json")[0];
-    const r = await fetch(root + "/stream/" + type + "/" + encodeURIComponent(id) + ".json");
-    if (!r.ok) return res.json({ streams: [] });
-    const data = await r.json();
-    res.json({ streams: Array.isArray(data.streams) ? data.streams : [] });
+    const requestedId = String(req.query.id || "");
+    if (!requestedId) return res.json({ streams: [] });
+
+    const root = manifest.replace(/\\/+$/, "").replace(/\\/manifest\\.json.*$/, "");
+    const rawId = requestedId.replace(/^tmdb:/, "");
+    const candidates = [];
+    function addId(v) {
+      if (v && !candidates.includes(v)) candidates.push(v);
+    }
+
+    // AIOStreams commonly accepts the Stremio TMDB form, but some
+    // configurations resolve better through the IMDb ID. Try both.
+    addId(requestedId);
+    addId(rawId);
+
+    try {
+      const externalPath = type === "series"
+        ? "/tv/" + encodeURIComponent(rawId) + "/external_ids?language=en-US"
+        : "/movie/" + encodeURIComponent(rawId) + "/external_ids?language=en-US";
+      const external = await tmdb(externalPath);
+      if (external && external.imdb_id) {
+        if (type === "series") {
+          const parts = requestedId.split(":");
+          if (parts.length >= 4) addId(external.imdb_id + ":" + parts[parts.length - 2] + ":" + parts[parts.length - 1]);
+          else addId(external.imdb_id);
+        } else {
+          addId(external.imdb_id);
+        }
+      }
+    } catch (_) {}
+
+    let streams = [];
+    for (const candidate of candidates) {
+      try {
+        const url = root + "/stream/" + type + "/" + encodeURIComponent(candidate) + ".json";
+        const r = await fetch(url, { headers: { "Accept": "application/json" } });
+        if (!r.ok) continue;
+        const data = await r.json();
+        if (Array.isArray(data.streams) && data.streams.length) {
+          streams = data.streams;
+          break;
+        }
+      } catch (_) {}
+    }
+
+    res.set("Cache-Control", "no-store");
+    res.json({ streams });
   } catch (e) {
     console.error("APP STREAMS ERROR " + e.message);
     res.json({ streams: [] });
