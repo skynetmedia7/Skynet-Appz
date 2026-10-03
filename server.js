@@ -969,7 +969,7 @@ function tick(){document.getElementById("clock").textContent=new Date().toLocale
         content.querySelectorAll(".card").forEach(function(card){
           card.onclick=function(){
             var id=card.getAttribute("data-id"), type=card.getAttribute("data-type")||"movie";
-            if(id && typeof openDetail==="function") openDetail(type,id);
+            if(id){document.getElementById("detailOverlay").classList.add("show");document.getElementById("detailOverlay").innerHTML='<div class="modal"><p class="help">Loading details…</p></div>';fetch(root+"/app/api/details?type="+encodeURIComponent(type)+"&id="+encodeURIComponent(id),{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){var x=d.meta;if(!x)return;document.getElementById("detailOverlay").innerHTML='<div class="detailBox"><button class="closeBtn" id="bootClose">×</button><div class="detailBg" style="background-image:url(\''+(x.background||x.poster||"")+'\')"><div class="detailCopy"><div class="kicker">'+(type==="series"?"SERIES":"MOVIE")+'</div><h1>'+esc(x.name)+'</h1><div class="meta">'+esc(x.releaseInfo||"")+'</div><p class="desc">'+esc(x.description||"")+'</p><div class="btns"><button class="btn list" id="bootList">＋ My List</button></div></div></div></div>';document.getElementById("bootClose").onclick=function(){document.getElementById("detailOverlay").classList.remove("show");};});}
           };
         });
       });
