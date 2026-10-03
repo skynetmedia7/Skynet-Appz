@@ -633,7 +633,7 @@ app.get("/app/api/streams", async (req, res) => {
     const requestedId = String(req.query.id || "");
     if (!requestedId) return res.json({ streams: [] });
 
-    const root = manifest.replace(/\\/+$/, "").replace(/\\/manifest\\.json.*$/, "");
+    const root = manifest.replace(/\/manifest\.json.*$/, "").replace(/\/+$/, "");
     const rawId = requestedId.replace(/^tmdb:/, "");
     const candidates = [];
     function addId(v) {
