@@ -936,6 +936,46 @@ document.getElementById("heroList").onclick=()=>state.hero&&toggleList(state.her
 
 function tick(){document.getElementById("clock").textContent=new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});}tick();setInterval(tick,30000);loadHome();setTimeout(()=>document.querySelector('.tab.active')?.focus(),300);
 </script>
+<script>
+(function(){
+  function bootSkynet(){
+    var root=location.origin;
+    var content=document.getElementById("content");
+    var heroTitle=document.getElementById("heroTitle");
+    var heroMeta=document.getElementById("heroMeta");
+    var heroDesc=document.getElementById("heroDesc");
+    var heroBg=document.getElementById("heroBg");
+    if(!content) return;
+    function esc(s){return String(s||"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]||c;});}
+    function card(x){return '<article class="card" tabindex="0"><img class="poster" loading="lazy" src="'+esc(x.poster||"")+'" alt="'+esc(x.name||"")+'"><div class="card-name">'+esc(x.name||"Untitled")+'</div><div class="card-year">'+esc(x.releaseInfo||"")+'</div></article>';}
+    function row(title,items){return items&&items.length?'<section class="section"><div class="section-head"><h2>'+esc(title)+'</h2></div><div class="row">'+items.slice(0,20).map(card).join("")+'</div></section>':"";}
+    function get(type,id){return fetch(root+"/app/api/vod-catalog/"+type+"/"+id+".json",{cache:"no-store"}).then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.json();}).then(function(d){return d.metas||[];});}
+    get("movie","skynet-trending-movies").then(function(trending){
+      if(trending[0]){
+        var x=trending[0];
+        if(heroBg) heroBg.style.backgroundImage="url('"+(x.background||x.poster||"")+"')";
+        if(heroTitle) heroTitle.textContent=x.name||"Featured";
+        if(heroMeta) heroMeta.textContent=x.releaseInfo||"";
+        if(heroDesc) heroDesc.textContent=x.description||"";
+      }
+      content.innerHTML=row("Trending now",trending)+'<div class="section"><div class="section-head"><h2>Loading more…</h2></div></div>';
+      return Promise.all([
+        get("movie","skynet-popular-movies"),
+        get("movie","skynet-top-rated-movies"),
+        get("series","skynet-trending-series"),
+        get("movie","skynet-new-releases-movies")
+      ]).then(function(a){
+        content.innerHTML=row("Trending now",trending)+row("Popular films",a[0])+row("Top rated",a[1])+row("Popular series",a[2])+row("Fresh this week",a[3]);
+      });
+    }).catch(function(e){
+      console.error("SKYNET STARTUP",e);
+      if(heroTitle) heroTitle.textContent="Skynet";
+      if(heroDesc) heroDesc.textContent="Catalogue is temporarily unavailable. Please refresh.";
+    });
+  }
+  if(document.readyState==="complete") bootSkynet(); else window.addEventListener("load",bootSkynet);
+})();
+</script>
 </body>
 </html>`);
 });
