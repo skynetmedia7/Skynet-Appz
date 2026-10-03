@@ -980,6 +980,71 @@ function tick(){document.getElementById("clock").textContent=new Date().toLocale
 </html>`);
 });
 
+app.get("/app-v3", (_req, res) => {
+  res.set({
+    "Content-Type":"text/html; charset=utf-8",
+    "Cache-Control":"no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma":"no-cache"
+  });
+  res.send(`<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Skynet</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:#07080b;color:#fff;font-family:Arial,sans-serif}body{overflow-x:hidden}
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:24px;padding:14px 4vw;background:rgba(7,8,11,.96);backdrop-filter:blur(14px);border-bottom:1px solid #20232a}
+.logo{font-size:32px;font-weight:950;color:#ff4050;letter-spacing:-1.5px}.nav{display:flex;gap:24px;overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.nav button{border:0;background:none;color:#aeb4bd;font-weight:800;padding:9px 0;white-space:nowrap}.nav button.active{color:#fff}.actions{margin-left:auto;display:flex;gap:8px}.actions button{border:1px solid #30343c;background:#171a20;color:#fff;border-radius:50%;width:40px;height:40px}
+.hero{min-height:500px;position:relative;display:flex;align-items:flex-end;overflow:hidden}.hero-bg{position:absolute;inset:0;background:center/cover no-repeat}.hero-bg:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#07080b 0%,rgba(7,8,11,.8) 38%,rgba(7,8,11,.2) 75%,#07080b 100%),linear-gradient(0deg,#07080b,transparent 55%)}.hero-copy{position:relative;z-index:2;padding:70px 5vw 55px;max-width:700px}.kicker{color:#ff4050;font-weight:900;text-transform:uppercase;font-size:13px;letter-spacing:1px}.hero h1{font-size:clamp(44px,6vw,82px);line-height:.95;margin:12px 0}.meta{font-weight:700;color:#dfe3e8}.desc{color:#c6cbd3;line-height:1.55;font-size:16px}.btn{border:0;border-radius:7px;padding:13px 22px;font-weight:900;margin:12px 8px 0 0}.play{background:#fff;color:#000}.list{background:#2a3039;color:#fff}
+main{padding:0 4vw 60px}.section{margin:28px 0}.section h2{font-size:24px;margin:0 0 13px}.row{display:flex;gap:12px;overflow-x:auto;padding:3px 3px 14px;scrollbar-width:none}.row::-webkit-scrollbar{display:none}.card{flex:0 0 155px;cursor:pointer;outline:0}.poster{display:block;width:155px;height:232px;object-fit:cover;border-radius:6px;background:#191c22}.card:focus{outline:3px solid #ff4050;outline-offset:4px}.name{font-weight:800;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.year{font-size:12px;color:#858d99;margin-top:3px}
+.overlay{display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.82);overflow:auto}.overlay.show{display:block}.modal{max-width:900px;margin:6vh auto;background:#101217;border:1px solid #292d35;border-radius:14px;overflow:hidden}.detail-bg{min-height:520px;background:center/cover no-repeat;position:relative}.detail-bg:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#101217 0%,rgba(16,18,23,.85) 28%,rgba(16,18,23,.05) 75%)}.detail-copy{position:absolute;z-index:2;left:0;right:0;bottom:0;padding:35px}.detail-copy h1{font-size:44px;margin:8px 0}.close{position:absolute;z-index:5;right:18px;top:15px;background:#171a20;color:#fff;border:0;border-radius:50%;width:40px;height:40px;font-size:24px}.stream{display:block;margin:10px 0;padding:14px;background:#1a1e25;color:#fff;text-decoration:none;border-radius:8px}.empty{padding:50px 0;color:#9299a3}
+@media(max-width:900px){header{padding:11px 14px;gap:12px;flex-wrap:wrap}.logo{font-size:26px}.nav{order:3;flex:0 0 100%;width:100%;gap:18px}.nav button{font-size:14px}.hero{min-height:430px}.hero-copy{padding:60px 22px 35px}.hero h1{font-size:44px}main{padding:0 14px 40px}.card{flex-basis:110px}.poster{width:110px;height:165px}.section h2{font-size:20px}.modal{margin:0;border-radius:0;min-height:100vh}.detail-bg{min-height:620px}.detail-copy{padding:24px 20px}.detail-copy h1{font-size:34px}}
+</style></head><body>
+<header><div class="logo">SKYNET</div><nav class="nav" id="nav">
+<button class="active" data-page="home">Home</button><button data-page="films">Films</button><button data-page="series">Series</button><button data-page="new">New &amp; Trending</button><button data-page="list">My List</button></nav>
+<div class="actions"><button id="search" aria-label="Search">⌕</button></div></header>
+<section class="hero"><div class="hero-bg" id="heroBg"></div><div class="hero-copy"><div class="kicker">Featured on Skynet</div><h1 id="heroTitle">Loading…</h1><div class="meta" id="heroMeta"></div><p class="desc" id="heroDesc"></p><button class="btn play" id="heroPlay">▶ Play</button><button class="btn list" id="heroList">＋ My List</button></div></section>
+<main id="main"><div class="empty">Loading catalogue…</div></main>
+<div class="overlay" id="overlay"></div>
+<script>
+(function(){
+var base=location.origin, current=[], hero=null;
+function esc(s){return String(s||"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]||c;});}
+function key(x){return (x.type||"movie")+"|"+x.id;}
+function get(type,id){return fetch(base+"/app/api/vod-catalog/"+type+"/"+id+".json",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){return d.metas||[];});}
+function card(x){return '<article class="card" tabindex="0" data-id="'+esc(x.id)+'" data-type="'+esc(x.type||"movie")+'"><img class="poster" loading="lazy" src="'+esc(x.poster||"")+'" alt="'+esc(x.name||"")+'"><div class="name">'+esc(x.name)+'</div><div class="year">'+esc(x.releaseInfo)+'</div></article>';}
+function row(title,items){return items.length?'<section class="section"><h2>'+esc(title)+'</h2><div class="row">'+items.map(card).join("")+'</div></section>':"";}
+function setHero(x){hero=x;if(!x)return;document.getElementById("heroBg").style.backgroundImage="url('"+(x.background||x.poster||"")+"')";document.getElementById("heroTitle").textContent=x.name||"Featured";document.getElementById("heroMeta").textContent=[x.releaseInfo,x.imdbRating?"★ "+x.imdbRating:""].filter(Boolean).join(" • ");document.getElementById("heroDesc").textContent=x.description||"";}
+function showDetails(type,id){
+var o=document.getElementById("overlay");o.classList.add("show");o.innerHTML='<div class="modal"><button class="close" id="close">×</button><div class="empty" style="padding:80px;text-align:center">Loading details…</div></div>';
+fetch(base+"/app/api/details?type="+encodeURIComponent(type)+"&id="+encodeURIComponent(id),{cache:"no-store"}).then(function(r){return r.json()}).then(function(d){
+var x=d.meta;if(!x)throw Error("No details");
+o.innerHTML='<div class="modal"><button class="close" id="close">×</button><div class="detail-bg" style="background-image:url(\''+(x.background||x.poster||"")+'\')"><div class="detail-copy"><div class="kicker">'+(type==="series"?"Series":"Film")+'</div><h1>'+esc(x.name)+'</h1><div class="meta">'+esc([x.releaseInfo,x.imdbRating?"★ "+x.imdbRating:""].filter(Boolean).join(" • "))+'</div><p class="desc">'+esc(x.description||"")+'</p><button class="btn play" id="detailPlay">▶ Play</button><button class="btn list" id="detailList">＋ My List</button></div></div></div>';
+document.getElementById("close").onclick=function(){o.classList.remove("show")};
+document.getElementById("detailList").onclick=function(){toggleList(x)};
+document.getElementById("detailPlay").onclick=function(){play(x)};
+}).catch(function(){o.innerHTML='<div class="modal"><button class="close" id="close">×</button><div class="empty" style="padding:80px;text-align:center">Could not load details.</div></div>';document.getElementById("close").onclick=function(){o.classList.remove("show")};});
+}
+function toggleList(x){var a=JSON.parse(localStorage.getItem("skynetMyList")||"[]"),i=a.findIndex(function(y){return key(y)===key(x)});if(i>=0)a.splice(i,1);else a.unshift(x);localStorage.setItem("skynetMyList",JSON.stringify(a));}
+function play(x){var u=localStorage.getItem("skynetAioManifest");if(!u){alert("Configure your AIOStreams manifest in the Skynet app first.");return;}var root=u.replace(/\/manifest\\.json.*$/,"");var url=root+"/stream/"+x.type+"/"+encodeURIComponent(x.id)+".json";var o=document.getElementById("overlay");o.classList.add("show");o.innerHTML='<div class="modal"><button class="close" id="close">×</button><div style="padding:28px"><h2>Streams — '+esc(x.name)+'</h2><div id="streams" class="empty">Loading AIOStreams…</div></div></div>';document.getElementById("close").onclick=function(){o.classList.remove("show")};fetch(url).then(function(r){return r.json()}).then(function(d){var s=d.streams||[];document.getElementById("streams").innerHTML=s.length?s.slice(0,30).map(function(v){return '<a class="stream" href="'+esc(v.url||"#")+'" target="_blank" rel="noopener"><b>▶ '+esc(v.name||"Stream")+'</b><br><small>'+esc(v.title||v.description||"")+'</small></a>'}).join(""):"No streams found.";}).catch(function(){document.getElementById("streams").textContent="AIOStreams could not be reached.";});}
+function bind(){document.getElementById("main").onclick=function(e){var c=e.target.closest(".card");if(c)showDetails(c.dataset.type,c.dataset.id);};document.getElementById("main").onkeydown=function(e){if((e.key==="Enter"||e.key===" ")&&e.target.classList.contains("card")){e.preventDefault();e.target.click();}};}
+async function page(p){
+var m=document.getElementById("main");m.innerHTML='<div class="empty">Loading…</div>';
+if(p==="list"){current=JSON.parse(localStorage.getItem("skynetMyList")||"[]");m.innerHTML=current.length?row("My List",current):'<div class="empty">Your My List is empty.</div>';return;}
+try{
+if(p==="home"){var a=await get("movie","skynet-trending-movies"),b=await Promise.all([get("movie","skynet-popular-movies"),get("movie","skynet-top-rated-movies"),get("series","skynet-trending-series"),get("movie","skynet-new-releases-movies")]);setHero(a[0]);current=a.concat(b.flat());m.innerHTML=row("Trending now",a.slice(0,20))+row("Popular films",b[0].slice(0,20))+row("Top rated",b[1].slice(0,20))+row("Popular series",b[2].slice(0,20))+row("Fresh this week",b[3].slice(0,20));
+}else if(p==="films"){var f=await Promise.all([get("movie","skynet-trending-movies"),get("movie","skynet-popular-movies"),get("movie","skynet-top-rated-movies"),get("movie","skynet-new-releases-movies")]);setHero(f[0][0]);current=f.flat();m.innerHTML=row("Trending",f[0].slice(0,30))+row("Popular",f[1].slice(0,30))+row("Top Rated",f[2].slice(0,30))+row("New Releases",f[3].slice(0,30));
+}else if(p==="series"){var s=await Promise.all([get("series","skynet-trending-series"),get("series","skynet-popular-series"),get("series","skynet-top-rated-series")]);setHero(s[0][0]);current=s.flat();m.innerHTML=row("Trending",s[0].slice(0,30))+row("Popular",s[1].slice(0,30))+row("Top Rated",s[2].slice(0,30));
+}else{var n=await get("movie","skynet-new-releases-movies");setHero(n[0]);current=n;m.innerHTML=row("New & Trending",n.slice(0,50));}
+}catch(e){m.innerHTML='<div class="empty">Catalogue temporarily unavailable. Refresh to try again.</div>';}
+}
+document.getElementById("nav").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;document.querySelectorAll(".nav button").forEach(function(x){x.classList.toggle("active",x===b)});page(b.dataset.page);});
+document.getElementById("main").addEventListener("click",function(e){var c=e.target.closest(".card");if(c)showDetails(c.dataset.type,c.dataset.id);});
+document.getElementById("heroPlay").onclick=function(){if(hero)play(hero)};
+document.getElementById("heroList").onclick=function(){if(hero)toggleList(hero)};
+document.getElementById("search").onclick=function(){var q=prompt("Search Skynet");if(!q)return;fetch(base+"/app/api/search?q="+encodeURIComponent(q)).then(function(r){return r.json()}).then(function(d){document.getElementById("main").innerHTML=row("Search results",d.results||[]);});};
+page("home");
+})();
+</script></body></html>`);
+});
 app.get("/health", (_req, res) => {
   res.json({
     ok: true,
