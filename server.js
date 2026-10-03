@@ -947,7 +947,7 @@ function tick(){document.getElementById("clock").textContent=new Date().toLocale
     var heroBg=document.getElementById("heroBg");
     if(!content) return;
     function esc(s){return String(s||"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]||c;});}
-    function card(x){return '<article class="card" tabindex="0"><img class="poster" loading="lazy" src="'+esc(x.poster||"")+'" alt="'+esc(x.name||"")+'"><div class="card-name">'+esc(x.name||"Untitled")+'</div><div class="card-year">'+esc(x.releaseInfo||"")+'</div></article>';}
+    function card(x){return '<article class="card" tabindex="0" data-id="'+esc(x.id||"")+'" data-type="'+esc(x.type||"movie")+'"><img class="poster" loading="lazy" src="'+esc(x.poster||"")+'" alt="'+esc(x.name||"")+'"><div class="card-name">'+esc(x.name||"Untitled")+'</div><div class="card-year">'+esc(x.releaseInfo||"")+'</div></article>';}
     function row(title,items){return items&&items.length?'<section class="section"><div class="section-head"><h2>'+esc(title)+'</h2></div><div class="row">'+items.slice(0,20).map(card).join("")+'</div></section>':"";}
     function get(type,id){return fetch(root+"/app/api/vod-catalog/"+type+"/"+id+".json",{cache:"no-store"}).then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.json();}).then(function(d){return d.metas||[];});}
     get("movie","skynet-trending-movies").then(function(trending){
@@ -966,6 +966,12 @@ function tick(){document.getElementById("clock").textContent=new Date().toLocale
         get("movie","skynet-new-releases-movies")
       ]).then(function(a){
         content.innerHTML=row("Trending now",trending)+row("Popular films",a[0])+row("Top rated",a[1])+row("Popular series",a[2])+row("Fresh this week",a[3]);
+        content.querySelectorAll(".card").forEach(function(card){
+          card.onclick=function(){
+            var id=card.getAttribute("data-id"), type=card.getAttribute("data-type")||"movie";
+            if(id && typeof openDetail==="function") openDetail(type,id);
+          };
+        });
       });
     }).catch(function(e){
       console.error("SKYNET STARTUP",e);
