@@ -714,6 +714,15 @@ app.get("/app/api/proxy", async (req, res) => {
       if (req.query.r) responseHeaders = JSON.parse(Buffer.from(String(req.query.r), "base64url").toString("utf8"));
     } catch (_) {}
 
+    const makeProxyUrl = (absoluteUrl) => {
+      const q = new URLSearchParams({
+        url: absoluteUrl,
+        h: Buffer.from(JSON.stringify(requestHeaders || {}), "utf8").toString("base64url"),
+        r: Buffer.from(JSON.stringify(responseHeaders || {}), "utf8").toString("base64url")
+      });
+      return req.protocol + "://" + req.get("host") + "/app/api/proxy?" + q.toString();
+    };
+
     const upstreamHeaders = new Headers();
     for (const [k, v] of Object.entries(requestHeaders || {})) {
       if (!k || /^host$/i.test(k) || typeof v !== "string") continue;
@@ -722,7 +731,47 @@ app.get("/app/api/proxy", async (req, res) => {
     const range = req.headers.range;
     if (range) upstreamHeaders.set("Range", range);
 
-    const upstream = await fetch(target, { method: req.method === "HEAD" ? "HEAD" : "GET", headers: upstreamHeaders, redirect: "follow" });
+    const upstream = await fetch(target, {
+      method: req.method === "HEAD" ? "HEAD" : "GET",
+      headers: upstreamHeaders,
+      redirect: "follow"
+    });
+
+    const contentType = (upstream.headers.get("content-type") || "").toLowerCase();
+    const isPlaylist = contentType.includes("mpegurl") || contentType.includes("vnd.apple.mpegurl") || /\.m3u8(?:$|[?#])/i.test(target);
+
+    if (isPlaylist && upstream.ok) {
+      const playlist = await upstream.text();
+      const base = new URL(target);
+      const rewritten = playlist.split(/\r?\n/).map(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return line;
+
+        // Rewrite URI="..." attributes used by HLS keys/maps/media playlists.
+        if (/^#/.test(trimmed)) {
+          return line.replace(/URI="([^"]+)"/gi, (_m, uri) => {
+            try {
+              return 'URI="' + makeProxyUrl(new URL(uri, base).toString()) + '"';
+            } catch (_) {
+              return 'URI="' + uri + '"';
+            }
+          });
+        }
+
+        // Rewrite segment and child-playlist URLs.
+        try {
+          return makeProxyUrl(new URL(trimmed, base).toString());
+        } catch (_) {
+          return line;
+        }
+      }).join("\n");
+
+      res.status(upstream.status);
+      res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+      return res.send(rewritten);
+    }
+
     res.status(upstream.status);
 
     const copyHeaders = ["content-type","content-length","content-range","accept-ranges","last-modified","etag"];
@@ -744,7 +793,6 @@ app.get("/app/api/proxy", async (req, res) => {
     else res.end();
   }
 });
-
 app.get("/app/api/episodes", async (req, res) => {
   try {
     const tv = String(req.query.id || "").replace(/^tmdb:/, "");
