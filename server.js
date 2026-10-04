@@ -639,9 +639,6 @@ app.get("/app/api/streams", async (req, res) => {
     function addId(v) {
       if (v && !candidates.includes(v)) candidates.push(v);
     }
-
-    // AIOStreams commonly accepts the Stremio TMDB form, but some
-    // configurations resolve better through the IMDb ID. Try both.
     addId(requestedId);
     addId(rawId);
 
@@ -655,9 +652,7 @@ app.get("/app/api/streams", async (req, res) => {
           const parts = requestedId.split(":");
           if (parts.length >= 4) addId(external.imdb_id + ":" + parts[parts.length - 2] + ":" + parts[parts.length - 1]);
           else addId(external.imdb_id);
-        } else {
-          addId(external.imdb_id);
-        }
+        } else addId(external.imdb_id);
       }
     } catch (_) {}
 
@@ -675,11 +670,78 @@ app.get("/app/api/streams", async (req, res) => {
       } catch (_) {}
     }
 
+    // Turn AIOStreams' direct URLs into Skynet playback URLs. This is important
+    // for streams that require the request headers supplied in behaviorHints.
+    const playback = streams.filter(s => s && (s.url || s.externalUrl)).map(s => {
+      if (!s.url) return s;
+      const requestHeaders = s.behaviorHints && s.behaviorHints.proxyHeaders
+        ? (s.behaviorHints.proxyHeaders.request || {})
+        : {};
+      const responseHeaders = s.behaviorHints && s.behaviorHints.proxyHeaders
+        ? (s.behaviorHints.proxyHeaders.response || {})
+        : {};
+      const q = new URLSearchParams({
+        url: s.url,
+        h: Buffer.from(JSON.stringify(requestHeaders), "utf8").toString("base64url"),
+        r: Buffer.from(JSON.stringify(responseHeaders), "utf8").toString("base64url")
+      });
+      return { ...s, url: req.protocol + "://" + req.get("host") + "/app/api/proxy?" + q.toString() };
+    });
+
     res.set("Cache-Control", "no-store");
-    res.json({ streams });
+    res.json({ streams: playback });
   } catch (e) {
     console.error("APP STREAMS ERROR " + e.message);
     res.json({ streams: [] });
+  }
+});
+
+app.get("/app/api/proxy", async (req, res) => {
+  try {
+    const target = String(req.query.url || "");
+    if (!/^https:\/\//i.test(target)) return res.status(400).send("Invalid playback URL");
+
+    const u = new URL(target);
+    const host = (u.hostname || "").toLowerCase();
+    if (host === "localhost" || host === "127.0.0.1" || host === "::1" || host.startsWith("10.") || host.startsWith("192.168.") || host.startsWith("172.16.") || host.startsWith("172.17.") || host.startsWith("172.18.") || host.startsWith("172.19.") || host.startsWith("172.2")) {
+      return res.status(403).send("Blocked playback host");
+    }
+
+    let requestHeaders = {};
+    let responseHeaders = {};
+    try {
+      if (req.query.h) requestHeaders = JSON.parse(Buffer.from(String(req.query.h), "base64url").toString("utf8"));
+      if (req.query.r) responseHeaders = JSON.parse(Buffer.from(String(req.query.r), "base64url").toString("utf8"));
+    } catch (_) {}
+
+    const upstreamHeaders = new Headers();
+    for (const [k, v] of Object.entries(requestHeaders || {})) {
+      if (!k || /^host$/i.test(k) || typeof v !== "string") continue;
+      upstreamHeaders.set(k, v);
+    }
+    const range = req.headers.range;
+    if (range) upstreamHeaders.set("Range", range);
+
+    const upstream = await fetch(target, { method: req.method === "HEAD" ? "HEAD" : "GET", headers: upstreamHeaders, redirect: "follow" });
+    res.status(upstream.status);
+
+    const copyHeaders = ["content-type","content-length","content-range","accept-ranges","last-modified","etag"];
+    for (const name of copyHeaders) {
+      const value = upstream.headers.get(name);
+      if (value) res.setHeader(name, value);
+    }
+    for (const [k, v] of Object.entries(responseHeaders || {})) {
+      if (typeof v === "string" && !/^set-cookie$/i.test(k)) res.setHeader(k, v);
+    }
+    res.setHeader("Cache-Control", "no-store");
+    if (req.method === "HEAD" || !upstream.body) return res.end();
+
+    for await (const chunk of upstream.body) res.write(Buffer.from(chunk));
+    res.end();
+  } catch (e) {
+    console.error("APP PROXY ERROR " + e.message);
+    if (!res.headersSent) res.status(502).send("Playback source unavailable");
+    else res.end();
   }
 });
 
