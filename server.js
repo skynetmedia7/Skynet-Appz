@@ -1198,7 +1198,7 @@ main{padding:0 4vw 60px}.section{margin:28px 0}.section h2{font-size:24px;margin
 @media(max-width:900px){header{padding:11px 14px;gap:12px;flex-wrap:wrap}.logo{font-size:26px}.nav{order:3;flex:0 0 100%;width:100%;gap:18px}.nav button{font-size:14px}.hero{min-height:430px}.hero-copy{padding:60px 22px 35px}.hero h1{font-size:44px}main{padding:0 14px 40px}.card{flex-basis:110px}.poster{width:110px;height:165px}.section h2{font-size:20px}.modal{margin:0;border-radius:0;min-height:100vh}.detail-bg{min-height:620px}.detail-copy{padding:24px 20px}.detail-copy h1{font-size:34px}}
 </style></head><body>
 <header><div class="logo">SKYNET</div><nav class="nav" id="nav">
-<button class="active" data-page="home">Home</button><button data-page="films">Films</button><button data-page="series">Series</button><button data-page="new">New &amp; Trending</button><button data-page="list">Favourites</button></nav>
+<button class="tab active" data-page="home">Home</button><button class="tab" data-page="films">Films</button><button class="tab" data-page="series">Series</button><button class="tab" data-page="new">New &amp; Trending</button><button class="tab" data-page="list">Favourites</button></nav>
 <div class="actions"><button id="search" aria-label="Search">⌕</button></div></header>
 <section class="hero"><div class="hero-bg" id="heroBg"></div><div class="hero-copy"><div class="kicker">Featured on Skynet</div><h1 id="heroTitle">Loading…</h1><div class="meta" id="heroMeta"></div><p class="desc" id="heroDesc"></p><button class="btn play" id="heroPlay">▶ Play</button><button class="btn list" id="heroList">＋ Favourites</button></div></section>
 <main id="main"><div class="empty">Loading catalogue…</div></main>
