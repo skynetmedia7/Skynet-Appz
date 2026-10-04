@@ -1065,7 +1065,73 @@ function tick(){document.getElementById("clock").textContent=new Date().toLocale
 
 app.get("/app-v3.js", (_req, res) => {
   res.set({"Content-Type":"application/javascript; charset=utf-8","Cache-Control":"no-store, no-cache, must-revalidate, max-age=0"});
-  res.send("\n(function(){\nvar base=location.origin, current=[], hero=null;\nfunction esc(s){return String(s||\"\").replace(/[&<>\"]/g,function(c){return {\"&\":\"&amp;\",\"<\":\"&lt;\",\">\":\"&gt;\",'\"':\"&quot;\"}[c]||c;});}\nfunction key(x){return (x.type||\"movie\")+\"|\"+x.id;}\nfunction get(type,id){return fetch(base+\"/app/api/vod-catalog/\"+type+\"/\"+id+\".json\",{cache:\"no-store\"}).then(function(r){return r.json();}).then(function(d){return d.metas||[];});}\nfunction card(x){return '<article class=\"card\" tabindex=\"0\" data-id=\"'+esc(x.id)+'\" data-type=\"'+esc(x.type||\"movie\")+'\"><img class=\"poster\" loading=\"eager\" src=\"'+esc(x.poster||\"\")+'\" alt=\"'+esc(x.name||\"\")+'\"><div class=\"name\">'+esc(x.name)+'</div><div class=\"year\">'+esc(x.releaseInfo)+'</div></article>';}\nfunction row(title,items){return items.length?'<section class=\"section\"><h2>'+esc(title)+'</h2><div class=\"row\">'+items.map(card).join(\"\")+'</div></section>':\"\";}\nfunction setHero(x){hero=x;if(!x)return;document.getElementById(\"heroBg\").style.backgroundImage=\"url('\"+(x.background||x.poster||\"\")+\"')\";document.getElementById(\"heroTitle\").textContent=x.name||\"Featured\";document.getElementById(\"heroMeta\").textContent=[x.releaseInfo,x.imdbRating?\"★ \"+x.imdbRating:\"\"].filter(Boolean).join(\" • \");document.getElementById(\"heroDesc\").textContent=x.description||\"\";}\nfunction showDetails(type,id){\nvar o=document.getElementById(\"overlay\");o.classList.add(\"show\");o.innerHTML='<div class=\"modal\"><button class=\"close\" id=\"close\">×</button><div class=\"empty\" style=\"padding:80px;text-align:center\">Loading details…</div></div>';\nfetch(base+\"/app/api/details?type=\"+encodeURIComponent(type)+\"&id=\"+encodeURIComponent(id),{cache:\"no-store\"}).then(function(r){return r.json()}).then(function(d){\nvar x=d.meta;if(!x)throw Error(\"No details\");\no.innerHTML='<div class=\"modal\"><button class=\"close\" id=\"close\">×</button><div class=\"detail-bg\" style=\"background-image:url(\\''+(x.background||x.poster||\"\")+'\\')\"><div class=\"detail-copy\"><div class=\"kicker\">'+(type===\"series\"?\"Series\":\"Film\")+'</div><h1>'+esc(x.name)+'</h1><div class=\"meta\">'+esc([x.releaseInfo,x.imdbRating?\"★ \"+x.imdbRating:\"\"].filter(Boolean).join(\" • \"))+'</div><p class=\"desc\">'+esc(x.description||\"\")+'</p><button class=\"btn play\" id=\"detailPlay\">▶ Play</button><button class=\"btn list\" id=\"detailList\">＋ My List</button></div></div></div>';\ndocument.getElementById(\"close\").onclick=function(){o.classList.remove(\"show\")};\ndocument.getElementById(\"detailList\").onclick=function(){toggleList(x)};\ndocument.getElementById(\"detailPlay\").onclick=function(){play(x)};\nif(type===\"series\" && Array.isArray(d.seasons) && d.seasons.length){\nvar season=d.seasons[0].season;\nvar seasonHtml='<div style=\"margin-top:22px\"><h3>Seasons</h3><div id=\"seasonButtons\" style=\"display:flex;gap:8px;flex-wrap:wrap\">'+d.seasons.map(function(se){return '<button class=\"btn list seasonBtn\" data-season=\"'+se.season+'\">Season '+se.season+'</button>';}).join(\"\")+'</div><div id=\"episodes\" class=\"empty\" style=\"margin-top:16px\">Loading episodes…</div></div>';\ndocument.querySelector(\".detail-copy\").insertAdjacentHTML(\"beforeend\",seasonHtml);\nfunction loadSeason(n){document.getElementById(\"episodes\").innerHTML=\"Loading episodes…\";fetch(base+\"/app/api/episodes?id=\"+encodeURIComponent(x.id)+\"&season=\"+n,{cache:\"no-store\"}).then(function(r){return r.json()}).then(function(q){var eps=q.episodes||[];document.getElementById(\"episodes\").innerHTML=eps.length?eps.map(function(ep){return '<button class=\"stream episodeBtn\" data-id=\"'+esc(ep.id)+'\" style=\"display:block;width:100%;text-align:left;margin-top:8px\"><b>E'+ep.episode+' — '+esc(ep.name)+'</b><br><small>'+esc(ep.releaseInfo||\"\")+'</small></button>';}).join(\"\"):\"No episodes found.\";document.querySelectorAll(\".episodeBtn\").forEach(function(b){b.onclick=function(){var ep=eps.find(function(z){return z.id===b.getAttribute(\"data-id\")});if(ep)play(ep);};});});}\ndocument.querySelectorAll(\".seasonBtn\").forEach(function(b){b.onclick=function(){loadSeason(parseInt(b.getAttribute(\"data-season\"),10));};});\nloadSeason(season);\n}\n}).catch(function(){o.innerHTML='<div class=\"modal\"><button class=\"close\" id=\"close\">×</button><div class=\"empty\" style=\"padding:80px;text-align:center\">Could not load details.</div></div>';document.getElementById(\"close\").onclick=function(){o.classList.remove(\"show\")};});\n}\nfunction toggleList(x){var a=JSON.parse(localStorage.getItem(\"skynetMyList\")||\"[]\"),i=a.findIndex(function(y){return key(y)===key(x)});if(i>=0)a.splice(i,1);else a.unshift(x);localStorage.setItem(\"skynetMyList\",JSON.stringify(a));}\nfunction playerIntent(url,pkg){var u=String(url||"");if(pkg==="org.videolan.vlc")return "vlc://"+u;var target=u.replace(/^https?:\/\//,"");return "intent://"+encodeURI(target)+"#Intent;action=android.intent.action.VIEW;scheme=https;type=video/*;package="+pkg+";end";}
+  res.send(String.raw\`
+(function(){
+var base=location.origin,hero=null;
+function esc(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]||c;});}
+function get(type,id){return fetch(base+"/app/api/vod-catalog/"+type+"/"+id+".json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(d){return d.metas||[];});}
+function key(x){return (x.type||"movie")+"|"+x.id;}
+function row(title,items){return items&&items.length?'<section class="section"><h2>'+esc(title)+'</h2><div class="row">'+items.slice(0,30).map(function(x){return '<article class="card" tabindex="0" data-id="'+esc(x.id)+'" data-type="'+esc(x.type||"movie")+'"><img class="poster" loading="lazy" src="'+esc(x.poster||"")+'"><div class="name">'+esc(x.name)+'</div><div class="year">'+esc(x.releaseInfo||"")+'</div></article>';}).join("")+'</div></section>':"";}
+function setHero(x){hero=x;if(!x)return;document.getElementById("heroBg").style.backgroundImage="url('"+(x.background||x.poster||"")+"')";document.getElementById("heroTitle").textContent=x.name||"Featured";document.getElementById("heroMeta").textContent=x.releaseInfo||"";document.getElementById("heroDesc").textContent=x.description||"";}
+function toggleList(x){var a=JSON.parse(localStorage.getItem("skynetMyList")||"[]"),i=a.findIndex(function(y){return key(y)===key(x)});if(i>=0)a.splice(i,1);else a.unshift(x);localStorage.setItem("skynetMyList",JSON.stringify(a));}
+function play(x){
+ var o=document.getElementById("overlay");o.classList.add("show");
+ o.innerHTML='<div class="modal"><button class="close" id="close">×</button><div style="padding:28px"><h2>Sources — '+esc(x.name)+'</h2><div id="streams" class="empty">Loading sources…</div></div></div>';
+ document.getElementById("close").onclick=function(){o.classList.remove("show")};
+ fetch(base+"/app/api/streams?type="+encodeURIComponent(x.type||"movie")+"&id="+encodeURIComponent(x.id),{cache:"no-store"}).then(function(r){return r.json()}).then(function(d){
+   var streams=(d.streams||[]).filter(function(s){return s&&s.url;});
+   var el=document.getElementById("streams");
+   if(!streams.length){el.textContent="No playable sources were found.";return;}
+   el.innerHTML=streams.slice(0,30).map(function(s,i){
+     return '<a class="stream" href="'+esc(s.url)+'" target="_blank" rel="noopener"><b>▶ '+esc(s.name||("Source "+(i+1)))+'</b><small>'+esc(s.title||s.description||"")+'</small><small style="color:#ff4050;font-weight:800;margin-top:8px">▶ Click source to play</small></a>';
+   }).join("");
+ }).catch(function(){document.getElementById("streams").textContent="No playable sources were found.";});
+}
+function showDetails(type,id){
+ var o=document.getElementById("overlay");o.classList.add("show");
+ o.innerHTML='<div class="modal"><button class="close" id="close">×</button><div class="empty">Loading details…</div></div>';
+ fetch(base+"/app/api/details?type="+encodeURIComponent(type)+"&id="+encodeURIComponent(id),{cache:"no-store"}).then(function(r){return r.json()}).then(function(d){
+   var x=d.meta;if(!x)throw Error("No details");
+   var html='<div class="modal"><button class="close" id="close">×</button><div class="detail-bg" style="background-image:url(\''+(x.background||x.poster||"")+'\')"><div class="detail-copy"><div class="kicker">'+(type==="series"?"Series":"Film")+'</div><h1>'+esc(x.name)+'</h1><div class="meta">'+esc(x.releaseInfo||"")+'</div><p class="desc">'+esc(x.description||"")+'</p><button class="btn play" id="detailPlay">▶ Play</button><button class="btn list" id="detailList">＋ My List</button>';
+   if(type==="series"&&d.seasons&&d.seasons.length){
+     html+='<div style="margin-top:22px"><h3>Seasons</h3><div id="seasonButtons" style="display:flex;gap:8px;flex-wrap:wrap">'+d.seasons.map(function(s){return '<button class="btn list seasonBtn" data-season="'+s.season+'">Season '+s.season+'</button>';}).join("")+'</div><div id="episodes" class="empty">Loading episodes…</div></div>';
+   }
+   html+='</div></div></div>';
+   o.innerHTML=html;
+   document.getElementById("close").onclick=function(){o.classList.remove("show")};
+   document.getElementById("detailPlay").onclick=function(){play(x)};
+   document.getElementById("detailList").onclick=function(){toggleList(x)};
+   if(type==="series"&&d.seasons&&d.seasons.length){
+     function loadSeason(n){
+       document.getElementById("episodes").innerHTML="Loading episodes…";
+       fetch(base+"/app/api/episodes?id="+encodeURIComponent(x.id)+"&season="+n,{cache:"no-store"}).then(function(r){return r.json()}).then(function(q){
+         var eps=q.episodes||[];
+         document.getElementById("episodes").innerHTML=eps.length?eps.map(function(ep){return '<button class="stream episodeBtn" data-id="'+esc(ep.id)+'" style="display:block;width:100%;text-align:left"><b>E'+ep.episode+" — "+esc(ep.name)+'</b><br><small>'+esc(ep.releaseInfo||"")+'</small></button>';}).join(""):"No episodes found.";
+         document.querySelectorAll(".episodeBtn").forEach(function(b){b.onclick=function(){var ep=eps.find(function(z){return z.id===b.getAttribute("data-id")});if(ep)play(ep);};});
+       });
+     }
+     document.querySelectorAll(".seasonBtn").forEach(function(b){b.onclick=function(){loadSeason(parseInt(b.getAttribute("data-season"),10));};});
+     loadSeason(d.seasons[0].season);
+   }
+ }).catch(function(){o.innerHTML='<div class="modal"><button class="close" id="close">×</button><div class="empty">Could not load details.</div></div>';document.getElementById("close").onclick=function(){o.classList.remove("show")};});
+}
+function bind(){
+ document.querySelectorAll(".card").forEach(function(c){c.onclick=function(){showDetails(c.getAttribute("data-type")||"movie",c.getAttribute("data-id"));};c.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();c.click();}};});
+}
+function loadPage(p){
+ var m=document.getElementById("main");m.innerHTML='<div class="empty">Loading…</div>';
+ if(p==="list"){var a=JSON.parse(localStorage.getItem("skynetMyList")||"[]");m.innerHTML=a.length?row("My List",a):'<div class="empty">Your My List is empty.</div>';bind();return;}
+ var jobs=p==="series"?[get("series","skynet-trending-series"),get("series","skynet-popular-series"),get("series","skynet-top-rated-series")]:p==="films"?[get("movie","skynet-trending-movies"),get("movie","skynet-popular-movies"),get("movie","skynet-top-rated-movies"),get("movie","skynet-new-releases-movies")]:p==="new"?[get("movie","skynet-new-releases-movies")]:[get("movie","skynet-trending-movies"),get("movie","skynet-popular-movies"),get("movie","skynet-top-rated-movies"),get("series","skynet-trending-series"),get("movie","skynet-new-releases-movies")];
+ Promise.all(jobs).then(function(a){var flat=a.flat();if(flat[0])setHero(flat[0]);m.innerHTML=a.map(function(items,i){return row((p==="home"?["Trending now","Popular films","Top rated","Popular series","Fresh this week"]:p==="films"?["Trending","Popular","Top Rated","New Releases"]:p==="series"?["Trending","Popular","Top Rated"]:["New & Trending"])[i]||"Sources",items);}).join("");bind();});
+}
+document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){document.querySelectorAll(".tab").forEach(function(x){x.classList.toggle("active",x===b);});loadPage(b.getAttribute("data-page"));};});
+document.getElementById("heroPlay").onclick=function(){if(hero)play(hero);};
+document.getElementById("heroList").onclick=function(){if(hero)toggleList(hero);};
+document.getElementById("search").onclick=function(){var q=prompt("Search Skynet");if(!q)return;fetch(base+"/app/api/search?q="+encodeURIComponent(q.trim()),{cache:"no-store"}).then(function(r){return r.json()}).then(function(d){document.getElementById("main").innerHTML=row("Search results",d.results||[]);bind();});};
+document.addEventListener("keydown",function(e){var a=document.activeElement;if(!a)return;if(a.classList.contains("card")&&(e.key==="ArrowLeft"||e.key==="ArrowRight")){var r=a.closest(".row"),cs=[].slice.call(r.querySelectorAll(".card")),i=cs.indexOf(a);e.preventDefault();(e.key==="ArrowLeft"?cs[i-1]:cs[i+1])?.focus();}if(e.key==="Escape"){var o=document.getElementById("overlay");if(o&&o.classList.contains("show"))o.classList.remove("show");}});
+loadPage("home");
+})();
+\`);
 });
 app.get("/app-v3", (_req, res) => {
   res.set({
