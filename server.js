@@ -879,18 +879,35 @@ app.get("/app/api/vod-catalog/:type/:id.json", async (req, res) => {
   try {
     const id = String(req.params.id || "");
     const type = req.params.type === "series" ? "series" : "movie";
-    const routes = {
-      "skynet-trending-movies": "/trending/movie/week?language=en-US&page=1",
-      "skynet-popular-movies": "/movie/popular?language=en-US&region=GB&page=1",
-      "skynet-top-rated-movies": "/movie/top_rated?language=en-US&region=GB&page=1",
-      "skynet-trending-series": "/trending/tv/week?language=en-US&page=1",
-      "skynet-popular-series": "/tv/popular?language=en-US&page=1",
-      "skynet-new-releases-movies": "/movie/now_playing?language=en-US&region=GB&page=1"
+    const routeBases = {
+      "skynet-trending-movies": "/trending/movie/week?language=en-US",
+      "skynet-popular-movies": "/movie/popular?language=en-US&region=GB",
+      "skynet-top-rated-movies": "/movie/top_rated?language=en-US&region=GB",
+      "skynet-trending-series": "/trending/tv/week?language=en-US",
+      "skynet-popular-series": "/tv/popular?language=en-US",
+      "skynet-new-releases-movies": "/movie/now_playing?language=en-US&region=GB"
     };
-    if (!routes[id]) return res.status(404).json({ metas: [] });
-    const data = await tmdb(routes[id]);
-    const metas = (data.results || []).slice(0, 50).map(x => catalogMeta(x, type));
-    res.set("Cache-Control", "no-store");
+    if (!routeBases[id]) return res.status(404).json({ metas: [] });
+
+    // TMDB returns about 20 titles per page. Fetch three pages so the
+    // Skynet app can actually display the requested 50 titles.
+    const pages = [1, 2, 3];
+    const data = await Promise.all(
+      pages.map(page => tmdb(routeBases[id] + "&page=" + page))
+    );
+    const seen = new Set();
+    const metas = [];
+    for (const page of data) {
+      for (const x of (page.results || [])) {
+        if (!x || !x.id || seen.has(x.id)) continue;
+        seen.add(x.id);
+        metas.push(catalogMeta(x, type));
+        if (metas.length >= 50) break;
+      }
+      if (metas.length >= 50) break;
+    }
+
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
     res.json({ metas });
   } catch (e) {
     console.error("VOD CATALOG ERROR " + e.message);
