@@ -2,7 +2,8 @@ import express from "express";
 
 const app = express();
 const PORT = process.env.PORT || 10000;
-const TMDB_KEY = process.env.TMDB_API_KEY || "";\nconst BASE_URL = (process.env.BASE_URL || "${BASE_URL}").replace(/\\/+$/, "");
+const TMDB_KEY = process.env.TMDB_API_KEY || "";
+const BASE_URL = (process.env.BASE_URL || "https://skynet-stremio-addon.onrender.com").replace(/\/+$/, "");
 
 app.use((req, _res, next) => {
   console.log("REQUEST " + req.method + " " + req.originalUrl);
@@ -451,11 +452,11 @@ async function sendServiceCatalog(res, type, manifestUrl) {
 }
 
 app.get("/catalog/movie/skynet-services-movies.json", (_req, res) =>
-  sendServiceCatalog(res, "movie", "${BASE_URL}/manifest.json")
+  sendServiceCatalog(res, "movie", BASE_URL + "/manifest.json")
 );
 
 app.get("/catalog/series/skynet-services-series.json", (_req, res) =>
-  sendServiceCatalog(res, "series", "${BASE_URL}/manifest.json")
+  sendServiceCatalog(res, "series", BASE_URL + "/manifest.json")
 );
 
 const streamingProviders = {
@@ -506,7 +507,7 @@ async function sendMeta(res, type, id) {
       const service = serviceIcons.find(x => x.slug === slug);
       if (!service) return res.status(404).json({ meta: null });
 
-      const manifestUrl = "${BASE_URL}/manifest.json";
+      const manifestUrl = BASE_URL + "/manifest.json";
       const catalogId = "skynet-" + slug + "-" + (type === "movie" ? "movies" : "series");
 
       return res.json({
@@ -549,9 +550,9 @@ app.get("/meta/series/:id.json", (req, res) =>
 );
 
 app.get("/install", (_req, res) => {
-  const manifestUrl = "${BASE_URL}/manifest.json";
-  const moviesManifestUrl = "${BASE_URL}/movies/manifest.json";
-  const seriesManifestUrl = "${BASE_URL}/series/manifest.json";
+  const manifestUrl = BASE_URL + "/manifest.json";
+  const moviesManifestUrl = BASE_URL + "/movies/manifest.json";
+  const seriesManifestUrl = BASE_URL + "/series/manifest.json";
   const stremioUrl = "stremio://" + manifestUrl.replace(/^https?:\/\//, "");
   const moviesStremioUrl = "stremio://" + moviesManifestUrl.replace(/^https?:\/\//, "");
   const seriesStremioUrl = "stremio://" + seriesManifestUrl.replace(/^https?:\/\//, "");
