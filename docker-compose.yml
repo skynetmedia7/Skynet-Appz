@@ -1,0 +1,9 @@
+services:
+  skynet:
+    build: .
+    container_name: skynet
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "10000:10000"
