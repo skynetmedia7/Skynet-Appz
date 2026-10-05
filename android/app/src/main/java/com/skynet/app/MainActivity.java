@@ -69,22 +69,33 @@ public class MainActivity extends Activity {
     }
 
     void load(){
+        // Show the first catalogue as soon as it arrives. The old loader waited
+        // for every catalogue before rendering anything, making Fire TV appear
+        // frozen while the VPS was contacted repeatedly.
         new Thread(()->{
             try{
-                ArrayList<JSONObject> rows=new ArrayList<>();
+                ArrayList<JSONObject> first=new ArrayList<>();
                 allMetas.clear();
+                addCatalog(first,"movie","skynet-trending-movies.json","Trending");
+                runOnUiThread(()->{
+                    render(first);
+                    status.setText("SKYNET • Connected");
+                });
 
-                // Keep the main Skynet rows first.
-                addCatalog(rows,"movie","skynet-trending-movies.json","Trending");
-                addCatalog(rows,"movie","skynet-popular-movies.json","Popular Movies");
-                addCatalog(rows,"series","skynet-popular-series.json","Popular Series");
-
-                // Then load every additional catalogue advertised by the VPS manifest.
-                addManifestCatalogs(rows);
-
-                runOnUiThread(()->render(rows));
+                // Load the remaining catalogues after the UI is already usable.
+                ArrayList<JSONObject> more=new ArrayList<>();
+                addCatalog(more,"movie","skynet-popular-movies.json","Popular Movies");
+                addCatalog(more,"series","skynet-popular-series.json","Popular Series");
+                addManifestCatalogs(more);
+                runOnUiThread(()->{
+                    first.addAll(more);
+                    render(first);
+                    status.setText("SKYNET • Connected");
+                });
             }catch(Exception e){
-                runOnUiThread(()->status.setText("Skynet connection error"));
+                runOnUiThread(()->{
+                    if(content.getChildCount()==0) status.setText("Skynet connection error");
+                });
             }
         }).start();
     }
