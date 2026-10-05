@@ -732,10 +732,45 @@ app.get("/app/api/streams", async (req, res) => {
       } catch (_) {}
     }
 
-    // Turn AIOStreams' direct URLs into Skynet playback URLs. This is important
-    // for streams that require the request headers supplied in behaviorHints.
-    const playback = streams.filter(s => s && (s.url || s.externalUrl)).map(s => {
-      if (!s.url) return s;
+    // Only expose real media URLs. AIOStreams can return a debrid "Still
+    // downloading" web page while a file is being prepared. Do not pass that
+    // HTML page to VLC as if it were a video stream.
+    async function isPlayableMedia(stream) {
+      if (!stream) return false;
+      const source = String(stream.url || "");
+      if (!source || !/^https?:\/\//i.test(source)) return false;
+
+      try {
+        const parts = source.split("|");
+        const target = parts.shift();
+        const requestHeaders = stream.behaviorHints && stream.behaviorHints.proxyHeaders
+          ? (stream.behaviorHints.proxyHeaders.request || {})
+          : {};
+        const h = { ...requestHeaders, "range": "bytes=0-1" };
+        const upstream = await fetch(target, { headers: h, redirect: "follow" });
+        const ct = (upstream.headers.get("content-type") || "").toLowerCase();
+        const finalUrl = String(upstream.url || target).toLowerCase();
+
+        // A real video, audio stream or HLS playlist is playable.
+        if (/video\/|audio\/|mpegurl|vnd\.apple\.mpegurl/.test(ct)) return true;
+        if (/\.m3u8(?:$|[?#])/.test(finalUrl)) return true;
+
+        // HTML/text is a waiting/configuration page, not a playable source.
+        if (/text\/html|text\/plain|application\/json/.test(ct)) return false;
+        return false;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    const readyStreams = [];
+    for (const s of streams.filter(x => x && x.url)) {
+      if (await isPlayableMedia(s)) readyStreams.push(s);
+    }
+
+    // Turn ready AIOStreams URLs into Skynet playback URLs, preserving the
+    // request/response headers supplied in behaviorHints.
+    const playback = readyStreams.map(s => {
       const requestHeaders = s.behaviorHints && s.behaviorHints.proxyHeaders
         ? (s.behaviorHints.proxyHeaders.request || {})
         : {};
