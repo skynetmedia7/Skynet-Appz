@@ -142,15 +142,29 @@ app.get("/movies/manifest.json", (_req, res) => res.json(manifest));
 app.get("/series/manifest.json", (_req, res) => res.json(seriesManifest));
 
 async function tmdb(path) {
-  if (!TMDB_KEY) throw new Error("TMDB_API_KEY is not configured");
+  const key = process.env.TMDB_API_TOKEN || process.env.TMDB_API_KEY || "";
+  if (!key) throw new Error("TMDB API key/token is not configured");
 
-  const r = await fetch("https://api.themoviedb.org/3" + path, {
-    headers: {
-      Authorization: "Bearer " + TMDB_KEY,
-      accept: "application/json"
-    }
+  const url = new URL("https://api.themoviedb.org/3" + path);
+
+  // TMDB has two common credential formats:
+  // v4 Read Access Tokens use Authorization: Bearer.
+  // v3 API keys use ?api_key=.
+  if (/^eyJ/i.test(key)) {
+    const r = await fetch(url, {
+      headers: {
+        Authorization: "Bearer " + key,
+        accept: "application/json"
+      }
+    });
+    if (!r.ok) throw new Error("TMDB returned " + r.status);
+    return r.json();
+  }
+
+  url.searchParams.set("api_key", key);
+  const r = await fetch(url, {
+    headers: { accept: "application/json" }
   });
-
   if (!r.ok) throw new Error("TMDB returned " + r.status);
   return r.json();
 }
