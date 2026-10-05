@@ -318,9 +318,14 @@ public class MainActivity extends Activity {
         status.setText("Finding source for "+name+"…");
         prefs.edit().putString("resume_id",id).putString("resume_name",name).putString("resume_type",type).apply();
         new Thread(()->{try{
-            JSONArray a=new JSONObject(get(BASE+"/stream/"+type+"/"+URLEncoder.encode(id,"UTF-8")+".json")).optJSONArray("streams");
-            if(a==null||a.length()==0)throw new Exception();
-            String u=a.getJSONObject(0).optString("url"); if(u.length()==0)throw new Exception();
+            String endpoint=BASE+"/app/api/streams?type="+URLEncoder.encode(type,"UTF-8")+"&id="+URLEncoder.encode(id,"UTF-8");
+            JSONObject data=new JSONObject(get(endpoint));
+            JSONArray a=data.optJSONArray("streams");
+            if(a==null||a.length()==0)throw new Exception("No streams");
+            JSONObject stream=a.getJSONObject(0);
+            String u=stream.optString("url","");
+            if(u.length()==0)u=stream.optString("externalUrl","");
+            if(u.length()==0)throw new Exception("No stream URL");
             final String streamUrl=u;
             runOnUiThread(()->{
                 try{
@@ -337,10 +342,17 @@ public class MainActivity extends Activity {
                     status.setText("Playing "+name);
                 }catch(Exception ex){
                     status.setText("VLC could not play this stream");
+                    Toast.makeText(this,"VLC could not open the Skynet stream",Toast.LENGTH_LONG).show();
                 }
             });
-        }catch(Exception e){runOnUiThread(()->status.setText("No playable source returned"));}}).start();
+        }catch(Exception e){
+            runOnUiThread(()->{
+                status.setText("No playable source returned");
+                Toast.makeText(this,"Skynet could not find a playable source",Toast.LENGTH_LONG).show();
+            });
+        }}).start();
     }
+
     void loadImage(ImageView v,String url){ if(url==null||url.length()==0)return; new Thread(()->{try{
         HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection(); c.setConnectTimeout(8000); c.setReadTimeout(10000); c.connect();
         InputStream in=c.getInputStream(); Bitmap b=BitmapFactory.decodeStream(in); in.close(); if(b!=null)runOnUiThread(()->v.setImageBitmap(b));
