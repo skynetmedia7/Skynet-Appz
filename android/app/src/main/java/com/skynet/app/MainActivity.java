@@ -43,7 +43,7 @@ public class MainActivity extends Activity {
         prefs=getSharedPreferences("skynet",0);
 
         root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(BG);
-        root.setPadding(dp(16),dp(8),0,0);
+        root.setPadding(dp(16),dp(24),0,0);
 
         LinearLayout top=new LinearLayout(this); top.setGravity(Gravity.CENTER_VERTICAL);
         TextView logo=label("SKYNET",28,GOLD); logo.setLetterSpacing(.08f);
@@ -188,20 +188,77 @@ public class MainActivity extends Activity {
     }
 
     void doSearch(String q){
-        q=q.trim().toLowerCase(Locale.UK); if(q.length()==0){showHome();return;}
-        content.removeAllViews(); TextView h=label("Search results",22,Color.WHITE); h.setPadding(0,dp(15),0,dp(10)); content.addView(h);
-        LinearLayout line=new LinearLayout(this); line.setOrientation(LinearLayout.HORIZONTAL);
-        int count=0;
-        for(JSONObject m:allMetas){
-            if(m.optString("name").toLowerCase(Locale.UK).contains(q)){
-                FrameLayout card=new FrameLayout(this); ImageView im=new ImageView(this); im.setScaleType(ImageView.ScaleType.CENTER_CROP); card.addView(im,new FrameLayout.LayoutParams(dp(125),dp(185))); card.setOnClickListener(v->details("movie",m)); line.addView(card,new LinearLayout.LayoutParams(dp(125),dp(185))); loadImage(im,m.optString("poster")); count++;
+        q=q.trim();
+        if(q.length()==0){showHome();return;}
+        content.removeAllViews();
+        TextView h=label("Search results",22,Color.WHITE);
+        h.setPadding(0,dp(15),0,dp(10));
+        content.addView(h);
+        status.setText("Searching Skynet…");
+        final String query=q;
+        new Thread(()->{
+            try{
+                String u=BASE+"/app/api/search?q="+URLEncoder.encode(query,"UTF-8");
+                JSONObject data=new JSONObject(get(u));
+                JSONArray results=data.optJSONArray("results");
+                ArrayList<JSONObject> found=new ArrayList<>();
+                if(results!=null){
+                    for(int i=0;i<Math.min(30,results.length());i++){
+                        JSONObject m=results.optJSONObject(i);
+                        if(m!=null)found.add(m);
+                    }
+                }
+                runOnUiThread(()->renderSearch(found));
+            }catch(Exception e){
+                runOnUiThread(()->{
+                    status.setText("Search unavailable");
+                    renderSearch(new ArrayList<>());
+                });
             }
-            if(count>=20)break;
-        }
-        HorizontalScrollView hs=new HorizontalScrollView(this); hs.addView(line); content.addView(hs);
-        status.setText(count+" result(s)");
+        }).start();
     }
 
+    void renderSearch(ArrayList<JSONObject> found){
+        content.removeViews(1,Math.max(0,content.getChildCount()-1));
+        if(found.size()==0){
+            TextView empty=label("No results found",17,Color.GRAY);
+            empty.setPadding(0,dp(20),0,dp(20));
+            content.addView(empty);
+            status.setText("0 results");
+            return;
+        }
+        LinearLayout grid=new LinearLayout(this);
+        grid.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout row=null;
+        for(int i=0;i<found.size();i++){
+            if(i%3==0){
+                row=new LinearLayout(this);
+                row.setGravity(Gravity.LEFT);
+                grid.addView(row,new LinearLayout.LayoutParams(-1,dp(185)));
+            }
+            JSONObject m=found.get(i);
+            FrameLayout card=new FrameLayout(this);
+            card.setFocusable(true); card.setClickable(true);
+            ImageView im=new ImageView(this);
+            im.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            im.setBackground(bg(Color.rgb(30,30,30),dp(7)));
+            card.addView(im,new FrameLayout.LayoutParams(dp(105),dp(175)));
+            TextView nt=label(m.optString("name",""),11,Color.WHITE);
+            nt.setGravity(Gravity.BOTTOM|Gravity.LEFT);
+            nt.setPadding(dp(6),0,dp(6),dp(6));
+            nt.setMaxLines(2);
+            nt.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                    new int[]{Color.TRANSPARENT,Color.argb(235,0,0,0)}));
+            card.addView(nt,new FrameLayout.LayoutParams(dp(105),dp(58),Gravity.BOTTOM));
+            card.setOnClickListener(v->details(m.optString("type","movie"),m));
+            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(105),dp(175));
+            cp.setMargins(0,0,dp(10),0);
+            row.addView(card,cp);
+            loadImage(im,m.optString("poster"));
+        }
+        content.addView(grid);
+        status.setText(found.size()+" result(s)");
+    }
     void showHome(){ search.setText(""); load(); }
 
     void play(String type,String id,String name){
