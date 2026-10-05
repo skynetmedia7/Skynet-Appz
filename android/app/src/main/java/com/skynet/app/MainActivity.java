@@ -150,6 +150,7 @@ public class MainActivity extends Activity {
         JSONObject hero=rows.get(0).optJSONArray("metas").optJSONObject(0);
         if(hero!=null) addHero(hero,rows.get(0).optString("type","movie"));
         if(prefs.contains("resume_id")) addResume();
+        addMyList();
         for(JSONObject r:rows){
             try{ addRow(r.optString("name","Skynet"),r.optString("type","movie"),r.getJSONArray("metas")); }catch(Exception ignored){}
         }
@@ -238,6 +239,48 @@ public class MainActivity extends Activity {
         Button b=button("▶  "+name+"   •   Continue",Color.rgb(30,30,30),Color.WHITE);
         b.setOnClickListener(v->play(prefs.getString("resume_type","movie"),prefs.getString("resume_id",""),name));
         content.addView(b,new LinearLayout.LayoutParams(-1,dp(55)));
+    }
+
+    void addMyList(){
+        ArrayList<JSONObject> favs=new ArrayList<>();
+        for(JSONObject m:allMetas){
+            String id=m.optString("id","");
+            if(id.length()>0 && prefs.getBoolean("fav_"+id,false)){
+                boolean duplicate=false;
+                for(JSONObject x:favs) if(id.equals(x.optString("id",""))){duplicate=true;break;}
+                if(!duplicate) favs.add(m);
+            }
+        }
+        if(favs.size()==0)return;
+        TextView t=label("My List",21,Color.WHITE);
+        t.setPadding(0,dp(18),0,dp(8));
+        content.addView(t,new LinearLayout.LayoutParams(-1,dp(54)));
+        HorizontalScrollView hs=new HorizontalScrollView(this);
+        hs.setHorizontalScrollBarEnabled(false);
+        LinearLayout line=new LinearLayout(this);
+        line.setPadding(0,0,dp(12),0);
+        for(JSONObject m:favs){
+            FrameLayout card=new FrameLayout(this);
+            card.setFocusable(true); card.setClickable(true);
+            ImageView im=new ImageView(this);
+            im.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            im.setBackground(bg(Color.rgb(30,30,30),dp(7)));
+            card.addView(im,new FrameLayout.LayoutParams(dp(125),dp(185)));
+            TextView nt=label(m.optString("name",""),12,Color.WHITE);
+            nt.setGravity(Gravity.BOTTOM|Gravity.LEFT);
+            nt.setPadding(dp(7),0,dp(7),dp(7));
+            nt.setMaxLines(2);
+            nt.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                    new int[]{Color.TRANSPARENT,Color.argb(235,0,0,0)}));
+            card.addView(nt,new FrameLayout.LayoutParams(-1,dp(65),Gravity.BOTTOM));
+            card.setOnClickListener(v->details(m.optString("type","movie"),m));
+            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(125),dp(185));
+            cp.setMargins(0,0,dp(10),0);
+            line.addView(card,cp);
+            loadImage(im,m.optString("poster"));
+        }
+        hs.addView(line);
+        content.addView(hs,new LinearLayout.LayoutParams(-1,dp(195)));
     }
 
     void doSearch(String q){
