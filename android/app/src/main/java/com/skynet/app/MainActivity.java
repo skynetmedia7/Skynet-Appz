@@ -333,11 +333,6 @@ public class MainActivity extends Activity {
                     vlc.setDataAndType(Uri.parse(streamUrl),"video/*");
                     vlc.setPackage("org.videolan.vlc");
                     vlc.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    if(vlc.resolveActivity(getPackageManager())==null){
-                        status.setText("VLC is not installed");
-                        Toast.makeText(this,"Please install VLC for Skynet playback",Toast.LENGTH_LONG).show();
-                        return;
-                    }
                     startActivity(vlc);
                     status.setText("Playing "+name);
                 }catch(Exception ex){
