@@ -398,48 +398,56 @@ public class MainActivity extends Activity {
     }
 
     void play(String type,String id,String name){
-        status.setText("Finding source…");
+        status.setText("Finding source for "+name+"…");
         prefs.edit().putString("resume_id",id).putString("resume_name",name).putString("resume_type",type).apply();
-
         new Thread(()->{
             try{
                 String endpoint=BASE+"/app/api/streams?type="+URLEncoder.encode(type,"UTF-8")+"&id="+URLEncoder.encode(id,"UTF-8");
                 JSONObject stream=null;
+                String lastMessage="No playable source returned";
 
-                // Keep Fire TV responsive: make only two short source checks.
-                for(int attempt=0;attempt<2 && stream==null;attempt++){
-                    JSONObject data=new JSONObject(get(endpoint));
-                    JSONArray a=data.optJSONArray("streams");
-                    stream=findPlayableStream(a);
-                    if(stream==null && attempt==0){
-                        runOnUiThread(()->status.setText("Preparing video…"));
-                        Thread.sleep(3000);
+                // AIOStreams may briefly return a debrid/waiting page while the
+                // file is being prepared. Poll the Skynet API instead of opening
+                // that page in VLC.
+                for(int attempt=0;attempt<7 && stream==null;attempt++){
+                    try{
+                        JSONObject data=new JSONObject(get(endpoint));
+                        JSONArray a=data.optJSONArray("streams");
+                        stream=findPlayableStream(a);
+                        if(stream==null)lastMessage=(a==null||a.length()==0)
+                                ?"Waiting for a source…":"Waiting for the video to become ready…";
+                    }catch(Exception ex){
+                        lastMessage="Waiting for source…";
+                    }
+                    if(stream==null && attempt<6){
+                        final String msg=lastMessage;
+                        runOnUiThread(()->status.setText(msg));
+                        Thread.sleep(5000);
                     }
                 }
 
-                if(stream==null)throw new Exception("No ready playable source");
+                if(stream==null)throw new Exception(lastMessage);
                 String u=stream.optString("url","");
                 if(u.length()==0)u=stream.optString("externalUrl","");
-                if(!looksLikePlayableUrl(u))throw new Exception("Invalid stream URL");
-
+                if(u.length()==0)throw new Exception("No stream URL");
                 final String streamUrl=u;
                 runOnUiThread(()->{
                     try{
-                        // Let Fire TV use the installed video player automatically.
-                        Intent player=new Intent(Intent.ACTION_VIEW);
-                        player.setDataAndType(Uri.parse(streamUrl),"video/*");
-                        player.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(player);
+                        Intent vlc=new Intent(Intent.ACTION_VIEW);
+                        vlc.setDataAndType(Uri.parse(streamUrl),"video/*");
+                        vlc.setPackage("org.videolan.vlc");
+                        vlc.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(vlc);
                         status.setText("Playing "+name);
                     }catch(Exception ex){
-                        status.setText("No video player available");
-                        Toast.makeText(this,"Install a video player such as VLC, then try again.",Toast.LENGTH_LONG).show();
+                        status.setText("VLC could not play this stream");
+                        Toast.makeText(this,"VLC could not open the Skynet stream",Toast.LENGTH_LONG).show();
                     }
                 });
             }catch(Exception e){
                 runOnUiThread(()->{
-                    status.setText("Video source not ready");
-                    Toast.makeText(this,"The video source isn't ready yet. Try PLAY again.",Toast.LENGTH_LONG).show();
+                    status.setText("No playable source returned");
+                    Toast.makeText(this,"Video is not ready yet. Try PLAY again in a moment.",Toast.LENGTH_LONG).show();
                 });
             }
         }).start();
