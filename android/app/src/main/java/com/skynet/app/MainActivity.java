@@ -324,19 +324,19 @@ public class MainActivity extends Activity {
             final String streamUrl=u;
             runOnUiThread(()->{
                 try{
-                    // Always hand playback to Nova Video Player.
-                    Intent nova=new Intent(Intent.ACTION_VIEW,Uri.parse(streamUrl));
-                    nova.setPackage("org.courville.nova");
-                    nova.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    if(nova.resolveActivity(getPackageManager())==null){
-                        status.setText("Nova Video Player is not installed");
-                        Toast.makeText(this,"Please install Nova Video Player to play Skynet streams",Toast.LENGTH_LONG).show();
+                    Intent vlc=new Intent(Intent.ACTION_VIEW);
+                    vlc.setDataAndType(Uri.parse(streamUrl),"video/*");
+                    vlc.setPackage("org.videolan.vlc");
+                    vlc.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    if(vlc.resolveActivity(getPackageManager())==null){
+                        status.setText("VLC is not installed");
+                        Toast.makeText(this,"Please install VLC for Skynet playback",Toast.LENGTH_LONG).show();
                         return;
                     }
-                    startActivity(nova);
+                    startActivity(vlc);
                     status.setText("Playing "+name);
                 }catch(Exception ex){
-                    status.setText("Nova Video Player could not play this stream");
+                    status.setText("VLC could not play this stream");
                 }
             });
         }catch(Exception e){runOnUiThread(()->status.setText("No playable source returned"));}}).start();
