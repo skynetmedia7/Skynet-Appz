@@ -179,7 +179,7 @@ public class MainActivity extends Activity {
 
     Button button(String s,int c,int tc){
         Button b=new Button(this); b.setText(s); b.setTextColor(tc); b.setTextSize(13); b.setAllCaps(false);
-        b.setTypeface(null,Typeface.BOLD); b.setBackground(bg(c,dp(8))); b.setFocusable(true); b.setFocusableInTouchMode(true);
+        b.setTypeface(null,Typeface.BOLD); b.setBackground(bg(c,dp(8))); b.setFocusable(true); b.setFocusableInTouchMode(false);
         return b;
     }
 
