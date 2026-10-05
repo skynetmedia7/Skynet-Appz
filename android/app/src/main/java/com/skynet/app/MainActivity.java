@@ -321,7 +321,24 @@ public class MainActivity extends Activity {
             JSONArray a=new JSONObject(get(BASE+"/stream/"+type+"/"+URLEncoder.encode(id,"UTF-8")+".json")).optJSONArray("streams");
             if(a==null||a.length()==0)throw new Exception();
             String u=a.getJSONObject(0).optString("url"); if(u.length()==0)throw new Exception();
-            runOnUiThread(()->{status.setText("Playing "+name);startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(u)));});
+            final String streamUrl=u;
+            runOnUiThread(()->{
+                try{
+                    // Always hand playback to Nova Video Player.
+                    Intent nova=new Intent(Intent.ACTION_VIEW,Uri.parse(streamUrl));
+                    nova.setPackage("org.courville.nova");
+                    nova.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    if(nova.resolveActivity(getPackageManager())==null){
+                        status.setText("Nova Video Player is not installed");
+                        Toast.makeText(this,"Please install Nova Video Player to play Skynet streams",Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    startActivity(nova);
+                    status.setText("Playing "+name);
+                }catch(Exception ex){
+                    status.setText("Nova Video Player could not play this stream");
+                }
+            });
         }catch(Exception e){runOnUiThread(()->status.setText("No playable source returned"));}}).start();
     }
     void loadImage(ImageView v,String url){ if(url==null||url.length()==0)return; new Thread(()->{try{
