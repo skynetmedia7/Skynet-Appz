@@ -1,12 +1,5 @@
-# Skynet Stremio Addon
+# Skynet App
 
-A small Stremio catalogue addon branded Skynet.
+Android Skynet app plus backend files. The Android project is in /android.
 
-## Environment
-Set TMDB_API_KEY in Render. The value is kept server-side and is never placed in the Stremio manifest.
-
-## Endpoints
-- /manifest.json
-- /catalog/movie/skynet-popular-movies.json
-- /catalog/series/skynet-popular-series.json
-- /health
+The APK is built automatically by GitHub Actions when the Android project changes.
