@@ -317,12 +317,53 @@ public class MainActivity extends Activity {
     void play(String type,String id,String name){
         status.setText("Finding source for "+name+"…");
         prefs.edit().putString("resume_id",id).putString("resume_name",name).putString("resume_type",type).apply();
-        new Thread(()->{try{
-            JSONArray a=new JSONObject(get(BASE+"/stream/"+type+"/"+URLEncoder.encode(id,"UTF-8")+".json")).optJSONArray("streams");
-            if(a==null||a.length()==0)throw new Exception();
-            String u=a.getJSONObject(0).optString("url"); if(u.length()==0)throw new Exception();
-            runOnUiThread(()->{status.setText("Playing "+name);startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(u)));});
-        }catch(Exception e){runOnUiThread(()->status.setText("No playable source returned"));}}).start();
+        new Thread(()->{
+            try{
+                String safeId=URLEncoder.encode(id,"UTF-8").replace("+","%20");
+                JSONObject data=new JSONObject(get(BASE+"/stream/"+type+"/"+safeId+".json"));
+                JSONArray streams=data.optJSONArray("streams");
+                if(streams==null||streams.length()==0)throw new Exception("No streams");
+
+                // Prefer the first real media URL, but don't assume the backend
+                // always puts it in exactly the same field.
+                String u="";
+                for(int i=0;i<streams.length();i++){
+                    JSONObject s=streams.optJSONObject(i);
+                    if(s==null)continue;
+                    u=s.optString("url","");
+                    if(u.length()==0)u=s.optString("externalUrl","");
+                    if(u.length()==0)u=s.optString("link","");
+                    if(u.startsWith("http://")||u.startsWith("https://"))break;
+                    u="";
+                }
+                if(u.length()==0)throw new Exception("Stream URL missing");
+
+                final String streamUrl=u;
+                runOnUiThread(()->{
+                    try{
+                        Uri uri=Uri.parse(streamUrl);
+                        Intent intent=new Intent(Intent.ACTION_VIEW);
+                        intent.setDataAndType(uri,"video/*");
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        if(intent.resolveActivity(getPackageManager())==null){
+                            // Some TV boxes only advertise a generic VIEW handler.
+                            Intent generic=new Intent(Intent.ACTION_VIEW,uri);
+                            if(generic.resolveActivity(getPackageManager())==null)
+                                throw new ActivityNotFoundException();
+                            startActivity(generic);
+                        }else{
+                            startActivity(intent);
+                        }
+                        status.setText("Playing "+name);
+                    }catch(Exception ex){
+                        status.setText("No video player found — install VLC or another video player");
+                        Toast.makeText(this,"No compatible video player found",Toast.LENGTH_LONG).show();
+                    }
+                });
+            }catch(Exception e){
+                runOnUiThread(()->status.setText("No playable source returned"));
+            }
+        }).start();
     }
 
     void loadImage(ImageView v,String url){ if(url==null||url.length()==0)return; new Thread(()->{try{
