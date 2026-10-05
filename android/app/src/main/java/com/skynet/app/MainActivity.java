@@ -71,14 +71,67 @@ public class MainActivity extends Activity {
     void load(){
         new Thread(()->{
             try{
-                ArrayList<JSONObject> first=new ArrayList<>();
+                ArrayList<JSONObject> rows=new ArrayList<>();
                 allMetas.clear();
-                addCatalog(first,"movie","skynet-trending-movies.json","Trending");
-                addCatalog(first,"movie","skynet-popular-movies.json","Popular Movies");
-                addCatalog(first,"series","skynet-popular-series.json","Popular Series");
-                runOnUiThread(()->render(first));
-            }catch(Exception e){runOnUiThread(()->status.setText("Skynet connection error")); }
+
+                // Keep the main Skynet rows first.
+                addCatalog(rows,"movie","skynet-trending-movies.json","Trending");
+                addCatalog(rows,"movie","skynet-popular-movies.json","Popular Movies");
+                addCatalog(rows,"series","skynet-popular-series.json","Popular Series");
+
+                // Then load every additional catalogue advertised by the VPS manifest.
+                addManifestCatalogs(rows);
+
+                runOnUiThread(()->render(rows));
+            }catch(Exception e){
+                runOnUiThread(()->status.setText("Skynet connection error"));
+            }
         }).start();
+    }
+
+    void addManifestCatalogs(ArrayList<JSONObject> rows)throws Exception{
+        JSONObject manifest=new JSONObject(get(BASE+"/manifest.json"));
+        JSONArray catalogs=manifest.optJSONArray("catalogs");
+        if(catalogs==null)return;
+
+        HashSet<String> seen=new HashSet<>();
+        for(JSONObject r:rows){
+            seen.add(r.optString("type","movie")+"|"+r.optString("name","").toLowerCase(Locale.UK));
+        }
+
+        for(int i=0;i<catalogs.length();i++){
+            JSONObject cat=catalogs.optJSONObject(i);
+            if(cat==null)continue;
+
+            String type=cat.optString("type","movie");
+            String id=cat.optString("id","");
+            String name=cat.optString("name",id);
+            if(id.length()==0||name.length()==0)continue;
+
+            String key=type+"|"+name.toLowerCase(Locale.UK);
+            if(seen.contains(key))continue;
+
+            // The manifest defines the exact catalogue route. If a catalogue
+            // is empty or unavailable, skip it without stopping the others.
+            try{
+                JSONArray metas=new JSONObject(get(BASE+"/catalog/"+type+"/"+id+".json")).optJSONArray("metas");
+                if(metas==null||metas.length()==0)continue;
+
+                ArrayList<JSONObject> list=new ArrayList<>();
+                for(int j=0;j<Math.min(20,metas.length());j++){
+                    JSONObject m=metas.optJSONObject(j);
+                    if(m!=null){list.add(m);allMetas.add(m);}
+                }
+                if(list.size()==0)continue;
+
+                JSONObject row=new JSONObject();
+                row.put("type",type);
+                row.put("name",name);
+                row.put("metas",new JSONArray(list));
+                rows.add(row);
+                seen.add(key);
+            }catch(Exception ignored){}
+        }
     }
 
     void addCatalog(ArrayList<JSONObject> rows,String type,String file,String name)throws Exception{
