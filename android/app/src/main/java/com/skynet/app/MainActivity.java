@@ -71,24 +71,24 @@ public class MainActivity extends Activity {
     void load(){
         new Thread(()->{
             try{
-                JSONObject manifest=new JSONObject(get(BASE+"/manifest.json"));
-                JSONArray catalogs=manifest.optJSONArray("catalogs");
                 ArrayList<JSONObject> first=new ArrayList<>();
-                if(catalogs!=null){
-                    for(int i=0;i<Math.min(6,catalogs.length());i++){
-                        JSONObject c=catalogs.getJSONObject(i);
-                        String type=c.optString("type","movie"), id=c.optString("id"), name=c.optString("name","Skynet");
-                        JSONArray metas=new JSONObject(get(BASE+"/catalog/"+type+"/"+URLEncoder.encode(id,"UTF-8")+".json")).optJSONArray("metas");
-                        if(metas!=null){
-                            ArrayList<JSONObject> list=new ArrayList<>();
-                            for(int j=0;j<Math.min(20,metas.length());j++){ JSONObject m=metas.getJSONObject(j); list.add(m); allMetas.add(m); }
-                            JSONObject row=new JSONObject(); row.put("type",type); row.put("name",name); row.put("metas",new JSONArray(list)); first.add(row);
-                        }
-                    }
-                }
+                allMetas.clear();
+                addCatalog(first,"movie","skynet-trending-movies.json","Trending");
+                addCatalog(first,"movie","skynet-popular-movies.json","Popular Movies");
+                addCatalog(first,"series","skynet-popular-series.json","Popular Series");
                 runOnUiThread(()->render(first));
             }catch(Exception e){runOnUiThread(()->status.setText("Skynet connection error")); }
         }).start();
+    }
+
+    void addCatalog(ArrayList<JSONObject> rows,String type,String file,String name)throws Exception{
+        JSONArray metas=new JSONObject(get(BASE+"/catalog/"+type+"/"+file)).optJSONArray("metas");
+        if(metas==null)return;
+        ArrayList<JSONObject> list=new ArrayList<>();
+        for(int j=0;j<Math.min(20,metas.length());j++){
+            JSONObject m=metas.getJSONObject(j); list.add(m); allMetas.add(m);
+        }
+        JSONObject row=new JSONObject(); row.put("type",type); row.put("name",name); row.put("metas",new JSONArray(list)); rows.add(row);
     }
 
     void render(ArrayList<JSONObject> rows){
