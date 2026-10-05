@@ -199,7 +199,7 @@ public class MainActivity extends Activity {
             if(a==null||a.length()==0)throw new Exception();
             String u=a.getJSONObject(0).optString("url"); if(u.length()==0)throw new Exception();
             runOnUiThread(()->{status.setText("Playing "+name);startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(u)));});
-        }catch(Exception e){runOnUiThread(()->status.setText("No playable source returned"));}});
+        }catch(Exception e){runOnUiThread(()->status.setText("No playable source returned"));}}).start();
     }
 
     void loadImage(ImageView v,String url){ if(url==null||url.length()==0)return; new Thread(()->{try{
