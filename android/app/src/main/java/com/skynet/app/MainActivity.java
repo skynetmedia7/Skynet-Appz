@@ -130,19 +130,32 @@ public class MainActivity extends Activity {
     }
 
     void addRow(String name,String type,JSONArray metas){
-        TextView title=label(name,21,Color.WHITE); title.setPadding(0,dp(18),0,dp(8)); content.addView(title,new LinearLayout.LayoutParams(-1,dp(54)));
+        TextView title=label(name,21,Color.WHITE); title.setPadding(0,dp(18),0,dp(8));
+        content.addView(title,new LinearLayout.LayoutParams(-1,dp(54)));
         HorizontalScrollView hs=new HorizontalScrollView(this); hs.setHorizontalScrollBarEnabled(false);
         LinearLayout line=new LinearLayout(this); line.setPadding(0,0,dp(12),0);
         for(int i=0;i<Math.min(20,metas.length());i++){
             JSONObject m=metas.optJSONObject(i); if(m==null)continue;
             FrameLayout card=new FrameLayout(this); card.setFocusable(true); card.setClickable(true);
-            ImageView im=new ImageView(this); im.setScaleType(ImageView.ScaleType.CENTER_CROP); im.setBackground(bg(Color.rgb(25,25,25),dp(7)));
+            ImageView im=new ImageView(this); im.setScaleType(ImageView.ScaleType.CENTER_CROP); im.setBackground(bg(Color.rgb(30,30,30),dp(7)));
             card.addView(im,new FrameLayout.LayoutParams(dp(125),dp(185)));
-            TextView badge=label(m.optString("id","").contains("4k")?"4K":"",10,GOLD); badge.setGravity(Gravity.CENTER); badge.setBackground(bg(Color.argb(210,0,0,0),dp(5)));
-            FrameLayout.LayoutParams bp=new FrameLayout.LayoutParams(dp(38),dp(25),Gravity.TOP|Gravity.RIGHT); bp.setMargins(0,dp(6),dp(5),0); card.addView(badge,bp);
+
+            TextView nameText=label(m.optString("name",""),12,Color.WHITE);
+            nameText.setGravity(Gravity.BOTTOM|Gravity.LEFT); nameText.setPadding(dp(7),0,dp(7),dp(7));
+            GradientDrawable nameBg=new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                    new int[]{Color.TRANSPARENT,Color.argb(235,0,0,0)});
+            nameText.setBackground(nameBg);
+            FrameLayout.LayoutParams np=new FrameLayout.LayoutParams(-1,dp(65),Gravity.BOTTOM);
+            card.addView(nameText,np);
+
+            String id=m.optString("id","").toLowerCase(Locale.UK);
+            TextView badge=label(id.contains("4k")?"4K":"HD",10,GOLD); badge.setGravity(Gravity.CENTER); badge.setBackground(bg(Color.argb(210,0,0,0),dp(5)));
+            FrameLayout.LayoutParams bp=new FrameLayout.LayoutParams(dp(38),dp(25),Gravity.TOP|Gravity.RIGHT);
+            bp.setMargins(0,dp(6),dp(5),0); card.addView(badge,bp);
+
             card.setOnClickListener(v->details(type,m));
-            line.addView(card,new LinearLayout.LayoutParams(dp(125),dp(185)));
-            LinearLayout.LayoutParams lp=(LinearLayout.LayoutParams)card.getLayoutParams(); lp.setMargins(0,0,dp(10),0); card.setLayoutParams(lp);
+            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(125),dp(185));
+            cp.setMargins(0,0,dp(10),0); line.addView(card,cp);
             loadImage(im,m.optString("poster"));
         }
         hs.addView(line); content.addView(hs,new LinearLayout.LayoutParams(-1,dp(195)));
