@@ -314,38 +314,100 @@ public class MainActivity extends Activity {
     }
     void showHome(){ search.setText(""); load(); }
 
+    boolean looksLikePlayableUrl(String u){
+        if(u==null||u.trim().length()==0)return false;
+        try{
+            Uri x=Uri.parse(u);
+            String host=x.getHost();
+            String path=x.getPath();
+            String s=(u+" "+(path==null?"":path)).toLowerCase(Locale.UK);
+
+            // Never send AIOStreams/debrid waiting or configuration pages to VLC.
+            if(host!=null){
+                host=host.toLowerCase(Locale.UK);
+                if(host.contains("aiostreams.elfhosted.com") &&
+                        (s.contains("/stremio/") || s.contains("configure") ||
+                         s.contains("download") || s.contains("waiting"))) return false;
+            }
+            if(s.contains("still-downloading") || s.contains("still_downloading") ||
+               s.contains("not-ready") || s.contains("not_ready")) return false;
+
+            // Obvious web pages are not playable media.
+            if(s.endsWith(".html") || s.endsWith(".htm") || s.contains("/configure?")) return false;
+            return true;
+        }catch(Exception e){ return false; }
+    }
+
+    JSONObject findPlayableStream(JSONArray a){
+        if(a==null)return null;
+        // Prefer a real URL over an external web page.
+        for(int i=0;i<a.length();i++){
+            JSONObject s=a.optJSONObject(i); if(s==null)continue;
+            String u=s.optString("url","");
+            if(looksLikePlayableUrl(u))return s;
+        }
+        for(int i=0;i<a.length();i++){
+            JSONObject s=a.optJSONObject(i); if(s==null)continue;
+            String u=s.optString("externalUrl","");
+            if(looksLikePlayableUrl(u))return s;
+        }
+        return null;
+    }
+
     void play(String type,String id,String name){
         status.setText("Finding source for "+name+"…");
         prefs.edit().putString("resume_id",id).putString("resume_name",name).putString("resume_type",type).apply();
-        new Thread(()->{try{
-            String endpoint=BASE+"/app/api/streams?type="+URLEncoder.encode(type,"UTF-8")+"&id="+URLEncoder.encode(id,"UTF-8");
-            JSONObject data=new JSONObject(get(endpoint));
-            JSONArray a=data.optJSONArray("streams");
-            if(a==null||a.length()==0)throw new Exception("No streams");
-            JSONObject stream=a.getJSONObject(0);
-            String u=stream.optString("url","");
-            if(u.length()==0)u=stream.optString("externalUrl","");
-            if(u.length()==0)throw new Exception("No stream URL");
-            final String streamUrl=u;
-            runOnUiThread(()->{
-                try{
-                    Intent vlc=new Intent(Intent.ACTION_VIEW);
-                    vlc.setDataAndType(Uri.parse(streamUrl),"video/*");
-                    vlc.setPackage("org.videolan.vlc");
-                    vlc.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(vlc);
-                    status.setText("Playing "+name);
-                }catch(Exception ex){
-                    status.setText("VLC could not play this stream");
-                    Toast.makeText(this,"VLC could not open the Skynet stream",Toast.LENGTH_LONG).show();
+        new Thread(()->{
+            try{
+                String endpoint=BASE+"/app/api/streams?type="+URLEncoder.encode(type,"UTF-8")+"&id="+URLEncoder.encode(id,"UTF-8");
+                JSONObject stream=null;
+                String lastMessage="No playable source returned";
+
+                // AIOStreams may briefly return a debrid/waiting page while the
+                // file is being prepared. Poll the Skynet API instead of opening
+                // that page in VLC.
+                for(int attempt=0;attempt<7 && stream==null;attempt++){
+                    try{
+                        JSONObject data=new JSONObject(get(endpoint));
+                        JSONArray a=data.optJSONArray("streams");
+                        stream=findPlayableStream(a);
+                        if(stream==null)lastMessage=(a==null||a.length()==0)
+                                ?"Waiting for a source…":"Waiting for the video to become ready…";
+                    }catch(Exception ex){
+                        lastMessage="Waiting for source…";
+                    }
+                    if(stream==null && attempt<6){
+                        final String msg=lastMessage;
+                        runOnUiThread(()->status.setText(msg));
+                        Thread.sleep(5000);
+                    }
                 }
-            });
-        }catch(Exception e){
-            runOnUiThread(()->{
-                status.setText("No playable source returned");
-                Toast.makeText(this,"Skynet could not find a playable source",Toast.LENGTH_LONG).show();
-            });
-        }}).start();
+
+                if(stream==null)throw new Exception(lastMessage);
+                String u=stream.optString("url","");
+                if(u.length()==0)u=stream.optString("externalUrl","");
+                if(u.length()==0)throw new Exception("No stream URL");
+                final String streamUrl=u;
+                runOnUiThread(()->{
+                    try{
+                        Intent vlc=new Intent(Intent.ACTION_VIEW);
+                        vlc.setDataAndType(Uri.parse(streamUrl),"video/*");
+                        vlc.setPackage("org.videolan.vlc");
+                        vlc.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(vlc);
+                        status.setText("Playing "+name);
+                    }catch(Exception ex){
+                        status.setText("VLC could not play this stream");
+                        Toast.makeText(this,"VLC could not open the Skynet stream",Toast.LENGTH_LONG).show();
+                    }
+                });
+            }catch(Exception e){
+                runOnUiThread(()->{
+                    status.setText("No playable source returned");
+                    Toast.makeText(this,"Video is not ready yet. Try PLAY again in a moment.",Toast.LENGTH_LONG).show();
+                });
+            }
+        }).start();
     }
 
     void loadImage(ImageView v,String url){ if(url==null||url.length()==0)return; new Thread(()->{try{
