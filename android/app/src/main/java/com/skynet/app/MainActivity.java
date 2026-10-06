@@ -338,6 +338,7 @@ public class MainActivity extends Activity {
                 runOnUiThread(()->{
                     render(first);
                     status.setText("SKYNET • Connected");
+                    reportDiagnostic("startup","home_loaded");
                     focusFirstTvCard();
                 });
 
@@ -355,6 +356,7 @@ public class MainActivity extends Activity {
             }catch(Exception e){
                 runOnUiThread(()->{
                     if(content.getChildCount()==0) status.setText("Skynet connection error");
+                    reportDiagnostic("api_error","home_load_failed");
                 });
             }
         }).start();
@@ -913,6 +915,23 @@ public class MainActivity extends Activity {
     }
     void showHome(){ search.setText(""); load(); }
 
+
+    void reportDiagnostic(String type,String detail){
+        new Thread(()->{
+            try{
+                URL u=new URL(BASE+"/app/api/diagnostics");
+                HttpURLConnection q=(HttpURLConnection)u.openConnection();
+                q.setRequestMethod("POST"); q.setConnectTimeout(4000); q.setReadTimeout(5000);
+                q.setDoOutput(true); q.setRequestProperty("Content-Type","application/json");
+                String lic=prefs==null?"":prefs.getString("license_code","");
+                q.setRequestProperty("X-Skynet-License",lic); q.setRequestProperty("X-Skynet-Device",deviceId());
+                JSONObject body=new JSONObject(); body.put("type",type); body.put("detail",detail==null?"":detail); body.put("app","android"); body.put("version","1.0.24");
+                byte[] bytes=body.toString().getBytes("UTF-8"); q.setFixedLengthStreamingMode(bytes.length);
+                OutputStream out=q.getOutputStream(); out.write(bytes); out.close(); q.getResponseCode(); q.disconnect();
+            }catch(Exception ignored){}
+        }).start();
+    }
+
     boolean looksLikePlayableUrl(String u){
         if(u==null||u.trim().length()==0)return false;
         try{
@@ -989,10 +1008,12 @@ public class MainActivity extends Activity {
                 if(u.length()==0)u=stream.optString("externalUrl","");
                 if(u.length()==0)throw new Exception("No stream URL");
                 final String streamUrl=u;
+                reportDiagnostic("playback_start","source_found");
                 runOnUiThread(()->startInternalPlayer(streamUrl,name));
             }catch(Exception e){
                 runOnUiThread(()->{
                     status.setText("No playable source returned");
+                    reportDiagnostic("playback_error",e.getMessage()==null?"source_not_found":e.getMessage());
                     Toast.makeText(this,e.getMessage()==null?"Video is not ready yet":e.getMessage(),Toast.LENGTH_LONG).show();
                 });
             }
