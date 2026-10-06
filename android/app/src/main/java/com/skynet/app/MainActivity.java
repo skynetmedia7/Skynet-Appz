@@ -553,30 +553,29 @@ public class MainActivity extends Activity {
                 if(i%columns==0){
                     row=new LinearLayout(this);
                     row.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);
-                    grid.addView(row,new LinearLayout.LayoutParams(-1,dp(cardH+42)));
+                    grid.addView(row,new LinearLayout.LayoutParams(-1,dp(cardH+70)));
                 }
 
-                FrameLayout card=new FrameLayout(this);
+                LinearLayout card=new LinearLayout(this);
+                card.setOrientation(LinearLayout.VERTICAL);
                 card.setFocusable(true); card.setClickable(true);
 
                 ImageView im=new ImageView(this);
                 im.setScaleType(ImageView.ScaleType.CENTER_CROP);
                 im.setBackground(bg(Color.rgb(30,30,30),dp(12)));
-                card.addView(im,new FrameLayout.LayoutParams(dp(cardW),dp(cardH)));
+                card.addView(im,new LinearLayout.LayoutParams(dp(cardW),dp(cardH)));
 
                 TextView nameText=label(m.optString("name",""),15,Color.WHITE);
-                nameText.setGravity(Gravity.BOTTOM|Gravity.LEFT);
-                nameText.setPadding(dp(7),0,dp(7),dp(7));
+                nameText.setGravity(Gravity.CENTER_VERTICAL|Gravity.LEFT);
+                nameText.setPadding(dp(7),dp(4),dp(7),0);
                 nameText.setMaxLines(1);
                 nameText.setEllipsize(android.text.TextUtils.TruncateAt.END);
-                nameText.setBackground(new GradientDrawable(
-                        GradientDrawable.Orientation.TOP_BOTTOM,
-                        new int[]{Color.TRANSPARENT,Color.argb(235,0,0,0)}));
-                card.addView(nameText,new FrameLayout.LayoutParams(-1,dp(48),Gravity.BOTTOM));
+                card.addView(nameText,new LinearLayout.LayoutParams(dp(cardW),dp(32)));
 
                 TextView year=label(m.optString("releaseInfo",""),12,Color.LTGRAY);
+                year.setGravity(Gravity.CENTER_VERTICAL|Gravity.LEFT);
                 year.setPadding(dp(7),0,0,0);
-                card.addView(year,new FrameLayout.LayoutParams(-1,dp(30),Gravity.BOTTOM));
+                card.addView(year,new LinearLayout.LayoutParams(dp(cardW),dp(24)));
 
                 String id=m.optString("id","").toLowerCase(Locale.UK);
                 TextView badge=label(id.contains("4k")?"4K":"HD",10,GOLD);
@@ -589,7 +588,7 @@ public class MainActivity extends Activity {
                 card.setOnClickListener(v->details(type,m));
                 styleTvCard(card,im);
 
-                LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(cardW),dp(cardH));
+                LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(cardW),dp(cardH+56));
                 cp.setMargins(0,0,dp(gap),dp(14));
                 row.addView(card,cp);
 
