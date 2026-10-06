@@ -836,7 +836,16 @@ app.get("/app/api/streams", async (req, res) => {
     const requestedId = String(req.query.id || "");
     if (!requestedId) return res.json({ streams: [] });
 
-    const root = manifest.replace(/\/manifest\.json.*$/, "").replace(/\/+$/, "");
+    const roots = [];
+    function addRoot(v) {
+      if (!v) return;
+      const x = String(v).replace(/\/manifest\.json.*$/, "").replace(/\/+$/, "");
+      if (x && !roots.includes(x)) roots.push(x);
+    }
+    addRoot(manifest);
+    // Also try the configured Skynet AIOStreams profile if the environment
+    // value is stale or returns no streams.
+    addRoot("https://aiostreams.elfhosted.com/stremio/fe2a7402-8285-4348-8a28-0d9a9b4dd1e5/eyJpIjoiSHRTQ21YeDdzSlN1aXF4YU9ZcThrdz09IiwiZSI6IjNBbk4rR0x3c3hkcllwQ2ZDa2xSSnp1elZCRU93cEJjMThYN0ZWTER4Mk09IiwidCI6ImEifQ/manifest.json");
     const rawId = requestedId.replace(/^tmdb:/, "");
     const candidates = [];
     function addId(v) {
@@ -860,18 +869,26 @@ app.get("/app/api/streams", async (req, res) => {
     } catch (_) {}
 
     let streams = [];
-    for (const candidate of candidates) {
-      try {
-        const url = root + "/stream/" + type + "/" + encodeURIComponent(candidate) + ".json";
-        const r = await fetch(url, { headers: { "Accept": "application/json" } });
-        if (!r.ok) continue;
-        const data = await r.json();
-        if (Array.isArray(data.streams) && data.streams.length) {
-          streams = data.streams;
-          break;
+    for (const root of roots) {
+      if (streams.length) break;
+      for (const candidate of candidates) {
+        try {
+          const url = root + "/stream/" + type + "/" + encodeURIComponent(candidate) + ".json";
+          const r = await fetch(url, { headers: { "Accept": "application/json", "User-Agent": "Skynet/1.0" } });
+          const body = await r.text();
+          if (!r.ok) {
+            console.error("AIOSTREAMS HTTP " + r.status + " " + url);
+            continue;
+          }
+          let data;
+          try { data = JSON.parse(body); } catch (_) { continue; }
+          if (Array.isArray(data.streams) && data.streams.length) {
+            streams = data.streams;
+            break;
+          }
+        } catch (e) {
+          console.error("AIOSTREAMS FETCH ERROR " + candidate + " " + e.message);
         }
-      } catch (e) {
-        console.error("AIOSTREAMS FETCH ERROR " + candidate + " " + e.message);
       }
     }
 
