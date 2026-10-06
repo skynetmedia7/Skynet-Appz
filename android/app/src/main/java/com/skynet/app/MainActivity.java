@@ -29,6 +29,53 @@ public class MainActivity extends Activity {
 
     int dp(float n){ return (int)(n*getResources().getDisplayMetrics().density+0.5f); }
 
+    boolean isTv(){
+        return (getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_TYPE_MASK)
+                == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION;
+    }
+
+    void prepareTvNavigation(ScrollView scroll){
+        scroll.setFocusable(false);
+        scroll.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
+        if(isTv()) search.setFocusable(false);
+    }
+
+    void focusFirstTvCard(){
+        if(!isTv()) return;
+        content.postDelayed(()->{
+            for(int i=0;i<content.getChildCount();i++){
+                View v=content.getChildAt(i);
+                View card=findFirstFocusable(v);
+                if(card!=null){ card.requestFocus(); return; }
+            }
+        },120);
+    }
+
+    View findFirstFocusable(View v){
+        if(v instanceof ViewGroup){
+            ViewGroup g=(ViewGroup)v;
+            for(int i=0;i<g.getChildCount();i++){
+                View x=findFirstFocusable(g.getChildAt(i));
+                if(x!=null)return x;
+            }
+        }
+        if(v.isFocusable() && v.isClickable())return v;
+        return null;
+    }
+
+    void styleTvCard(View card, View image){
+        if(!isTv()) return;
+        card.setOnFocusChangeListener((v,has)->{
+            if(has){
+                v.animate().scaleX(1.06f).scaleY(1.06f).setDuration(100).start();
+                image.setBackground(bg(GOLD,dp(8)));
+            }else{
+                v.animate().scaleX(1f).scaleY(1f).setDuration(100).start();
+                image.setBackground(bg(Color.rgb(30,30,30),dp(7)));
+            }
+        });
+    }
+
     TextView label(String s,float size,int color){
         TextView v=new TextView(this);
         v.setText(s); v.setTextColor(color); v.setTextSize(size); v.setTypeface(null,Typeface.BOLD);
@@ -63,6 +110,7 @@ public class MainActivity extends Activity {
         search.setOnFocusChangeListener((v,has)->{ if(!has && search.getText().length()==0) showHome(); });
 
         ScrollView scroll=new ScrollView(this); scroll.setFillViewport(true);
+        prepareTvNavigation(scroll);
         content=new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(0,0,0,dp(30));
         scroll.addView(content); root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
 
@@ -93,6 +141,7 @@ public class MainActivity extends Activity {
                 runOnUiThread(()->{
                     render(first);
                     status.setText("SKYNET • Connected");
+                    focusFirstTvCard();
                 });
 
                 // Load the remaining catalogues after the UI is already usable.
@@ -104,6 +153,7 @@ public class MainActivity extends Activity {
                     first.addAll(more);
                     render(first);
                     status.setText("SKYNET • Connected");
+                    focusFirstTvCard();
                 });
             }catch(Exception e){
                 runOnUiThread(()->{
@@ -210,8 +260,8 @@ public class MainActivity extends Activity {
     void addRow(String name,String type,JSONArray metas){
         TextView title=label(name,21,Color.WHITE); title.setPadding(0,dp(18),0,dp(8));
         content.addView(title,new LinearLayout.LayoutParams(-1,dp(54)));
-        HorizontalScrollView hs=new HorizontalScrollView(this); hs.setHorizontalScrollBarEnabled(false);
-        LinearLayout line=new LinearLayout(this); line.setPadding(0,0,dp(12),0);
+        HorizontalScrollView hs=new HorizontalScrollView(this); hs.setHorizontalScrollBarEnabled(false); hs.setFocusable(false); hs.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
+        LinearLayout line=new LinearLayout(this); line.setPadding(0,0,dp(12),0); line.setFocusable(false);
         for(int i=0;i<Math.min(20,metas.length());i++){
             JSONObject m=metas.optJSONObject(i); if(m==null)continue;
             FrameLayout card=new FrameLayout(this); card.setFocusable(true); card.setClickable(true);
@@ -237,6 +287,7 @@ public class MainActivity extends Activity {
             }else{
                 card.setOnClickListener(v->details(type,m));
             }
+            styleTvCard(card,im);
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(125),dp(185));
             cp.setMargins(0,0,dp(10),0); line.addView(card,cp);
             loadImage(im,m.optString("poster"));
@@ -361,7 +412,7 @@ public class MainActivity extends Activity {
                         if(m!=null)found.add(m);
                     }
                 }
-                runOnUiThread(()->renderSearch(found));
+                runOnUiThread(()->{ renderSearch(found); focusFirstTvCard(); });
             }catch(Exception e){
                 runOnUiThread(()->{
                     status.setText("Search unavailable");
