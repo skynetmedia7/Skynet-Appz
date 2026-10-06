@@ -541,15 +541,15 @@ public class MainActivity extends Activity {
             grid.setOrientation(LinearLayout.VERTICAL);
             grid.setPadding(0,0,dp(12),0);
 
-            final int columns=4;
-            final int cardH=135;
+            final int columns=5;
+            final int cardH=105;
             // Fit exactly five TV tiles across the available display width.
             // The old fixed 200dp width could overflow on some TVs and show
             // part of a sixth tile.
             final int screenW=getResources().getDisplayMetrics().widthPixels;
             final int gap=dp(12);
             final int sidePadding=dp(18);
-            final int cardW=Math.max(dp(160),(screenW-sidePadding-gap*(columns-1))/columns);
+            final int cardW=Math.min(dp(190),Math.max(dp(150),(screenW-sidePadding-gap*(columns-1))/columns));
             LinearLayout row=null;
 
             for(int i=0;i<Math.min(50,metas.length());i++){
@@ -558,7 +558,7 @@ public class MainActivity extends Activity {
                 if(i%columns==0){
                     row=new LinearLayout(this);
                     row.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);
-                    grid.addView(row,new LinearLayout.LayoutParams(-1,dp(cardH+14)));
+                    grid.addView(row,new LinearLayout.LayoutParams(-1,dp(cardH+12)));
                 }
 
                 FrameLayout card=new FrameLayout(this);
@@ -579,7 +579,7 @@ public class MainActivity extends Activity {
                 GradientDrawable nameBg=new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                         new int[]{Color.TRANSPARENT,Color.argb(235,0,0,0)});
                 nameText.setBackground(nameBg);
-                card.addView(nameText,new FrameLayout.LayoutParams(-1,dp(42),Gravity.BOTTOM));
+                card.addView(nameText,new FrameLayout.LayoutParams(-1,dp(34),Gravity.BOTTOM));
 
                 String id=m.optString("id","").toLowerCase(Locale.UK);
                 TextView badge=label(id.contains("4k")?"4K":"HD",10,GOLD);
