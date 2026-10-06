@@ -10,6 +10,9 @@ import android.provider.Settings;
 import android.view.*;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
+import androidx.media3.common.MediaItem;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.ui.StyledPlayerView;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -978,52 +981,53 @@ public class MainActivity extends Activity {
                 String endpoint=BASE+"/app/api/streams?type="+URLEncoder.encode(type,"UTF-8")+"&id="+URLEncoder.encode(id,"UTF-8");
                 JSONObject stream=null;
                 String lastMessage="No playable source returned";
-
-                // AIOStreams may briefly return a debrid/waiting page while the
-                // file is being prepared. Poll the Skynet API instead of opening
-                // that page in VLC.
                 for(int attempt=0;attempt<7 && stream==null;attempt++){
                     try{
                         JSONObject data=new JSONObject(get(endpoint));
-                        JSONArray a=data.optJSONArray("streams");
-                        stream=findPlayableStream(a);
-                        if(stream==null)lastMessage=(a==null||a.length()==0)
-                                ?"Waiting for a source…":"Waiting for the video to become ready…";
-                    }catch(Exception ex){
-                        lastMessage="Waiting for source…";
-                    }
+                        stream=findPlayableStream(data.optJSONArray("streams"));
+                        if(stream==null) lastMessage="Waiting for the video to become ready…";
+                    }catch(Exception ex){ lastMessage="Waiting for source…"; }
                     if(stream==null && attempt<6){
-                        final String msg=lastMessage;
-                        runOnUiThread(()->status.setText(msg));
+                        final String msg=lastMessage; runOnUiThread(()->status.setText(msg));
                         Thread.sleep(5000);
                     }
                 }
-
-                if(stream==null)throw new Exception(lastMessage);
+                if(stream==null) throw new Exception(lastMessage);
                 String u=stream.optString("url","");
                 if(u.length()==0)u=stream.optString("externalUrl","");
                 if(u.length()==0)throw new Exception("No stream URL");
                 final String streamUrl=u;
-                runOnUiThread(()->{
-                    try{
-                        Intent vlc=new Intent(Intent.ACTION_VIEW);
-                        vlc.setDataAndType(Uri.parse(streamUrl),"video/*");
-                        vlc.setPackage("org.videolan.vlc");
-                        vlc.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(vlc);
-                        status.setText("Playing "+name);
-                    }catch(Exception ex){
-                        status.setText("VLC could not play this stream");
-                        Toast.makeText(this,"VLC could not open the Skynet stream",Toast.LENGTH_LONG).show();
-                    }
-                });
+                runOnUiThread(()->startInternalPlayer(streamUrl,name));
             }catch(Exception e){
                 runOnUiThread(()->{
                     status.setText("No playable source returned");
-                    Toast.makeText(this,"Video is not ready yet. Try PLAY again in a moment.",Toast.LENGTH_LONG).show();
+                    Toast.makeText(this,e.getMessage()==null?"Video is not ready yet":e.getMessage(),Toast.LENGTH_LONG).show();
                 });
             }
         }).start();
+    }
+
+    void startInternalPlayer(String streamUrl,String name){
+        releaseInternalPlayer();
+        playerView=new StyledPlayerView(this);
+        playerView.setUseController(true);
+        playerView.setShowBuffering(StyledPlayerView.SHOW_BUFFERING_WHEN_PLAYING);
+        playerView.setBackgroundColor(Color.BLACK);
+        playerView.setFocusable(true);
+        playerView.setKeepScreenOn(true);
+        player=new ExoPlayer.Builder(this).build();
+        playerView.setPlayer(player);
+        root.addView(playerView,new LinearLayout.LayoutParams(-1,0,1));
+        player.setMediaItem(MediaItem.fromUri(Uri.parse(streamUrl)));
+        player.prepare();
+        player.play();
+        status.setText("Playing "+name);
+        playerView.requestFocus();
+    }
+
+    void releaseInternalPlayer(){
+        if(playerView!=null){ root.removeView(playerView); playerView=null; }
+        if(player!=null){ player.release(); player=null; }
     }
 
     void loadImage(ImageView v,String url){ if(url==null||url.length()==0)return; new Thread(()->{try{
@@ -1038,3 +1042,8 @@ public class MainActivity extends Activity {
         while((l=b.readLine())!=null)s.append(l); b.close(); return s.toString();
     }
 }
+    @Override protected void onDestroy(){
+        releaseInternalPlayer();
+        super.onDestroy();
+    }
+
