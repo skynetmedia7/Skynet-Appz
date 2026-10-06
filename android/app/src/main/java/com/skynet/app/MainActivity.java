@@ -235,7 +235,7 @@ public class MainActivity extends Activity {
     void addHero(JSONObject m,String type,JSONArray heroMetas){
         // Give the main hero much more screen space on Fire TV while keeping
         // the compact layout on phones/tablets.
-        int heroH=isTv()?360:270;
+        int heroH=isTv()?320:270;
         FrameLayout hero=new FrameLayout(this); hero.setBackgroundColor(Color.rgb(15,15,15));
         ImageView image=new ImageView(this); image.setScaleType(ImageView.ScaleType.CENTER_CROP);
         hero.addView(image,new FrameLayout.LayoutParams(-1,dp(heroH)));
@@ -286,15 +286,16 @@ public class MainActivity extends Activity {
         for(int i=0;i<Math.min(20,metas.length());i++){
             JSONObject m=metas.optJSONObject(i); if(m==null)continue;
             FrameLayout card=new FrameLayout(this); card.setFocusable(true); card.setClickable(true);
+            int cardW=isTv()?140:125, cardH=isTv()?165:185;
             ImageView im=new ImageView(this); im.setScaleType(ImageView.ScaleType.CENTER_CROP); im.setBackground(bg(Color.rgb(30,30,30),dp(7)));
-            card.addView(im,new FrameLayout.LayoutParams(dp(125),dp(185)));
+            card.addView(im,new FrameLayout.LayoutParams(dp(cardW),dp(cardH)));
 
             TextView nameText=label(m.optString("name",""),12,Color.WHITE);
             nameText.setGravity(Gravity.BOTTOM|Gravity.LEFT); nameText.setPadding(dp(7),0,dp(7),dp(7));
             GradientDrawable nameBg=new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                     new int[]{Color.TRANSPARENT,Color.argb(235,0,0,0)});
             nameText.setBackground(nameBg);
-            FrameLayout.LayoutParams np=new FrameLayout.LayoutParams(-1,dp(65),Gravity.BOTTOM);
+            FrameLayout.LayoutParams np=new FrameLayout.LayoutParams(-1,dp(isTv()?55:65),Gravity.BOTTOM);
             card.addView(nameText,np);
 
             String id=m.optString("id","").toLowerCase(Locale.UK);
@@ -309,11 +310,11 @@ public class MainActivity extends Activity {
                 card.setOnClickListener(v->details(type,m));
             }
             styleTvCard(card,im);
-            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(125),dp(185));
+            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(cardW),dp(cardH));
             cp.setMargins(0,0,dp(10),0); line.addView(card,cp);
             loadImage(im,m.optString("poster"));
         }
-        hs.addView(line); content.addView(hs,new LinearLayout.LayoutParams(-1,dp(195)));
+        hs.addView(line); content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?175:195)));
     }
 
     void openServiceCatalog(String slug,String type){
