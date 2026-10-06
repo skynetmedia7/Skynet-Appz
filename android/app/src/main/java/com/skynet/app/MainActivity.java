@@ -27,6 +27,7 @@ public class MainActivity extends Activity {
     // Tracks whether the user is on the main catalogue. Back from a sub-page
     // should return here instead of immediately leaving the app.
     boolean showingHome = true;
+    int heroPlayId = View.NO_ID;
 
     int dp(float n){ return (int)(n*getResources().getDisplayMetrics().density+0.5f); }
 
@@ -320,7 +321,7 @@ public class MainActivity extends Activity {
                 // Make UP from the first catalogue row return directly to the
                 // hero controls instead of getting trapped inside the row.
                 if(i==0){
-                    card.setNextFocusUpId(play.getId());
+                    if(heroPlayId!=View.NO_ID) card.setNextFocusUpId(heroPlayId);
                 }
             }
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(cardW),dp(cardH));
