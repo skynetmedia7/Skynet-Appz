@@ -6,6 +6,7 @@ import android.content.*;
 import android.graphics.*;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
+import android.provider.Settings;
 import android.view.*;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
@@ -124,7 +125,8 @@ public class MainActivity extends Activity {
 
         status=label("Connecting to Skynet VPS…",12,Color.GRAY); status.setPadding(0,dp(8),dp(16),dp(8));
         root.addView(status,new LinearLayout.LayoutParams(-1,dp(40)));
-        setContentView(root); load();
+        setContentView(root);
+        if(prefs.getString("license_code","").length()>0) load(); else showLogin();
     }
 
     @Override public void onBackPressed(){
@@ -134,6 +136,53 @@ public class MainActivity extends Activity {
             return;
         }
         super.onBackPressed();
+    }
+
+    String deviceId(){
+        return Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+    }
+
+    void showLogin(){
+        content.removeAllViews();
+        LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL);
+        box.setGravity(Gravity.CENTER_HORIZONTAL); box.setPadding(dp(28),dp(70),dp(28),dp(30));
+        TextView title=label("SKYNET",34,GOLD); title.setGravity(Gravity.CENTER); box.addView(title,new LinearLayout.LayoutParams(-1,dp(55)));
+        TextView sub=label("Enter your login code",18,Color.WHITE); sub.setGravity(Gravity.CENTER); box.addView(sub,new LinearLayout.LayoutParams(-1,dp(48)));
+        TextView hint=label("Your code activates this device.",13,Color.GRAY); hint.setGravity(Gravity.CENTER); box.addView(hint,new LinearLayout.LayoutParams(-1,dp(38)));
+        EditText code=new EditText(this); code.setHint("XXXX-XXXX-XXXX"); code.setHintTextColor(Color.GRAY); code.setTextColor(Color.WHITE); code.setTextSize(20); code.setGravity(Gravity.CENTER); code.setSingleLine(true); code.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS); code.setBackground(bg(Color.rgb(25,25,25),dp(10))); box.addView(code,new LinearLayout.LayoutParams(-1,dp(58)));
+        Button login=button("LOGIN",GOLD,Color.BLACK); LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(180),dp(50)); lp.setMargins(0,dp(18),0,0); box.addView(login,lp);
+        TextView msg=label("",13,Color.GRAY); msg.setGravity(Gravity.CENTER); box.addView(msg,new LinearLayout.LayoutParams(-1,dp(50)));
+        login.setOnClickListener(v->{
+            String entered=code.getText().toString().trim().toUpperCase(Locale.UK);
+            if(entered.length()==0){msg.setText("Enter your login code");return;}
+            login.setEnabled(false); msg.setText("Activating device…");
+            new Thread(()->{
+                try{
+                    JSONObject body=new JSONObject(); body.put("code",entered);
+                    JSONObject reply=new JSONObject(postJson(BASE+"/app/api/login",body.toString()));
+                    if(reply.optBoolean("ok")) runOnUiThread(()->{prefs.edit().putString("license_code",entered).apply(); msg.setText("Activated ✓"); load();});
+                    else runOnUiThread(()->{login.setEnabled(true); msg.setText(loginError(reply.optString("error")));});
+                }catch(Exception e){runOnUiThread(()->{login.setEnabled(true);msg.setText("Could not connect to Skynet");});}
+            }).start();
+        });
+        content.addView(box,new LinearLayout.LayoutParams(-1,-1));
+        code.requestFocus();
+        if(isTv()) code.setNextFocusDownId(login.getId());
+        status.setText("SKYNET • Login required");
+    }
+
+    String loginError(String e){
+        if("INVALID_CODE".equals(e))return "Invalid login code";
+        if("DEVICE_LIMIT".equals(e))return "This code is already registered to another device";
+        if("EXPIRED".equals(e))return "This login code has expired";
+        if("SUSPENDED".equals(e))return "This login code has been suspended";
+        return "Login failed";
+    }
+
+    String postJson(String u,String body)throws Exception{
+        HttpURLConnection c=(HttpURLConnection)new URL(u).openConnection(); c.setRequestMethod("POST"); c.setConnectTimeout(10000); c.setReadTimeout(15000); c.setDoOutput(true); c.setRequestProperty("Content-Type","application/json"); c.setRequestProperty("X-Skynet-Device",deviceId());
+        c.getOutputStream().write(body.getBytes("UTF-8")); c.getOutputStream().close();
+        InputStream in=c.getResponseCode()>=400?c.getErrorStream():c.getInputStream(); BufferedReader b=new BufferedReader(new InputStreamReader(in)); StringBuilder s=new StringBuilder(); String l; while((l=b.readLine())!=null)s.append(l); b.close(); return s.toString();
     }
 
     void load(){
@@ -735,6 +784,7 @@ public class MainActivity extends Activity {
 
     String get(String u)throws Exception{
         HttpURLConnection c=(HttpURLConnection)new URL(u).openConnection(); c.setConnectTimeout(10000); c.setReadTimeout(15000);
+        String license=prefs==null?"":prefs.getString("license_code",""); if(license.length()>0)c.setRequestProperty("X-Skynet-License",license); c.setRequestProperty("X-Skynet-Device",deviceId());
         BufferedReader b=new BufferedReader(new InputStreamReader(c.getInputStream())); StringBuilder s=new StringBuilder(); String l;
         while((l=b.readLine())!=null)s.append(l); b.close(); return s.toString();
     }
