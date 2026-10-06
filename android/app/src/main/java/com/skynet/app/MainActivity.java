@@ -166,7 +166,8 @@ public class MainActivity extends Activity {
             LinearLayout tvBody=new LinearLayout(this);
             tvBody.setOrientation(LinearLayout.HORIZONTAL);
             tvBody.addView(addTvSidebar(),new LinearLayout.LayoutParams(dp(78),-1));
-            tvBody.addView(scroll,new LinearLayout.LayoutParams(0,0,1));
+            // Horizontal parent: the content must take the full TV height.
+            tvBody.addView(scroll,new LinearLayout.LayoutParams(0,-1,1));
             root.addView(tvBody,new LinearLayout.LayoutParams(-1,0,1));
         }else{
             root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
