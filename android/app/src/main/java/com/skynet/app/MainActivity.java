@@ -144,31 +144,106 @@ public class MainActivity extends Activity {
 
     void showLogin(){
         content.removeAllViews();
-        LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL);
-        box.setGravity(Gravity.CENTER_HORIZONTAL); box.setPadding(dp(28),dp(70),dp(28),dp(30));
-        TextView title=label("SKYNET",34,GOLD); title.setGravity(Gravity.CENTER); box.addView(title,new LinearLayout.LayoutParams(-1,dp(55)));
-        TextView sub=label("Enter your login code",18,Color.WHITE); sub.setGravity(Gravity.CENTER); box.addView(sub,new LinearLayout.LayoutParams(-1,dp(48)));
-        TextView hint=label("Your code activates this device.",13,Color.GRAY); hint.setGravity(Gravity.CENTER); box.addView(hint,new LinearLayout.LayoutParams(-1,dp(38)));
-        EditText code=new EditText(this); code.setHint("XXXX-XXXX-XXXX"); code.setHintTextColor(Color.GRAY); code.setTextColor(Color.WHITE); code.setTextSize(20); code.setGravity(Gravity.CENTER); code.setSingleLine(true); code.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS); code.setBackground(bg(Color.rgb(25,25,25),dp(10))); box.addView(code,new LinearLayout.LayoutParams(-1,dp(58)));
-        Button login=button("LOGIN",GOLD,Color.BLACK); LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(180),dp(50)); lp.setMargins(0,dp(18),0,0); box.addView(login,lp);
-        TextView msg=label("",13,Color.GRAY); msg.setGravity(Gravity.CENTER); box.addView(msg,new LinearLayout.LayoutParams(-1,dp(50)));
+        content.setGravity(Gravity.CENTER);
+
+        LinearLayout box=new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setGravity(Gravity.CENTER_HORIZONTAL);
+        box.setPadding(dp(34),dp(36),dp(34),dp(36));
+        box.setBackground(bg(Color.rgb(15,17,22),dp(22)));
+
+        LinearLayout.LayoutParams card=new LinearLayout.LayoutParams(
+                isTv()?dp(620):-1, ViewGroup.LayoutParams.WRAP_CONTENT);
+        card.gravity=Gravity.CENTER;
+        card.setMargins(dp(18),dp(30),dp(18),dp(30));
+
+        TextView logo=label("SKYNET",42,Color.rgb(255,64,80));
+        logo.setGravity(Gravity.CENTER);
+        logo.setTypeface(null,android.graphics.Typeface.BOLD);
+        box.addView(logo,new LinearLayout.LayoutParams(-1,dp(58)));
+
+        TextView welcome=label("WELCOME",18,Color.WHITE);
+        welcome.setGravity(Gravity.CENTER);
+        welcome.setTypeface(null,android.graphics.Typeface.BOLD);
+        box.addView(welcome,new LinearLayout.LayoutParams(-1,dp(38)));
+
+        TextView sub=label("Activate your device to continue",15,Color.LTGRAY);
+        sub.setGravity(Gravity.CENTER);
+        box.addView(sub,new LinearLayout.LayoutParams(-1,dp(42)));
+
+        TextView hint=label("Enter the 12-character licence code supplied to you",13,Color.GRAY);
+        hint.setGravity(Gravity.CENTER);
+        hint.setPadding(0,dp(6),0,dp(8));
+        box.addView(hint,new LinearLayout.LayoutParams(-1,dp(48)));
+
+        EditText code=new EditText(this);
+        code.setHint("XXXX-XXXX-XXXX");
+        code.setHintTextColor(Color.rgb(100,105,115));
+        code.setTextColor(Color.WHITE);
+        code.setTextSize(21);
+        code.setGravity(Gravity.CENTER);
+        code.setSingleLine(true);
+        code.setLetterSpacing(.08f);
+        code.setPadding(dp(16),0,dp(16),0);
+        code.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+        code.setBackground(bg(Color.rgb(25,28,35),dp(12)));
+        box.addView(code,new LinearLayout.LayoutParams(-1,dp(64)));
+
+        Button login=button("ACTIVATE SKYNET",Color.rgb(255,64,80),Color.WHITE);
+        login.setTextSize(16);
+        login.setAllCaps(false);
+        login.setTypeface(null,android.graphics.Typeface.BOLD);
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(isTv()?dp(250):-1,dp(54));
+        lp.setMargins(0,dp(20),0,0);
+        box.addView(login,lp);
+
+        TextView msg=label("",14,Color.GRAY);
+        msg.setGravity(Gravity.CENTER);
+        msg.setPadding(0,dp(8),0,0);
+        box.addView(msg,new LinearLayout.LayoutParams(-1,dp(52)));
+
+        TextView privacy=label("Your licence is locked to this device.",12,Color.DKGRAY);
+        privacy.setGravity(Gravity.CENTER);
+        box.addView(privacy,new LinearLayout.LayoutParams(-1,dp(30)));
+
+        login.setOnFocusChangeListener((v,has)->{
+            if(isTv()) v.setBackground(has?bg(Color.rgb(255,90,105),dp(10)):bg(Color.rgb(255,64,80),dp(10)));
+        });
+
         login.setOnClickListener(v->{
-            String entered=code.getText().toString().trim().toUpperCase(Locale.UK);
-            if(entered.length()==0){msg.setText("Enter your login code");return;}
-            login.setEnabled(false); msg.setText("Activating device…");
+            String entered=code.getText().toString().trim().toUpperCase(Locale.UK).replace(" ","");
+            if(entered.length()==0){msg.setText("Enter your licence code");return;}
+            login.setEnabled(false);
+            msg.setText("Activating device…");
             new Thread(()->{
                 try{
                     JSONObject body=new JSONObject(); body.put("code",entered);
                     JSONObject reply=new JSONObject(postJson(BASE+"/app/api/login",body.toString()));
-                    if(reply.optBoolean("ok")) runOnUiThread(()->{prefs.edit().putString("license_code",entered).apply(); msg.setText("Activated ✓"); load();});
-                    else runOnUiThread(()->{login.setEnabled(true); msg.setText(loginError(reply.optString("error")));});
-                }catch(Exception e){runOnUiThread(()->{login.setEnabled(true);msg.setText("Could not connect to Skynet");});}
+                    if(reply.optBoolean("ok")) runOnUiThread(()->{
+                        prefs.edit().putString("license_code",entered).apply();
+                        msg.setText("Activation successful ✓");
+                        load();
+                    });
+                    else runOnUiThread(()->{
+                        login.setEnabled(true);
+                        msg.setText(loginError(reply.optString("error")));
+                    });
+                }catch(Exception e){
+                    runOnUiThread(()->{
+                        login.setEnabled(true);
+                        msg.setText("Could not connect to Skynet");
+                    });
+                }
             }).start();
         });
-        content.addView(box,new LinearLayout.LayoutParams(-1,-1));
+
+        content.addView(box,card);
         code.requestFocus();
-        if(isTv()) code.setNextFocusDownId(login.getId());
-        status.setText("SKYNET • Login required");
+        if(isTv()){
+            code.setNextFocusDownId(login.getId());
+            login.setNextFocusUpId(code.getId());
+        }
+        status.setText("SKYNET • Activation required");
     }
 
     String loginError(String e){
