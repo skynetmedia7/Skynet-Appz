@@ -440,31 +440,28 @@ public class MainActivity extends Activity {
             card.setClickable(true);
 
             ImageView im=new ImageView(this);
+            // The provider artwork already contains its own logo and wording.
+            // Show the complete artwork inside the tile — never crop it or
+            // overlay another service name on top.
             im.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-            im.setPadding(dp(7),dp(5),dp(7),dp(5));
-            im.setBackground(bg(Color.rgb(28,28,28),dp(10)));
-            card.addView(im,new FrameLayout.LayoutParams(dp(isTv()?78:62),dp(isTv()?54:46)));
-
-            TextView nt=label(m.optString("name",""),9,Color.WHITE);
-            nt.setGravity(Gravity.CENTER);
-            nt.setSingleLine(true);
-            nt.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            nt.setPadding(dp(3),0,dp(3),0);
-            FrameLayout.LayoutParams np=new FrameLayout.LayoutParams(-1,dp(18),Gravity.BOTTOM);
-            card.addView(nt,np);
+            im.setAdjustViewBounds(true);
+            im.setPadding(dp(4),dp(4),dp(4),dp(4));
+            im.setBackground(bg(Color.rgb(28,28,28),dp(12)));
+            int serviceW=isTv()?104:82, serviceH=isTv()?62:50;
+            card.addView(im,new FrameLayout.LayoutParams(dp(serviceW),dp(serviceH)));
 
             card.setOnClickListener(v->openServiceCatalog(
                     serviceId.substring("skynet-service:".length()),type));
             styleTvCard(card,im);
 
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(
-                    dp(isTv()?78:62),dp(isTv()?54:46));
+                    dp(serviceW),dp(serviceH));
             cp.setMargins(0,0,dp(isTv()?8:6),0);
             line.addView(card,cp);
             loadImage(im,m.optString("poster"));
         }
         hs.addView(line);
-        content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?62:54)));
+        content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?70:58)));
     }
 
     void addScrollHint(){
