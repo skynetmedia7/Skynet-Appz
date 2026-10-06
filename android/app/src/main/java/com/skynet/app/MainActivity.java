@@ -491,7 +491,7 @@ public class MainActivity extends Activity {
             final int cardW=200, cardH=112;
             LinearLayout row=null;
 
-            for(int i=0;i<Math.min(20,metas.length());i++){
+            for(int i=0;i<Math.min(50,metas.length());i++){
                 JSONObject m=metas.optJSONObject(i); if(m==null)continue;
 
                 if(i%columns==0){
@@ -561,7 +561,7 @@ public class MainActivity extends Activity {
         line.setPadding(0,0,dp(12),0);
         line.setFocusable(false);
 
-        for(int i=0;i<Math.min(20,metas.length());i++){
+        for(int i=0;i<Math.min(50,metas.length());i++){
             JSONObject m=metas.optJSONObject(i); if(m==null)continue;
             FrameLayout card=new FrameLayout(this); card.setFocusable(true); card.setClickable(true);
             int cardW=125, cardH=185;
