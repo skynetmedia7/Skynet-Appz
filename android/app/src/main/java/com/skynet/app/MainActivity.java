@@ -23,6 +23,9 @@ public class MainActivity extends Activity {
     EditText search;
     SharedPreferences prefs;
     ArrayList<JSONObject> allMetas = new ArrayList<>();
+    // Tracks whether the user is on the main catalogue. Back from a sub-page
+    // should return here instead of immediately leaving the app.
+    boolean showingHome = true;
 
     int dp(float n){ return (int)(n*getResources().getDisplayMetrics().density+0.5f); }
 
@@ -68,7 +71,17 @@ public class MainActivity extends Activity {
         setContentView(root); load();
     }
 
+    @Override public void onBackPressed(){
+        if(!showingHome){
+            showingHome=true;
+            showHome();
+            return;
+        }
+        super.onBackPressed();
+    }
+
     void load(){
+        showingHome=true;
         // Show the first catalogue as soon as it arrives. The old loader waited
         // for every catalogue before rendering anything, making Fire TV appear
         // frozen while the VPS was contacted repeatedly.
@@ -232,6 +245,7 @@ public class MainActivity extends Activity {
     }
 
     void openServiceCatalog(String slug,String type){
+        showingHome=false;
         String catalogId="skynet-"+slug+"-"+(type.equals("series")?"series":"movies");
         String url=BASE+"/catalog/"+type+"/"+catalogId+".json";
         status.setText("Opening "+slug.replace("-"," ")+"…");
@@ -327,6 +341,7 @@ public class MainActivity extends Activity {
 
     void doSearch(String q){
         q=q.trim();
+        showingHome=false;
         if(q.length()==0){showHome();return;}
         content.removeAllViews();
         TextView h=label("Search results",22,Color.WHITE);
