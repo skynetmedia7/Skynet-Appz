@@ -233,22 +233,25 @@ public class MainActivity extends Activity {
     }
 
     void addHero(JSONObject m,String type,JSONArray heroMetas){
+        // Give the main hero much more screen space on Fire TV while keeping
+        // the compact layout on phones/tablets.
+        int heroH=isTv()?360:270;
         FrameLayout hero=new FrameLayout(this); hero.setBackgroundColor(Color.rgb(15,15,15));
         ImageView image=new ImageView(this); image.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        hero.addView(image,new FrameLayout.LayoutParams(-1,dp(270)));
+        hero.addView(image,new FrameLayout.LayoutParams(-1,dp(heroH)));
         TextView shade=new TextView(this); shade.setBackground(bg(Color.argb(180,5,5,5),0));
-        FrameLayout.LayoutParams sh=new FrameLayout.LayoutParams(-1,dp(270)); hero.addView(shade,sh);
+        FrameLayout.LayoutParams sh=new FrameLayout.LayoutParams(-1,dp(heroH)); hero.addView(shade,sh);
         LinearLayout info=new LinearLayout(this); info.setOrientation(LinearLayout.VERTICAL); info.setGravity(Gravity.BOTTOM);
-        info.setPadding(dp(18),0,dp(18),dp(18));
-        TextView title=label(m.optString("name","Skynet"),28,Color.WHITE); info.addView(title,new LinearLayout.LayoutParams(-1,dp(48)));
-        TextView desc=label(m.optString("description",""),13,Color.LTGRAY); desc.setMaxLines(2); info.addView(desc,new LinearLayout.LayoutParams(-1,dp(50)));
+        info.setPadding(dp(18),0,dp(18),dp(22));
+        TextView title=label(m.optString("name","Skynet"),28,Color.WHITE); info.addView(title,new LinearLayout.LayoutParams(-1,dp(52)));
+        TextView desc=label(m.optString("description",""),13,Color.LTGRAY); desc.setMaxLines(2); info.addView(desc,new LinearLayout.LayoutParams(-1,dp(56)));
         LinearLayout buttons=new LinearLayout(this); buttons.setGravity(Gravity.LEFT);
         Button play=button("▶  PLAY",GOLD,Color.BLACK); Button more=button("+  MY LIST",Color.rgb(45,45,45),Color.WHITE);
         buttons.addView(play,new LinearLayout.LayoutParams(dp(125),dp(44))); LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(dp(125),dp(44)); mp.setMargins(dp(8),0,0,0); buttons.addView(more,mp);
-        info.addView(buttons); hero.addView(info,new FrameLayout.LayoutParams(-1,dp(270)));
+        info.addView(buttons); hero.addView(info,new FrameLayout.LayoutParams(-1,dp(heroH)));
         play.setOnClickListener(v->play(type,m.optString("id"),m.optString("name")));
         more.setOnClickListener(v->toggleList(m));
-        content.addView(hero,new LinearLayout.LayoutParams(-1,dp(270)));
+        content.addView(hero,new LinearLayout.LayoutParams(-1,dp(heroH)));
         loadImage(image,m.optString("background",m.optString("poster")));
 
         // Rotate the hero artwork automatically on the TV/home screen.
