@@ -538,29 +538,21 @@ public class MainActivity extends Activity {
         content.addView(title,new LinearLayout.LayoutParams(-1,dp(54)));
 
         if(isTv()){
-            // TV catalogue: portrait poster cards like the phone design reference,
-            // with four comfortable cards across the TV screen.
-            LinearLayout grid=new LinearLayout(this);
-            grid.setOrientation(LinearLayout.VERTICAL);
-            grid.setPadding(0,0,dp(12),0);
+            // Nuvio-style TV catalogue shelf: every catalogue is its own
+            // horizontally scrolling category, with a See All tile at the end.
+            HorizontalScrollView hs=new HorizontalScrollView(this);
+            hs.setHorizontalScrollBarEnabled(false);
+            hs.setFocusable(false);
+            hs.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
+            LinearLayout line=new LinearLayout(this);
+            line.setPadding(0,0,dp(12),0);
+            line.setGravity(Gravity.CENTER_VERTICAL);
 
-            final int columns=4;
-            final int cardW=190;
-            // Nuvio uses a ~0.68 poster aspect ratio and an 8dp label gap.
-            // Keep the same proportions on TV rather than stretching posters.
-            final int cardH=279;
+            final int cardW=178;
+            final int cardH=261;
             final int gap=14;
-            LinearLayout row=null;
-
             for(int i=0;i<Math.min(50,metas.length());i++){
                 JSONObject m=metas.optJSONObject(i); if(m==null)continue;
-
-                if(i%columns==0){
-                    row=new LinearLayout(this);
-                    row.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);
-                    grid.addView(row,new LinearLayout.LayoutParams(-1,dp(cardH+72)));
-                }
-
                 LinearLayout card=new LinearLayout(this);
                 card.setOrientation(LinearLayout.VERTICAL);
                 card.setFocusable(true); card.setClickable(true);
@@ -570,41 +562,41 @@ public class MainActivity extends Activity {
                 im.setBackground(bg(Color.rgb(30,30,30),dp(12)));
                 card.addView(im,new LinearLayout.LayoutParams(dp(cardW),dp(cardH)));
 
-                TextView nameText=label(m.optString("name",""),15,Color.WHITE);
+                TextView nameText=label(m.optString("name",""),14,Color.WHITE);
                 nameText.setGravity(Gravity.CENTER_VERTICAL|Gravity.LEFT);
-                nameText.setPadding(dp(7),dp(4),dp(7),0);
+                nameText.setPadding(dp(5),0,dp(5),0);
                 nameText.setMaxLines(1);
                 nameText.setEllipsize(android.text.TextUtils.TruncateAt.END);
-                LinearLayout.LayoutParams nameLp=new LinearLayout.LayoutParams(dp(cardW),dp(32));
-                nameLp.topMargin=dp(8);
-                card.addView(nameText,nameLp);
+                LinearLayout.LayoutParams nl=new LinearLayout.LayoutParams(dp(cardW),dp(31));
+                nl.topMargin=dp(7);
+                card.addView(nameText,nl);
 
                 TextView year=label(m.optString("releaseInfo",""),12,Color.LTGRAY);
                 year.setGravity(Gravity.CENTER_VERTICAL|Gravity.LEFT);
-                year.setPadding(dp(7),0,0,0);
-                card.addView(year,new LinearLayout.LayoutParams(dp(cardW),dp(24)));
-
-                String id=m.optString("id","").toLowerCase(Locale.UK);
-                TextView badge=label(id.contains("4k")?"4K":"HD",10,GOLD);
-                badge.setGravity(Gravity.CENTER);
-                badge.setBackground(bg(Color.argb(210,0,0,0),dp(5)));
-                FrameLayout.LayoutParams bp=new FrameLayout.LayoutParams(dp(42),dp(23),Gravity.TOP|Gravity.RIGHT);
-                bp.setMargins(0,dp(6),dp(5),0);
-                card.addView(badge,bp);
+                year.setPadding(dp(5),0,0,0);
+                card.addView(year,new LinearLayout.LayoutParams(dp(cardW),dp(21)));
 
                 card.setOnClickListener(v->details(type,m));
                 styleTvCard(card,im);
-
-                LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(cardW),dp(cardH+56));
-                cp.setMargins(0,0,dp(gap),dp(14));
-                row.addView(card,cp);
-
+                LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(cardW),dp(cardH+59));
+                cp.setMargins(0,0,dp(gap),dp(8));
+                line.addView(card,cp);
                 loadImage(im,tileArtwork(m));
-
-                if(i<columns) card.setNextFocusUpId(heroPlayId);
+                if(i==0) card.setNextFocusUpId(heroPlayId);
             }
 
-            content.addView(grid,new LinearLayout.LayoutParams(-1,ViewGroup.LayoutParams.WRAP_CONTENT));
+            // Nuvio-style See All affordance at the end of every category.
+            TextView seeAll=label("See All  ›",15,FOCUS_BLUE);
+            seeAll.setGravity(Gravity.CENTER);
+            seeAll.setFocusable(true); seeAll.setClickable(true);
+            seeAll.setBackground(bg(Color.rgb(20,20,20),dp(12)));
+            seeAll.setOnFocusChangeListener((v,has)->v.setBackground(
+                    bg(has?Color.rgb(18,75,130):Color.rgb(20,20,20),dp(12))));
+            seeAll.setOnClickListener(v->status.setText(name+" • Full catalogue coming next"));
+            line.addView(seeAll,new LinearLayout.LayoutParams(dp(130),dp(90)));
+
+            hs.addView(line);
+            content.addView(hs,new LinearLayout.LayoutParams(-1,dp(cardH+82)));
             return;
         }
 
