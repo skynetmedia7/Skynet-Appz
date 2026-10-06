@@ -543,7 +543,9 @@ public class MainActivity extends Activity {
 
             final int columns=4;
             final int cardW=190;
-            final int cardH=285;
+            // Nuvio uses a ~0.68 poster aspect ratio and an 8dp label gap.
+            // Keep the same proportions on TV rather than stretching posters.
+            final int cardH=279;
             final int gap=14;
             LinearLayout row=null;
 
@@ -553,7 +555,7 @@ public class MainActivity extends Activity {
                 if(i%columns==0){
                     row=new LinearLayout(this);
                     row.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);
-                    grid.addView(row,new LinearLayout.LayoutParams(-1,dp(cardH+70)));
+                    grid.addView(row,new LinearLayout.LayoutParams(-1,dp(cardH+72)));
                 }
 
                 LinearLayout card=new LinearLayout(this);
@@ -570,7 +572,9 @@ public class MainActivity extends Activity {
                 nameText.setPadding(dp(7),dp(4),dp(7),0);
                 nameText.setMaxLines(1);
                 nameText.setEllipsize(android.text.TextUtils.TruncateAt.END);
-                card.addView(nameText,new LinearLayout.LayoutParams(dp(cardW),dp(32)));
+                LinearLayout.LayoutParams nameLp=new LinearLayout.LayoutParams(dp(cardW),dp(32));
+                nameLp.topMargin=dp(8);
+                card.addView(nameText,nameLp);
 
                 TextView year=label(m.optString("releaseInfo",""),12,Color.LTGRAY);
                 year.setGravity(Gravity.CENTER_VERTICAL|Gravity.LEFT);
