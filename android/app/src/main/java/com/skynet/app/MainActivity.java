@@ -71,17 +71,17 @@ public class MainActivity extends Activity {
         // Rounded TV cards: the card itself owns the rounded outline so the
         // poster/logo is clipped to the same corners. The blue focus ring
         // remains a foreground outline and does not cover the artwork.
-        card.setBackground(bg(Color.TRANSPARENT,dp(10)));
+        card.setBackground(bg(Color.TRANSPARENT,dp(12)));
         card.setClipToOutline(true);
         card.setOutlineProvider(new ViewOutlineProvider(){
             @Override public void getOutline(View v, Outline outline){
-                outline.setRoundRect(0,0,v.getWidth(),v.getHeight(),dp(10));
+                outline.setRoundRect(0,0,v.getWidth(),v.getHeight(),dp(12));
             }
         });
         card.setOnFocusChangeListener((v,has)->{
             GradientDrawable border=new GradientDrawable();
             border.setColor(Color.TRANSPARENT);
-            border.setCornerRadius(dp(10));
+            border.setCornerRadius(dp(12));
             border.setStroke(dp(has?4:0), has?FOCUS_BLUE:Color.TRANSPARENT);
             v.setForeground(border);
             if(has){
@@ -538,7 +538,7 @@ public class MainActivity extends Activity {
                 styleTvCard(card,im);
 
                 LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(cardW),dp(cardH));
-                cp.setMargins(0,0,dp(12),dp(10));
+                cp.setMargins(0,0,dp(8),dp(10));
                 row.addView(card,cp);
 
                 loadImage(im,tileArtwork(m));
