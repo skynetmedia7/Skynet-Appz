@@ -526,18 +526,49 @@ public class MainActivity extends Activity {
         }catch(Exception e){ return false; }
     }
 
+    boolean looksLikeWaitingStream(JSONObject s){
+        if(s==null)return true;
+        String meta=(s.optString("name","")+" "+s.optString("title","")+" "+
+                s.optString("description","")+" "+s.optString("behaviorHints","")).toLowerCase(Locale.UK);
+        return meta.contains("still downloading") || meta.contains("still_downloading") ||
+               meta.contains("not ready") || meta.contains("not-ready") ||
+               meta.contains("preparing") || meta.contains("waiting for");
+    }
+
+    boolean isActuallyPlayable(String u){
+        if(!looksLikePlayableUrl(u))return false;
+        try{
+            HttpURLConnection c=(HttpURLConnection)new URL(u).openConnection();
+            c.setInstanceFollowRedirects(true);
+            c.setRequestMethod("HEAD");
+            c.setConnectTimeout(5000);
+            c.setReadTimeout(5000);
+            c.setRequestProperty("User-Agent","Skynet/1.0");
+            int code=c.getResponseCode();
+            String ct=c.getContentType();
+            c.disconnect();
+
+            // A waiting/configuration page is normally HTML. Do not send it to VLC.
+            if(ct!=null && ct.toLowerCase(Locale.UK).contains("text/html"))return false;
+            return code>=200 && code<400;
+        }catch(Exception e){
+            // Some media servers reject HEAD. The URL-level checks above still
+            // protect us from the known waiting/configuration pages.
+            return looksLikePlayableUrl(u);
+        }
+    }
+
     JSONObject findPlayableStream(JSONArray a){
         if(a==null)return null;
-        // Prefer a real URL over an external web page.
         for(int i=0;i<a.length();i++){
-            JSONObject s=a.optJSONObject(i); if(s==null)continue;
+            JSONObject s=a.optJSONObject(i); if(s==null||looksLikeWaitingStream(s))continue;
             String u=s.optString("url","");
-            if(looksLikePlayableUrl(u))return s;
+            if(isActuallyPlayable(u))return s;
         }
         for(int i=0;i<a.length();i++){
-            JSONObject s=a.optJSONObject(i); if(s==null)continue;
+            JSONObject s=a.optJSONObject(i); if(s==null||looksLikeWaitingStream(s))continue;
             String u=s.optString("externalUrl","");
-            if(looksLikePlayableUrl(u))return s;
+            if(isActuallyPlayable(u))return s;
         }
         return null;
     }
