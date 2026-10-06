@@ -20,6 +20,26 @@ function deviceId(req){ return String(req.get("X-Skynet-Device") || "").trim().s
 function licenseFromReq(req){ const code=String(req.get("X-Skynet-License") || "").trim().toUpperCase(); const db=loadLicenses(); return {code, lic:db[code], db}; }
 function requireLicense(req,res,next){ const {code,lic}=licenseFromReq(req); if(!code||!lic)return res.status(401).json({ok:false,error:"LOGIN_REQUIRED"}); if(lic.suspended)return res.status(403).json({ok:false,error:"SUSPENDED"}); if(lic.expiresAt && Date.now()>Date.parse(lic.expiresAt))return res.status(403).json({ok:false,error:"EXPIRED"}); const dev=deviceId(req); if(!dev || !lic.devices.includes(dev))return res.status(403).json({ok:false,error:"DEVICE_NOT_AUTHORISED"}); next(); }
 
+const DIAGNOSTICS_FILE = path.join(DATA_DIR, "diagnostics.json");
+function loadDiagnostics(){ try { const x=JSON.parse(fs.readFileSync(DIAGNOSTICS_FILE,"utf8")); return Array.isArray(x)?x:[]; } catch(e){ return []; } }
+function saveDiagnostic(event){ try { const a=loadDiagnostics(); a.push(event); const cutoff=Date.now()-7*24*60*60*1000; const kept=a.filter(x=>Date.parse(x.ts||"")>=cutoff).slice(-5000); fs.mkdirSync(DATA_DIR,{recursive:true}); fs.writeFileSync(DIAGNOSTICS_FILE,JSON.stringify(kept)); } catch(e){ console.error("DIAGNOSTICS SAVE ERROR "+e.message); } }
+
+app.post("/app/api/diagnostics", requireLicense, (req,res)=>{
+  const allowed=["startup","api_error","catalog_error","playback_start","playback_error","player_error"];
+  const type=String(req.body?.type||"").trim();
+  if(!allowed.includes(type)) return res.status(400).json({ok:false,error:"INVALID_EVENT"});
+  const detail=String(req.body?.detail||"").slice(0,300).replace(/[\\r\\n]/g," ");
+  saveDiagnostic({ts:new Date().toISOString(),type,detail,app:String(req.body?.app||"").slice(0,30),version:String(req.body?.version||"").slice(0,20)});
+  res.json({ok:true});
+});
+
+app.get("/app/api/health", (_req,res)=>{
+  const a=loadDiagnostics(), now=Date.now(), hour=now-3600000;
+  const recent=a.filter(x=>Date.parse(x.ts||"")>=hour);
+  const counts={}; recent.forEach(x=>counts[x.type]=(counts[x.type]||0)+1);
+  res.json({ok:true,uptimeSeconds:Math.round(process.uptime()),diagnosticsLastHour:recent.length,eventsLastHour:counts});
+});
+
 app.post("/app/api/login", (req,res)=>{ const code=String(req.body?.code||"").trim().toUpperCase(); const dev=deviceId(req); if(!code||!dev)return res.status(400).json({ok:false,error:"CODE_REQUIRED"}); const db=loadLicenses(); const lic=db[code]; if(!lic)return res.status(401).json({ok:false,error:"INVALID_CODE"}); if(lic.suspended)return res.status(403).json({ok:false,error:"SUSPENDED"}); if(lic.expiresAt && Date.now()>Date.parse(lic.expiresAt))return res.status(403).json({ok:false,error:"EXPIRED"}); lic.devices=Array.isArray(lic.devices)?lic.devices:[]; if(!lic.devices.includes(dev) && lic.devices.length>=(lic.maxDevices||1))return res.status(403).json({ok:false,error:"DEVICE_LIMIT"}); if(!lic.devices.includes(dev)){lic.devices.push(dev);lic.lastLoginAt=new Date().toISOString();saveLicenses(db);} res.json({ok:true,code,expiresAt:lic.expiresAt||null}); });
 
 app.get("/app/admin/licenses", (req,res)=>{ if(!ADMIN_KEY || req.query.key!==ADMIN_KEY)return res.status(401).send("Unauthorised"); const db=loadLicenses(); res.json(Object.entries(db).map(([code,x])=>({code,name:x.name||"",status:x.suspended?"suspended":"active",devices:x.devices?.length||0,maxDevices:x.maxDevices||1,expiresAt:x.expiresAt||null,createdAt:x.createdAt||null}))); });
