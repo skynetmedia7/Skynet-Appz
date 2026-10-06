@@ -471,7 +471,7 @@ public class MainActivity extends Activity {
                     }
                     hero.postDelayed(this,10000);
                 }
-            },10000);
+            },7000);
         }
     }
 
