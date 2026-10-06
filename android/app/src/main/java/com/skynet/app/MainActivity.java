@@ -246,7 +246,7 @@ public class MainActivity extends Activity {
         FrameLayout.LayoutParams sh=new FrameLayout.LayoutParams(-1,dp(heroH)); hero.addView(shade,sh);
         LinearLayout info=new LinearLayout(this); info.setOrientation(LinearLayout.VERTICAL); info.setGravity(Gravity.BOTTOM);
         info.setPadding(dp(18),0,dp(18),dp(22));
-        TextView title=label(m.optString("name","Skynet"),28,Color.WHITE); info.addView(title,new LinearLayout.LayoutParams(-1,dp(52)));
+        TextView title=label(m.optString("name","Skynet"),28,Color.WHITE); info.addView(title,new LinearLayout.LayoutParams(-1,dp(52)));\n        TextView rating=label(ratingText(m),14,GOLD); info.addView(rating,new LinearLayout.LayoutParams(-1,dp(28)));
         TextView desc=label(m.optString("description",""),13,Color.LTGRAY); desc.setMaxLines(2); info.addView(desc,new LinearLayout.LayoutParams(-1,dp(56)));
         LinearLayout buttons=new LinearLayout(this); buttons.setGravity(Gravity.LEFT);
         Button play=button("▶  PLAY",GOLD,Color.BLACK); Button more=button("+  MY LIST",Color.rgb(45,45,45),Color.WHITE);
@@ -362,7 +362,7 @@ public class MainActivity extends Activity {
         if(!"series".equals(type)){
             final Dialog d=new Dialog(this); d.getWindow();
             LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(dp(18),dp(18),dp(18),dp(18)); box.setBackground(bg(Color.rgb(18,18,18),dp(12)));
-            TextView t=label(m.optString("name","Title"),24,Color.WHITE); box.addView(t,new LinearLayout.LayoutParams(-1,dp(55)));
+            TextView t=label(m.optString("name","Title"),24,Color.WHITE); box.addView(t,new LinearLayout.LayoutParams(-1,dp(55)));\n            TextView rt=label(ratingText(m),14,GOLD); box.addView(rt,new LinearLayout.LayoutParams(-1,dp(30)));
             TextView desc=label(m.optString("description","No description available."),14,Color.LTGRAY); desc.setMaxLines(5); box.addView(desc,new LinearLayout.LayoutParams(-1,dp(110)));
             LinearLayout bs=new LinearLayout(this); Button p=button("▶ PLAY",GOLD,Color.BLACK); Button f=button("+ MY LIST",Color.DKGRAY,Color.WHITE);
             bs.addView(p,new LinearLayout.LayoutParams(dp(120),dp(45))); LinearLayout.LayoutParams fp=new LinearLayout.LayoutParams(dp(120),dp(45)); fp.setMargins(dp(8),0,0,0); bs.addView(f,fp); box.addView(bs);
@@ -375,7 +375,7 @@ public class MainActivity extends Activity {
         final Dialog d=new Dialog(this);
         LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(dp(18),dp(18),dp(18),dp(18)); box.setBackground(bg(Color.rgb(18,18,18),dp(12)));
-        TextView title=label(m.optString("name","Series"),24,Color.WHITE); box.addView(title,new LinearLayout.LayoutParams(-1,dp(52)));
+        TextView title=label(m.optString("name","Series"),24,Color.WHITE); box.addView(title,new LinearLayout.LayoutParams(-1,dp(52)));\n        TextView rt=label(ratingText(m),14,GOLD); box.addView(rt,new LinearLayout.LayoutParams(-1,dp(30)));
         TextView loading=label("Loading seasons…",14,Color.LTGRAY); box.addView(loading,new LinearLayout.LayoutParams(-1,dp(42)));
         d.setContentView(box);
         Window w=d.getWindow(); if(w!=null)w.setBackgroundDrawableResource(android.R.color.transparent);
@@ -453,7 +453,7 @@ public class MainActivity extends Activity {
         }).start();
     }
 
-    void toggleList(JSONObject m){
+    String ratingText(JSONObject m){\n        if(m==null)return "★ -";\n        double r=m.optDouble("imdbRating",0);\n        if(r<=0)return "★ -";\n        return String.format(Locale.UK,"★ %.1f",r);\n    }\n\n    void toggleList(JSONObject m){
         String id=m.optString("id"); boolean has=prefs.getBoolean("fav_"+id,false);
         prefs.edit().putBoolean("fav_"+id,!has).apply();
         Toast.makeText(this,!has?"Added to My List":"Removed from My List",Toast.LENGTH_SHORT).show();
@@ -492,7 +492,7 @@ public class MainActivity extends Activity {
             im.setScaleType(ImageView.ScaleType.CENTER_CROP);
             im.setBackground(bg(Color.rgb(30,30,30),dp(7)));
             card.addView(im,new FrameLayout.LayoutParams(dp(isTv()?210:125),dp(isTv()?118:185)));
-            TextView nt=label(m.optString("name",""),12,Color.WHITE);
+            TextView nt=label(ratingText(m)+"  "+m.optString("name",""),12,Color.WHITE);
             nt.setGravity(Gravity.BOTTOM|Gravity.LEFT);
             nt.setPadding(dp(7),0,dp(7),dp(7));
             nt.setMaxLines(2);
@@ -567,7 +567,7 @@ public class MainActivity extends Activity {
             im.setScaleType(ImageView.ScaleType.CENTER_CROP);
             im.setBackground(bg(Color.rgb(30,30,30),dp(7)));
             card.addView(im,new FrameLayout.LayoutParams(dp(isTv()?180:105),dp(isTv()?105:175)));
-            TextView nt=label(m.optString("name",""),11,Color.WHITE);
+            TextView nt=label(ratingText(m)+"  "+m.optString("name",""),11,Color.WHITE);
             nt.setGravity(Gravity.BOTTOM|Gravity.LEFT);
             nt.setPadding(dp(6),0,dp(6),dp(6));
             nt.setMaxLines(2);
