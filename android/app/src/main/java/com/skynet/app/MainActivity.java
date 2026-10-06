@@ -165,9 +165,18 @@ public class MainActivity extends Activity {
         if(isTv()){
             LinearLayout tvBody=new LinearLayout(this);
             tvBody.setOrientation(LinearLayout.HORIZONTAL);
+            tvBody.setGravity(Gravity.TOP);
             tvBody.addView(addTvSidebar(),new LinearLayout.LayoutParams(dp(78),-1));
-            // Horizontal parent: the content must take the full TV height.
-            tvBody.addView(scroll,new LinearLayout.LayoutParams(0,-1,1));
+            
+            // Give the TV catalogue an explicit full-height container.
+            // This avoids Android TV collapsing a nested weighted ScrollView.
+            FrameLayout tvContent=new FrameLayout(this);
+            tvContent.setBackgroundColor(BG);
+            tvContent.addView(scroll,new FrameLayout.LayoutParams(
+                    -1,-1,Gravity.TOP));
+            LinearLayout.LayoutParams tvcp=new LinearLayout.LayoutParams(
+                    0,-1,1);
+            tvBody.addView(tvContent,tvcp);
             root.addView(tvBody,new LinearLayout.LayoutParams(-1,0,1));
         }else{
             root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
