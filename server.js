@@ -827,8 +827,11 @@ app.get("/app/api/proxy", async (req, res) => {
 
 app.get("/app/api/streams", async (req, res) => {
   try {
-    const manifest = process.env.AIOSTREAMS_MANIFEST;
-    if (!manifest) return res.json({ streams: [] });
+    // Use the VPS environment value when supplied. Fall back to the configured
+    // Skynet AIOStreams addon so a missing env variable cannot silently
+    // produce an empty source list.
+    const manifest = process.env.AIOSTREAMS_MANIFEST ||
+      "https://aiostreams.elfhosted.com/stremio/fe2a7402-8285-4348-8a28-0d9a9b4dd1e5/eyJpIjoiSHRTQ21YeDdzSlN1aXF4YU9ZcThrdz09IiwiZSI6IjNBbk4rR0x3c3hkcllwQ2ZDa2xSSnp1elZCRU93cEJjMThYN0ZWTER4Mk09IiwidCI6ImEifQ/manifest.json";
     const type = req.query.type === "series" ? "series" : "movie";
     const requestedId = String(req.query.id || "");
     if (!requestedId) return res.json({ streams: [] });
@@ -867,7 +870,13 @@ app.get("/app/api/streams", async (req, res) => {
           streams = data.streams;
           break;
         }
-      } catch (_) {}
+      } catch (e) {
+        console.error("AIOSTREAMS FETCH ERROR " + candidate + " " + e.message);
+      }
+    }
+
+    if (!streams.length) {
+      console.error("AIOSTREAMS RETURNED NO STREAMS type=" + type + " id=" + requestedId + " candidates=" + JSON.stringify(candidates));
     }
 
     // Only expose real media URLs. AIOStreams can return a debrid "Still
