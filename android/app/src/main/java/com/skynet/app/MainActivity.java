@@ -237,6 +237,8 @@ public class MainActivity extends Activity {
         // the compact layout on phones/tablets.
         int heroH=isTv()?320:270;
         FrameLayout hero=new FrameLayout(this); hero.setBackgroundColor(Color.rgb(15,15,15));
+        hero.setFocusable(false);
+        hero.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
         ImageView image=new ImageView(this); image.setScaleType(ImageView.ScaleType.CENTER_CROP);
         hero.addView(image,new FrameLayout.LayoutParams(-1,dp(heroH)));
         TextView shade=new TextView(this); shade.setBackground(bg(Color.argb(180,5,5,5),0));
@@ -247,6 +249,10 @@ public class MainActivity extends Activity {
         TextView desc=label(m.optString("description",""),13,Color.LTGRAY); desc.setMaxLines(2); info.addView(desc,new LinearLayout.LayoutParams(-1,dp(56)));
         LinearLayout buttons=new LinearLayout(this); buttons.setGravity(Gravity.LEFT);
         Button play=button("▶  PLAY",GOLD,Color.BLACK); Button more=button("+  MY LIST",Color.rgb(45,45,45),Color.WHITE);
+        if(isTv()){
+            play.setNextFocusDownId(View.NO_ID);
+            more.setNextFocusDownId(View.NO_ID);
+        }
         buttons.addView(play,new LinearLayout.LayoutParams(dp(125),dp(44))); LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(dp(125),dp(44)); mp.setMargins(dp(8),0,0,0); buttons.addView(more,mp);
         info.addView(buttons); hero.addView(info,new FrameLayout.LayoutParams(-1,dp(heroH)));
         play.setOnClickListener(v->play(type,m.optString("id"),m.optString("name")));
@@ -310,6 +316,13 @@ public class MainActivity extends Activity {
                 card.setOnClickListener(v->details(type,m));
             }
             styleTvCard(card,im);
+            if(isTv()){
+                // Make UP from the first catalogue row return directly to the
+                // hero controls instead of getting trapped inside the row.
+                if(i==0){
+                    card.setNextFocusUpId(play.getId());
+                }
+            }
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(cardW),dp(cardH));
             cp.setMargins(0,0,dp(10),0); line.addView(card,cp);
             loadImage(im,m.optString("poster"));
