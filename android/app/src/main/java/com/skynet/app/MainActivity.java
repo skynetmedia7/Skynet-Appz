@@ -139,6 +139,28 @@ public class MainActivity extends Activity {
         return nav;
     }
 
+    LinearLayout skyflixBrand(float textSize){
+        LinearLayout mark=new LinearLayout(this);
+        mark.setOrientation(LinearLayout.HORIZONTAL);
+        mark.setGravity(Gravity.CENTER_VERTICAL);
+        mark.setPadding(0,0,0,0);
+
+        TextView play=label("▶",textSize+2,Color.rgb(35,175,255));
+        play.setGravity(Gravity.CENTER);
+        play.setTypeface(null,Typeface.BOLD);
+        mark.addView(play,new LinearLayout.LayoutParams(dp(textSize*1.05f),dp(textSize+8)));
+
+        TextView sky=label("SKY",textSize,Color.WHITE);
+        sky.setLetterSpacing(.04f);
+        sky.setTypeface(null,Typeface.BOLD);
+        TextView flix=label("FLIX",textSize,Color.rgb(35,175,255));
+        flix.setLetterSpacing(.04f);
+        flix.setTypeface(null,Typeface.BOLD);
+        mark.addView(sky,new LinearLayout.LayoutParams(dp(textSize*2.0f),dp(textSize+8)));
+        mark.addView(flix,new LinearLayout.LayoutParams(dp(textSize*2.05f),dp(textSize+8)));
+        return mark;
+    }
+
     @Override public void onCreate(Bundle b){
         super.onCreate(b);
         getWindow().setStatusBarColor(BG); getWindow().setNavigationBarColor(BG);
@@ -148,8 +170,8 @@ public class MainActivity extends Activity {
         root.setPadding(dp(16),dp(24),0,0);
 
         LinearLayout top=new LinearLayout(this); top.setGravity(Gravity.CENTER_VERTICAL);
-        TextView logo=label("SKYNET",28,GOLD); logo.setLetterSpacing(.08f);
-        top.addView(logo,new LinearLayout.LayoutParams(0,dp(54),1));
+        LinearLayout skyflixLogo=skyflixBrand(28);
+        top.addView(skyflixLogo,new LinearLayout.LayoutParams(0,dp(54),1));
 
         search=new EditText(this);
         search.setHint("Search"); search.setHintTextColor(Color.GRAY); search.setTextColor(Color.WHITE);
@@ -188,7 +210,7 @@ public class MainActivity extends Activity {
             root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
         }
 
-        status=label("Connecting to Skynet VPS…",12,Color.GRAY); status.setPadding(0,dp(8),dp(16),dp(8));
+        status=label("Connecting to Skyflix VPS…",12,Color.GRAY); status.setPadding(0,dp(8),dp(16),dp(8));
         root.addView(status,new LinearLayout.LayoutParams(-1,dp(40)));
         setContentView(root);
         if(prefs.getString("license_code","").length()>0) load(); else showLogin();
@@ -222,10 +244,9 @@ public class MainActivity extends Activity {
         card.gravity=Gravity.CENTER;
         card.setMargins(dp(18),dp(30),dp(18),dp(30));
 
-        TextView logo=label("SKYNET",42,Color.rgb(255,64,80));
+        LinearLayout logo=skyflixBrand(42);
         logo.setGravity(Gravity.CENTER);
-        logo.setTypeface(null,android.graphics.Typeface.BOLD);
-        box.addView(logo,new LinearLayout.LayoutParams(-1,dp(58)));
+        box.addView(logo,new LinearLayout.LayoutParams(-1,dp(66)));
 
         TextView welcome=label("WELCOME",18,Color.WHITE);
         welcome.setGravity(Gravity.CENTER);
@@ -254,7 +275,7 @@ public class MainActivity extends Activity {
         code.setBackground(bg(Color.rgb(25,28,35),dp(12)));
         box.addView(code,new LinearLayout.LayoutParams(-1,dp(64)));
 
-        Button login=button("ACTIVATE SKYNET",Color.rgb(255,64,80),Color.WHITE);
+        Button login=button("ACTIVATE SKYFLIX",Color.rgb(255,64,80),Color.WHITE);
         login.setTextSize(16);
         login.setAllCaps(false);
         login.setTypeface(null,android.graphics.Typeface.BOLD);
@@ -296,7 +317,7 @@ public class MainActivity extends Activity {
                 }catch(Exception e){
                     runOnUiThread(()->{
                         login.setEnabled(true);
-                        msg.setText("Could not connect to Skynet");
+                        msg.setText("Could not connect to Skyflix");
                     });
                 }
             }).start();
@@ -308,7 +329,7 @@ public class MainActivity extends Activity {
             code.setNextFocusDownId(login.getId());
             login.setNextFocusUpId(code.getId());
         }
-        status.setText("SKYNET • Activation required");
+        status.setText("SKYFLIX • Activation required");
     }
 
     String loginError(String e){
@@ -320,7 +341,7 @@ public class MainActivity extends Activity {
     }
 
     String postJson(String u,String body)throws Exception{
-        HttpURLConnection c=(HttpURLConnection)new URL(u).openConnection(); c.setRequestMethod("POST"); c.setConnectTimeout(10000); c.setReadTimeout(15000); c.setDoOutput(true); c.setRequestProperty("Content-Type","application/json"); c.setRequestProperty("X-Skynet-Device",deviceId());
+        HttpURLConnection c=(HttpURLConnection)new URL(u).openConnection(); c.setRequestMethod("POST"); c.setConnectTimeout(10000); c.setReadTimeout(15000); c.setDoOutput(true); c.setRequestProperty("Content-Type","application/json"); c.setRequestProperty("X-Skyflix-Device",deviceId());
         c.getOutputStream().write(body.getBytes("UTF-8")); c.getOutputStream().close();
         InputStream in=c.getResponseCode()>=400?c.getErrorStream():c.getInputStream(); BufferedReader b=new BufferedReader(new InputStreamReader(in)); StringBuilder s=new StringBuilder(); String l; while((l=b.readLine())!=null)s.append(l); b.close(); return s.toString();
     }
@@ -337,7 +358,7 @@ public class MainActivity extends Activity {
                 addCatalog(first,"movie","skynet-trending-movies.json","Trending");
                 runOnUiThread(()->{
                     render(first);
-                    status.setText("SKYNET • Connected");
+                    status.setText("SKYFLIX • Connected");
                     reportDiagnostic("startup","home_loaded");
                     focusFirstTvCard();
                 });
@@ -350,12 +371,12 @@ public class MainActivity extends Activity {
                 runOnUiThread(()->{
                     first.addAll(more);
                     render(first);
-                    status.setText("SKYNET • Connected");
+                    status.setText("SKYFLIX • Connected");
                     focusFirstTvCard();
                 });
             }catch(Exception e){
                 runOnUiThread(()->{
-                    if(content.getChildCount()==0) status.setText("Skynet connection error");
+                    if(content.getChildCount()==0) status.setText("Skyflix connection error");
                     reportDiagnostic("api_error","home_load_failed");
                 });
             }
@@ -433,9 +454,9 @@ public class MainActivity extends Activity {
         addMyList();
         for(JSONObject r:rows){
             if("Streaming Services".equalsIgnoreCase(r.optString("name",""))) continue;
-            try{ addRow(r.optString("name","Skynet"),r.optString("type","movie"),r.getJSONArray("metas")); }catch(Exception ignored){}
+            try{ addRow(r.optString("name","Skyflix"),r.optString("type","movie"),r.getJSONArray("metas")); }catch(Exception ignored){}
         }
-        status.setText("SKYNET • Connected");
+        status.setText("SKYFLIX • Connected");
     }
 
     void addHero(JSONObject m,String type,JSONArray heroMetas){
@@ -451,7 +472,7 @@ public class MainActivity extends Activity {
         FrameLayout.LayoutParams sh=new FrameLayout.LayoutParams(-1,dp(heroH)); hero.addView(shade,sh);
         LinearLayout info=new LinearLayout(this); info.setOrientation(LinearLayout.VERTICAL); info.setGravity(Gravity.BOTTOM);
         info.setPadding(dp(18),0,dp(18),dp(22));
-        TextView title=label(m.optString("name","Skynet"),28,Color.WHITE); info.addView(title,new LinearLayout.LayoutParams(-1,dp(52)));
+        TextView title=label(m.optString("name","Skyflix"),28,Color.WHITE); info.addView(title,new LinearLayout.LayoutParams(-1,dp(52)));
         TextView rating=label(ratingText(m),14,GOLD); info.addView(rating,new LinearLayout.LayoutParams(-1,dp(28)));
         TextView desc=label(m.optString("description",""),13,Color.LTGRAY); desc.setMaxLines(2); info.addView(desc,new LinearLayout.LayoutParams(-1,dp(56)));
         hero.addView(info,new FrameLayout.LayoutParams(-1,dp(heroH)));
@@ -467,7 +488,7 @@ public class MainActivity extends Activity {
                     heroIndex[0]=(heroIndex[0]+1)%Math.min(heroMetas.length(),10);
                     JSONObject next=heroMetas.optJSONObject(heroIndex[0]);
                     if(next!=null){
-                        title.setText(next.optString("name","Skynet"));
+                        title.setText(next.optString("name","Skyflix"));
                         desc.setText(next.optString("description",""));
                         loadImage(image,next.optString("background",next.optString("poster")));
                     }
@@ -847,7 +868,7 @@ public class MainActivity extends Activity {
         TextView h=label("Search results",22,Color.WHITE);
         h.setPadding(0,dp(15),0,dp(10));
         content.addView(h);
-        status.setText("Searching Skynet…");
+        status.setText("Searching Skyflix…");
         final String query=q;
         new Thread(()->{
             try{
@@ -924,7 +945,7 @@ public class MainActivity extends Activity {
                 q.setRequestMethod("POST"); q.setConnectTimeout(4000); q.setReadTimeout(5000);
                 q.setDoOutput(true); q.setRequestProperty("Content-Type","application/json");
                 String lic=prefs==null?"":prefs.getString("license_code","");
-                q.setRequestProperty("X-Skynet-License",lic); q.setRequestProperty("X-Skynet-Device",deviceId());
+                q.setRequestProperty("X-Skyflix-License",lic); q.setRequestProperty("X-Skyflix-Device",deviceId());
                 JSONObject body=new JSONObject(); body.put("type",type); body.put("detail",detail==null?"":detail); body.put("app","android"); body.put("version","1.0.24");
                 byte[] bytes=body.toString().getBytes("UTF-8"); q.setFixedLengthStreamingMode(bytes.length);
                 OutputStream out=q.getOutputStream(); out.write(bytes); out.close(); q.getResponseCode(); q.disconnect();
@@ -1050,7 +1071,7 @@ public class MainActivity extends Activity {
 
     String get(String u)throws Exception{
         HttpURLConnection c=(HttpURLConnection)new URL(u).openConnection(); c.setConnectTimeout(10000); c.setReadTimeout(15000);
-        String license=prefs==null?"":prefs.getString("license_code",""); if(license.length()>0)c.setRequestProperty("X-Skynet-License",license); c.setRequestProperty("X-Skynet-Device",deviceId());
+        String license=prefs==null?"":prefs.getString("license_code",""); if(license.length()>0)c.setRequestProperty("X-Skyflix-License",license); c.setRequestProperty("X-Skyflix-Device",deviceId());
         BufferedReader b=new BufferedReader(new InputStreamReader(c.getInputStream())); StringBuilder s=new StringBuilder(); String l;
         while((l=b.readLine())!=null)s.append(l); b.close(); return s.toString();
     }
