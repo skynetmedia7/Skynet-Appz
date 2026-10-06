@@ -436,7 +436,7 @@ public class MainActivity extends Activity {
     void addHero(JSONObject m,String type,JSONArray heroMetas){
         // Give the main hero much more screen space on Fire TV while keeping
         // the compact layout on phones/tablets.
-        int heroH=isTv()?390:250;
+        int heroH=isTv()?300:250;
         FrameLayout hero=new FrameLayout(this); hero.setBackground(bg(Color.rgb(15,15,15),dp(14))); hero.setClipToOutline(true);
         hero.setFocusable(false);
         hero.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
@@ -499,7 +499,7 @@ public class MainActivity extends Activity {
             im.setAdjustViewBounds(true);
             im.setPadding(dp(4),dp(4),dp(4),dp(4));
             im.setBackground(bg(Color.rgb(28,28,28),dp(12)));
-            int serviceW=isTv()?220:82, serviceH=isTv()?105:50;
+            int serviceW=isTv()?200:82, serviceH=isTv()?88:50;
             card.addView(im,new FrameLayout.LayoutParams(dp(serviceW),dp(serviceH)));
 
             card.setOnClickListener(v->openServiceCatalog(
@@ -513,7 +513,7 @@ public class MainActivity extends Activity {
             loadImage(im,m.optString("poster"));
         }
         hs.addView(line);
-        content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?125:58)));
+        content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?104:58)));
     }
 
     Button button(String s,int c,int tc){
