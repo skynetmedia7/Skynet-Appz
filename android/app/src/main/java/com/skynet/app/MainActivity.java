@@ -450,8 +450,7 @@ public class MainActivity extends Activity {
             FrameLayout.LayoutParams bp=new FrameLayout.LayoutParams(dp(isTv()?42:38),dp(isTv()?23:25),Gravity.TOP|Gravity.RIGHT);
             bp.setMargins(0,dp(6),dp(5),0); card.addView(badge,bp);
 
-            String serviceId=m.optString("id","");
-            if(serviceId.startsWith("skynet-service:")){
+            if(serviceCard){
                 card.setOnClickListener(v->openServiceCatalog(serviceId.substring("skynet-service:".length()), type));
             }else{
                 card.setOnClickListener(v->details(type,m));
