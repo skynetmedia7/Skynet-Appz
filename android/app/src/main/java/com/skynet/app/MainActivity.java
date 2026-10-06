@@ -380,15 +380,16 @@ public class MainActivity extends Activity {
         TextView rating=label(ratingText(m),14,GOLD); info.addView(rating,new LinearLayout.LayoutParams(-1,dp(28)));
         TextView desc=label(m.optString("description",""),13,Color.LTGRAY); desc.setMaxLines(2); info.addView(desc,new LinearLayout.LayoutParams(-1,dp(56)));
         LinearLayout buttons=new LinearLayout(this); buttons.setGravity(Gravity.LEFT);
-        Button play=button("▶  PLAY",GOLD,Color.BLACK); Button more=button("+  MY LIST",Color.rgb(45,45,45),Color.WHITE);\n        final JSONObject[] currentHero={m};
+        Button play=button("▶  PLAY",GOLD,Color.BLACK); Button more=button("+  MY LIST",Color.rgb(45,45,45),Color.WHITE);
+        final JSONObject[] currentHero={m};
         if(isTv()){
             play.setNextFocusDownId(View.NO_ID);
             more.setNextFocusDownId(View.NO_ID);
         }
         buttons.addView(play,new LinearLayout.LayoutParams(dp(125),dp(44))); LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(dp(125),dp(44)); mp.setMargins(dp(8),0,0,0); buttons.addView(more,mp);
         info.addView(buttons); hero.addView(info,new FrameLayout.LayoutParams(-1,dp(heroH)));
-        play.setOnClickListener(v->play(type,m.optString("id"),m.optString("name")));
-        more.setOnClickListener(v->toggleList(m));
+        play.setOnClickListener(v->{ JSONObject x=currentHero[0]; play(type,x.optString("id"),x.optString("name")); });
+        more.setOnClickListener(v->{ JSONObject x=currentHero[0]; toggleList(x); });
         content.addView(hero,new LinearLayout.LayoutParams(-1,dp(heroH)));
         loadImage(image,m.optString("background",m.optString("poster")));
 
