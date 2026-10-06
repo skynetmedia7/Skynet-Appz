@@ -367,7 +367,7 @@ public class MainActivity extends Activity {
         // Give the main hero much more screen space on Fire TV while keeping
         // the compact layout on phones/tablets.
         int heroH=isTv()?430:270;
-        FrameLayout hero=new FrameLayout(this); hero.setBackgroundColor(Color.rgb(15,15,15));
+        FrameLayout hero=new FrameLayout(this); hero.setBackground(bg(Color.rgb(15,15,15),dp(14))); hero.setClipToOutline(true);
         hero.setFocusable(false);
         hero.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
         ImageView image=new ImageView(this); image.setScaleType(ImageView.ScaleType.CENTER_CROP);
@@ -380,7 +380,7 @@ public class MainActivity extends Activity {
         TextView rating=label(ratingText(m),14,GOLD); info.addView(rating,new LinearLayout.LayoutParams(-1,dp(28)));
         TextView desc=label(m.optString("description",""),13,Color.LTGRAY); desc.setMaxLines(2); info.addView(desc,new LinearLayout.LayoutParams(-1,dp(56)));
         LinearLayout buttons=new LinearLayout(this); buttons.setGravity(Gravity.LEFT);
-        Button play=button("▶  PLAY",GOLD,Color.BLACK); Button more=button("+  MY LIST",Color.rgb(45,45,45),Color.WHITE);
+        Button play=button("▶  PLAY",GOLD,Color.BLACK); Button more=button("+  MY LIST",Color.rgb(45,45,45),Color.WHITE);\n        final JSONObject[] currentHero={m};
         if(isTv()){
             play.setNextFocusDownId(View.NO_ID);
             more.setNextFocusDownId(View.NO_ID);
