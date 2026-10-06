@@ -67,13 +67,19 @@ public class MainActivity extends Activity {
 
     void styleTvCard(View card, View image){
         if(!isTv()) return;
+        // Clear, unmistakable Fire TV selection: a bright blue outline around
+        // the whole card, without covering the poster artwork.
+        card.setBackgroundColor(Color.TRANSPARENT);
         card.setOnFocusChangeListener((v,has)->{
+            GradientDrawable border=new GradientDrawable();
+            border.setColor(Color.TRANSPARENT);
+            border.setCornerRadius(dp(8));
+            border.setStroke(dp(has?4:0), has?FOCUS_BLUE:Color.TRANSPARENT);
+            v.setForeground(border);
             if(has){
                 v.animate().scaleX(1.06f).scaleY(1.06f).setDuration(100).start();
-                image.setBackground(bg(FOCUS_BLUE,dp(8)));
             }else{
                 v.animate().scaleX(1f).scaleY(1f).setDuration(100).start();
-                image.setBackground(bg(Color.rgb(30,30,30),dp(7)));
             }
         });
     }
