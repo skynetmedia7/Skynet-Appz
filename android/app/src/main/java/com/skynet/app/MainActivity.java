@@ -366,7 +366,7 @@ public class MainActivity extends Activity {
     void addHero(JSONObject m,String type,JSONArray heroMetas){
         // Give the main hero much more screen space on Fire TV while keeping
         // the compact layout on phones/tablets.
-        int heroH=isTv()?320:270;
+        int heroH=isTv()?430:270;
         FrameLayout hero=new FrameLayout(this); hero.setBackgroundColor(Color.rgb(15,15,15));
         hero.setFocusable(false);
         hero.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
