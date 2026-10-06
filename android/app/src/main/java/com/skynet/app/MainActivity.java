@@ -370,8 +370,6 @@ public class MainActivity extends Activity {
                 break;
             }
         }
-        addScrollHint();
-
         if(prefs.contains("resume_id")) addResume();
         addMyList();
         for(JSONObject r:rows){
@@ -464,13 +462,6 @@ public class MainActivity extends Activity {
         content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?70:58)));
     }
 
-    void addScrollHint(){
-        TextView down=label("⌄",30,Color.LTGRAY);
-        down.setGravity(Gravity.CENTER);
-        down.setAlpha(0.9f);
-        content.addView(down,new LinearLayout.LayoutParams(-1,dp(30)));
-    }
-
     Button button(String s,int c,int tc){
         Button b=new Button(this); b.setText(s); b.setTextColor(tc); b.setTextSize(13); b.setAllCaps(false);
         b.setTypeface(null,Typeface.BOLD); b.setBackground(bg(c,dp(8))); b.setFocusable(true); b.setFocusableInTouchMode(false);
@@ -485,7 +476,7 @@ public class MainActivity extends Activity {
         for(int i=0;i<Math.min(20,metas.length());i++){
             JSONObject m=metas.optJSONObject(i); if(m==null)continue;
             FrameLayout card=new FrameLayout(this); card.setFocusable(true); card.setClickable(true);
-            int cardW=isTv()?210:125, cardH=isTv()?118:185;
+            int cardW=isTv()?190:125, cardH=isTv()?107:185;
             String serviceId=m.optString("id","");
             boolean serviceCard=serviceId.startsWith("skynet-service:");
             ImageView im=new ImageView(this);
@@ -699,7 +690,7 @@ public class MainActivity extends Activity {
             im.setScaleType(serviceCard?ImageView.ScaleType.CENTER_INSIDE:ImageView.ScaleType.CENTER_CROP);
             im.setBackground(bg(Color.rgb(30,30,30),dp(10)));
             if(serviceCard) im.setPadding(dp(14),dp(8),dp(14),dp(8));
-            card.addView(im,new FrameLayout.LayoutParams(dp(isTv()?210:125),dp(isTv()?118:185)));
+            card.addView(im,new FrameLayout.LayoutParams(dp(isTv()?190:125),dp(isTv()?107:185)));
             card.setClipToOutline(true);
             TextView nt=label(ratingText(m)+"  "+m.optString("name",""),12,Color.WHITE);
             nt.setGravity(Gravity.BOTTOM|Gravity.LEFT);
