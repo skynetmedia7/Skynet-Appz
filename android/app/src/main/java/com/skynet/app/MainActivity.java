@@ -222,7 +222,7 @@ public class MainActivity extends Activity {
         content.removeAllViews();
         if(rows.size()==0){ status.setText("No catalogue data returned"); return; }
         JSONObject hero=rows.get(0).optJSONArray("metas").optJSONObject(0);
-        if(hero!=null) addHero(hero,rows.get(0).optString("type","movie"));
+        if(hero!=null) addHero(hero,rows.get(0).optString("type","movie"), rows.get(0).optJSONArray("metas"));
         if(prefs.contains("resume_id")) addResume();
         addMyList();
         for(JSONObject r:rows){
@@ -231,7 +231,7 @@ public class MainActivity extends Activity {
         status.setText("SKYNET • Connected");
     }
 
-    void addHero(JSONObject m,String type){
+    void addHero(JSONObject m,String type,JSONArray heroMetas){
         FrameLayout hero=new FrameLayout(this); hero.setBackgroundColor(Color.rgb(15,15,15));
         ImageView image=new ImageView(this); image.setScaleType(ImageView.ScaleType.CENTER_CROP);
         hero.addView(image,new FrameLayout.LayoutParams(-1,dp(270)));
@@ -249,6 +249,23 @@ public class MainActivity extends Activity {
         more.setOnClickListener(v->toggleList(m));
         content.addView(hero,new LinearLayout.LayoutParams(-1,dp(270)));
         loadImage(image,m.optString("background",m.optString("poster")));
+
+        // Rotate the hero artwork automatically on the TV/home screen.
+        if(heroMetas!=null && heroMetas.length()>1){
+            final int[] heroIndex={0};
+            hero.postDelayed(new Runnable(){
+                @Override public void run(){
+                    heroIndex[0]=(heroIndex[0]+1)%Math.min(heroMetas.length(),10);
+                    JSONObject next=heroMetas.optJSONObject(heroIndex[0]);
+                    if(next!=null){
+                        title.setText(next.optString("name","Skynet"));
+                        desc.setText(next.optString("description",""));
+                        loadImage(image,next.optString("background",next.optString("poster")));
+                    }
+                    hero.postDelayed(this,10000);
+                }
+            },10000);
+        }
     }
 
     Button button(String s,int c,int tc){
