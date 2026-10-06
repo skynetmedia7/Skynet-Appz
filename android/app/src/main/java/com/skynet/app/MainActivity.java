@@ -373,7 +373,7 @@ public class MainActivity extends Activity {
     void addHero(JSONObject m,String type,JSONArray heroMetas){
         // Give the main hero much more screen space on Fire TV while keeping
         // the compact layout on phones/tablets.
-        int heroH=isTv()?430:270;
+        int heroH=isTv()?350:250;
         FrameLayout hero=new FrameLayout(this); hero.setBackground(bg(Color.rgb(15,15,15),dp(14))); hero.setClipToOutline(true);
         hero.setFocusable(false);
         hero.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
@@ -386,17 +386,7 @@ public class MainActivity extends Activity {
         TextView title=label(m.optString("name","Skynet"),28,Color.WHITE); info.addView(title,new LinearLayout.LayoutParams(-1,dp(52)));
         TextView rating=label(ratingText(m),14,GOLD); info.addView(rating,new LinearLayout.LayoutParams(-1,dp(28)));
         TextView desc=label(m.optString("description",""),13,Color.LTGRAY); desc.setMaxLines(2); info.addView(desc,new LinearLayout.LayoutParams(-1,dp(56)));
-        LinearLayout buttons=new LinearLayout(this); buttons.setGravity(Gravity.LEFT);
-        Button play=button("▶  PLAY",GOLD,Color.BLACK); Button more=button("+  MY LIST",Color.rgb(45,45,45),Color.WHITE);
-        final JSONObject[] currentHero={m};
-        if(isTv()){
-            play.setNextFocusDownId(View.NO_ID);
-            more.setNextFocusDownId(View.NO_ID);
-        }
-        buttons.addView(play,new LinearLayout.LayoutParams(dp(125),dp(44))); LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(dp(125),dp(44)); mp.setMargins(dp(8),0,0,0); buttons.addView(more,mp);
-        info.addView(buttons); hero.addView(info,new FrameLayout.LayoutParams(-1,dp(heroH)));
-        play.setOnClickListener(v->{ JSONObject x=currentHero[0]; play(type,x.optString("id"),x.optString("name")); });
-        more.setOnClickListener(v->{ JSONObject x=currentHero[0]; toggleList(x); });
+        hero.addView(info,new FrameLayout.LayoutParams(-1,dp(heroH)));
         content.addView(hero,new LinearLayout.LayoutParams(-1,dp(heroH)));
         loadImage(image,m.optString("background",m.optString("poster")));
 
@@ -408,7 +398,6 @@ public class MainActivity extends Activity {
                     heroIndex[0]=(heroIndex[0]+1)%Math.min(heroMetas.length(),10);
                     JSONObject next=heroMetas.optJSONObject(heroIndex[0]);
                     if(next!=null){
-                        currentHero[0]=next;
                         title.setText(next.optString("name","Skynet"));
                         desc.setText(next.optString("description",""));
                         loadImage(image,next.optString("background",next.optString("poster")));
