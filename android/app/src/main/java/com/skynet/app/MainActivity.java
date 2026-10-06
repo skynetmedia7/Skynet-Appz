@@ -1075,9 +1075,6 @@ public class MainActivity extends Activity {
         BufferedReader b=new BufferedReader(new InputStreamReader(c.getInputStream())); StringBuilder s=new StringBuilder(); String l;
         while((l=b.readLine())!=null)s.append(l); b.close(); return s.toString();
     }
-}
-    @Override protected void onDestroy(){
-        releaseInternalPlayer();
     @Override protected void onDestroy(){
         releaseInternalPlayer();
         super.onDestroy();
