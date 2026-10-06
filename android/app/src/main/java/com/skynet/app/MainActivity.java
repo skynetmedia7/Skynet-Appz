@@ -220,7 +220,7 @@ public class MainActivity extends Activity {
 
             String serviceId=m.optString("id","");
             if(serviceId.startsWith("skynet-service:")){
-                card.setOnClickListener(v->openServiceCatalog(serviceId.substring("skynet-service:".length), type));
+                card.setOnClickListener(v->openServiceCatalog(serviceId.substring("skynet-service:".length()), type));
             }else{
                 card.setOnClickListener(v->details(type,m));
             }
