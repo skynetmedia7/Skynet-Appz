@@ -103,6 +103,39 @@ public class MainActivity extends Activity {
         GradientDrawable g=new GradientDrawable(); g.setColor(color); g.setCornerRadius(dp(radius)); return g;
     }
 
+    LinearLayout addTvSidebar(){
+        LinearLayout nav=new LinearLayout(this);
+        nav.setOrientation(LinearLayout.VERTICAL);
+        nav.setGravity(Gravity.TOP|Gravity.CENTER_HORIZONTAL);
+        nav.setPadding(0,dp(18),dp(14),0);
+        nav.setFocusable(false);
+
+        String[] labels={"⌂","⌕","▣","⚙"};
+        String[] names={"Home","Search","Library","Settings"};
+        for(int i=0;i<labels.length;i++){
+            TextView item=label(labels[i],28,Color.rgb(70,170,255));
+            item.setGravity(Gravity.CENTER);
+            item.setFocusable(true);
+            item.setClickable(true);
+            item.setBackground(bg(Color.TRANSPARENT,dp(14)));
+            item.setContentDescription(names[i]);
+            final int which=i;
+            item.setOnFocusChangeListener((v,has)->{
+                v.setBackground(has?bg(Color.rgb(18,85,145),dp(14)):bg(Color.TRANSPARENT,dp(14)));
+                v.setScaleX(has?1.08f:1f); v.setScaleY(has?1.08f:1f);
+            });
+            item.setOnClickListener(v->{
+                if(which==0) showHome();
+                else if(which==1){ search.requestFocus(); }
+                else status.setText(names[which]+" • Coming soon");
+            });
+            LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(dp(64),dp(64));
+            p.setMargins(0,dp(4),0,dp(14));
+            nav.addView(item,p);
+        }
+        return nav;
+    }
+
     @Override public void onCreate(Bundle b){
         super.onCreate(b);
         getWindow().setStatusBarColor(BG); getWindow().setNavigationBarColor(BG);
@@ -127,8 +160,17 @@ public class MainActivity extends Activity {
 
         ScrollView scroll=new ScrollView(this); scroll.setFillViewport(true);
         prepareTvNavigation(scroll);
-        content=new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(0,0,0,dp(30));
-        scroll.addView(content); root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+        content=new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(0,0,dp(24),dp(30));
+
+        if(isTv()){
+            LinearLayout tvBody=new LinearLayout(this);
+            tvBody.setOrientation(LinearLayout.HORIZONTAL);
+            tvBody.addView(addTvSidebar(),new LinearLayout.LayoutParams(dp(78),-1));
+            tvBody.addView(scroll,new LinearLayout.LayoutParams(0,0,1));
+            root.addView(tvBody,new LinearLayout.LayoutParams(-1,0,1));
+        }else{
+            root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+        }
 
         status=label("Connecting to Skynet VPS…",12,Color.GRAY); status.setPadding(0,dp(8),dp(16),dp(8));
         root.addView(status,new LinearLayout.LayoutParams(-1,dp(40)));
@@ -381,7 +423,7 @@ public class MainActivity extends Activity {
     void addHero(JSONObject m,String type,JSONArray heroMetas){
         // Give the main hero much more screen space on Fire TV while keeping
         // the compact layout on phones/tablets.
-        int heroH=isTv()?350:250;
+        int heroH=isTv()?390:250;
         FrameLayout hero=new FrameLayout(this); hero.setBackground(bg(Color.rgb(15,15,15),dp(14))); hero.setClipToOutline(true);
         hero.setFocusable(false);
         hero.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
@@ -444,7 +486,7 @@ public class MainActivity extends Activity {
             im.setAdjustViewBounds(true);
             im.setPadding(dp(4),dp(4),dp(4),dp(4));
             im.setBackground(bg(Color.rgb(28,28,28),dp(12)));
-            int serviceW=isTv()?110:82, serviceH=isTv()?62:50;
+            int serviceW=isTv()?220:82, serviceH=isTv()?105:50;
             card.addView(im,new FrameLayout.LayoutParams(dp(serviceW),dp(serviceH)));
 
             card.setOnClickListener(v->openServiceCatalog(
@@ -458,7 +500,7 @@ public class MainActivity extends Activity {
             loadImage(im,m.optString("poster"));
         }
         hs.addView(line);
-        content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?70:58)));
+        content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?125:58)));
     }
 
     Button button(String s,int c,int tc){
@@ -486,15 +528,15 @@ public class MainActivity extends Activity {
             grid.setOrientation(LinearLayout.VERTICAL);
             grid.setPadding(0,0,dp(12),0);
 
-            final int columns=5;
-            final int cardH=112;
+            final int columns=4;
+            final int cardH=135;
             // Fit exactly five TV tiles across the available display width.
             // The old fixed 200dp width could overflow on some TVs and show
             // part of a sixth tile.
             final int screenW=getResources().getDisplayMetrics().widthPixels;
-            final int gap=dp(8);
-            final int sidePadding=dp(12);
-            final int cardW=Math.max(dp(120),(screenW-sidePadding-gap*(columns-1))/columns);
+            final int gap=dp(12);
+            final int sidePadding=dp(18);
+            final int cardW=Math.max(dp(160),(screenW-sidePadding-gap*(columns-1))/columns);
             LinearLayout row=null;
 
             for(int i=0;i<Math.min(50,metas.length());i++){
