@@ -401,6 +401,7 @@ public class MainActivity extends Activity {
                     heroIndex[0]=(heroIndex[0]+1)%Math.min(heroMetas.length(),10);
                     JSONObject next=heroMetas.optJSONObject(heroIndex[0]);
                     if(next!=null){
+                        currentHero[0]=next;
                         title.setText(next.optString("name","Skynet"));
                         desc.setText(next.optString("description",""));
                         loadImage(image,next.optString("background",next.optString("poster")));
