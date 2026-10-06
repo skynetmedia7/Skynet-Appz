@@ -535,21 +535,16 @@ public class MainActivity extends Activity {
         content.addView(title,new LinearLayout.LayoutParams(-1,dp(54)));
 
         if(isTv()){
-            // Fire TV: show five tiles per line, then wrap the remaining titles
-            // onto the next line instead of making one very long horizontal row.
+            // TV catalogue: portrait poster cards like the phone design reference,
+            // with four comfortable cards across the TV screen.
             LinearLayout grid=new LinearLayout(this);
             grid.setOrientation(LinearLayout.VERTICAL);
             grid.setPadding(0,0,dp(12),0);
 
-            final int columns=5;
-            final int cardH=105;
-            // Fit exactly five TV tiles across the available display width.
-            // The old fixed 200dp width could overflow on some TVs and show
-            // part of a sixth tile.
-            final int screenW=getResources().getDisplayMetrics().widthPixels;
-            final int gap=dp(12);
-            final int sidePadding=dp(18);
-            final int cardW=Math.min(dp(190),Math.max(dp(150),(screenW-sidePadding-gap*(columns-1))/columns));
+            final int columns=4;
+            final int cardW=190;
+            final int cardH=285;
+            final int gap=14;
             LinearLayout row=null;
 
             for(int i=0;i<Math.min(50,metas.length());i++){
@@ -558,28 +553,30 @@ public class MainActivity extends Activity {
                 if(i%columns==0){
                     row=new LinearLayout(this);
                     row.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);
-                    grid.addView(row,new LinearLayout.LayoutParams(-1,dp(cardH+12)));
+                    grid.addView(row,new LinearLayout.LayoutParams(-1,dp(cardH+42)));
                 }
 
                 FrameLayout card=new FrameLayout(this);
                 card.setFocusable(true); card.setClickable(true);
 
-                String serviceId=m.optString("id","");
-                boolean serviceCard=serviceId.startsWith("skynet-service:");
-
                 ImageView im=new ImageView(this);
-                im.setScaleType(serviceCard?ImageView.ScaleType.CENTER_INSIDE:ImageView.ScaleType.CENTER_CROP);
-                im.setBackground(bg(Color.rgb(30,30,30),dp(10)));
-                if(serviceCard) im.setPadding(dp(14),dp(8),dp(14),dp(8));
+                im.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                im.setBackground(bg(Color.rgb(30,30,30),dp(12)));
                 card.addView(im,new FrameLayout.LayoutParams(dp(cardW),dp(cardH)));
 
-                TextView nameText=label(m.optString("name",""),12,Color.WHITE);
+                TextView nameText=label(m.optString("name",""),15,Color.WHITE);
                 nameText.setGravity(Gravity.BOTTOM|Gravity.LEFT);
                 nameText.setPadding(dp(7),0,dp(7),dp(7));
-                GradientDrawable nameBg=new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                        new int[]{Color.TRANSPARENT,Color.argb(235,0,0,0)});
-                nameText.setBackground(nameBg);
-                card.addView(nameText,new FrameLayout.LayoutParams(-1,dp(34),Gravity.BOTTOM));
+                nameText.setMaxLines(1);
+                nameText.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                nameText.setBackground(new GradientDrawable(
+                        GradientDrawable.Orientation.TOP_BOTTOM,
+                        new int[]{Color.TRANSPARENT,Color.argb(235,0,0,0)}));
+                card.addView(nameText,new FrameLayout.LayoutParams(-1,dp(48),Gravity.BOTTOM));
+
+                TextView year=label(m.optString("releaseInfo",""),12,Color.LTGRAY);
+                year.setPadding(dp(7),0,0,0);
+                card.addView(year,new FrameLayout.LayoutParams(-1,dp(30),Gravity.BOTTOM));
 
                 String id=m.optString("id","").toLowerCase(Locale.UK);
                 TextView badge=label(id.contains("4k")?"4K":"HD",10,GOLD);
@@ -589,24 +586,16 @@ public class MainActivity extends Activity {
                 bp.setMargins(0,dp(6),dp(5),0);
                 card.addView(badge,bp);
 
-                if(serviceCard){
-                    card.setOnClickListener(v->openServiceCatalog(
-                            serviceId.substring("skynet-service:".length()),type));
-                }else{
-                    card.setOnClickListener(v->details(type,m));
-                }
-
+                card.setOnClickListener(v->details(type,m));
                 styleTvCard(card,im);
 
                 LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(cardW),dp(cardH));
-                cp.setMargins(0,0,dp(8),dp(10));
+                cp.setMargins(0,0,dp(gap),dp(14));
                 row.addView(card,cp);
 
                 loadImage(im,tileArtwork(m));
 
-                if(i<columns){
-                    card.setNextFocusUpId(heroPlayId);
-                }
+                if(i<columns) card.setNextFocusUpId(heroPlayId);
             }
 
             content.addView(grid,new LinearLayout.LayoutParams(-1,ViewGroup.LayoutParams.WRAP_CONTENT));
