@@ -44,7 +44,7 @@ async function load(){
   const r=await fetch("/app/admin/licenses?key="+encodeURIComponent(key),{cache:"no-store"});
   const raw=await r.text();let d=[];try{d=JSON.parse(raw)}catch(e){}
   if(!r.ok){msg.innerHTML="<p style='color:#ff4050'>Admin key rejected ("+r.status+").</p>";return}
-  document.getElementById("rows").innerHTML=d.map(x=>"<tr><td>"+esc(x.name)+"</td><td class=code>"+x.code+"</td><td>"+(x.expiresAt?new Date(x.expiresAt).toLocaleDateString():"Never")+"</td><td>"+x.devices+"/"+x.maxDevices+"</td><td>"+x.status+"</td></tr>").join("");
+  document.getElementById("rows").innerHTML=d.map(x=>"<tr><td>"+esc(x.name)+"</td><td class=code>"+x.code+"</td><td>"+(x.expiresAt?new Date(x.expiresAt).toLocaleDateString():"Never")+"</td><td>"+x.devices+"/"+x.maxDevices+"</td><td>"+x.status+"</td><td><button onclick="editLicence('"+x.code+"','"+esc(x.name).replace(/'/g,"&#39;")+"')">EDIT</button> <button onclick="resetDevice('"+x.code+"')">RESET DEVICE</button> <button onclick="toggleSuspend('"+x.code+"',"+(x.status==="suspended"?"false":"true")+")">"+(x.status==="suspended"?"UNSUSPEND":"SUSPEND")+"</button> <button class="danger" onclick="deleteLicence('"+x.code+"')">DELETE</button></td></tr>").join("");
   msg.innerHTML="<p class=ok>Admin key accepted — "+d.length+" licence"+(d.length===1?"":"s")+" found.</p>";
  }catch(e){msg.innerHTML="<p style='color:#ff4050'>Connection error: "+esc(e.message)+"</p>"}
 }
@@ -68,6 +68,23 @@ async function create(){
  }catch(e){msg.innerHTML='<p style="color:#ff4050">Connection error: '+esc(e.message)+"</p>"}
  finally{btn.disabled=false;btn.textContent="CREATE LICENCE"}
 }
+async function postAdmin(path,body){const r=await fetch(path,{method:"POST",headers:hdr(),body:JSON.stringify(body)});const raw=await r.text();let d={};try{d=JSON.parse(raw)}catch(e){}if(!r.ok)throw Error(d.error||("Request failed ("+r.status+")"));return d}
+async function editLicence(code,currentName){
+ const name=prompt("Customer name:",currentName||""); if(name===null)return;
+ try{await postAdmin("/app/admin/rename",{code,name});await load()}catch(e){alert(e.message)}
+}
+async function resetDevice(code){
+ if(!confirm("Reset the device binding for "+code+"?"))return;
+ try{await postAdmin("/app/admin/reset-device",{code});await load()}catch(e){alert(e.message)}
+}
+async function toggleSuspend(code,suspended){
+ if(!confirm((suspended?"Suspend ":"Unsuspend ")+code+"?"))return;
+ try{await postAdmin("/app/admin/suspend",{code,suspended});await load()}catch(e){alert(e.message)}
+}
+async function deleteLicence(code){
+ if(!confirm("DELETE licence "+code+"? This cannot be undone."))return;
+ try{await postAdmin("/app/admin/delete",{code});await load()}catch(e){alert(e.message)}
+}
 document.getElementById("loadBtn").onclick=load;
 document.getElementById("createBtn").onclick=create;
 refreshCode();initKey();if(key)setTimeout(load,100);
@@ -75,6 +92,7 @@ refreshCode();initKey();if(key)setTimeout(load,100);
 });
 app.post("/app/admin/rename", (req,res)=>{ if(!ADMIN_KEY || req.get("X-Skynet-Admin")!==ADMIN_KEY)return res.status(401).json({ok:false}); const code=String(req.body?.code||"").trim().toUpperCase(); const name=String(req.body?.name||"").trim().slice(0,100); const db=loadLicenses(); if(!db[code])return res.status(404).json({ok:false,error:"NOT_FOUND"}); db[code].name=name; saveLicenses(db); res.json({ok:true,code,name}); });
 app.post("/app/admin/reset-device", (req,res)=>{ if(!ADMIN_KEY || req.get("X-Skynet-Admin")!==ADMIN_KEY)return res.status(401).json({ok:false}); const code=String(req.body?.code||"").trim().toUpperCase(); const db=loadLicenses(); if(!db[code])return res.status(404).json({ok:false}); db[code].devices=[]; saveLicenses(db); res.json({ok:true}); });
+app.post("/app/admin/delete", (req,res)=>{ if(!ADMIN_KEY || req.get("X-Skynet-Admin")!==ADMIN_KEY)return res.status(401).json({ok:false}); const code=String(req.body?.code||"").trim().toUpperCase(); const db=loadLicenses(); if(!db[code])return res.status(404).json({ok:false,error:"NOT_FOUND"}); delete db[code]; saveLicenses(db); res.json({ok:true,code}); });
 app.post("/app/admin/suspend", (req,res)=>{ if(!ADMIN_KEY || req.get("X-Skynet-Admin")!==ADMIN_KEY)return res.status(401).json({ok:false}); const code=String(req.body?.code||"").trim().toUpperCase(); const db=loadLicenses(); if(!db[code])return res.status(404).json({ok:false}); db[code].suspended=!!req.body?.suspended; saveLicenses(db); res.json({ok:true,suspended:db[code].suspended}); });
 
 app.use((req, _res, next) => {
