@@ -445,7 +445,7 @@ public class MainActivity extends Activity {
             im.setAdjustViewBounds(true);
             im.setPadding(dp(4),dp(4),dp(4),dp(4));
             im.setBackground(bg(Color.rgb(28,28,28),dp(12)));
-            int serviceW=isTv()?104:82, serviceH=isTv()?62:50;
+            int serviceW=isTv()?110:82, serviceH=isTv()?62:50;
             card.addView(im,new FrameLayout.LayoutParams(dp(serviceW),dp(serviceH)));
 
             card.setOnClickListener(v->openServiceCatalog(
@@ -454,7 +454,7 @@ public class MainActivity extends Activity {
 
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(
                     dp(serviceW),dp(serviceH));
-            cp.setMargins(0,0,dp(isTv()?8:6),0);
+            cp.setMargins(0,0,dp(isTv()?10:6),0);
             line.addView(card,cp);
             loadImage(im,m.optString("poster"));
         }
@@ -476,7 +476,7 @@ public class MainActivity extends Activity {
         for(int i=0;i<Math.min(20,metas.length());i++){
             JSONObject m=metas.optJSONObject(i); if(m==null)continue;
             FrameLayout card=new FrameLayout(this); card.setFocusable(true); card.setClickable(true);
-            int cardW=isTv()?190:125, cardH=isTv()?107:185;
+            int cardW=isTv()?200:125, cardH=isTv()?112:185;
             String serviceId=m.optString("id","");
             boolean serviceCard=serviceId.startsWith("skynet-service:");
             ImageView im=new ImageView(this);
@@ -690,7 +690,7 @@ public class MainActivity extends Activity {
             im.setScaleType(serviceCard?ImageView.ScaleType.CENTER_INSIDE:ImageView.ScaleType.CENTER_CROP);
             im.setBackground(bg(Color.rgb(30,30,30),dp(10)));
             if(serviceCard) im.setPadding(dp(14),dp(8),dp(14),dp(8));
-            card.addView(im,new FrameLayout.LayoutParams(dp(isTv()?190:125),dp(isTv()?107:185)));
+            card.addView(im,new FrameLayout.LayoutParams(dp(isTv()?200:125),dp(isTv()?112:185)));
             card.setClipToOutline(true);
             TextView nt=label(ratingText(m)+"  "+m.optString("name",""),12,Color.WHITE);
             nt.setGravity(Gravity.BOTTOM|Gravity.LEFT);
