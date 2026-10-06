@@ -370,7 +370,6 @@ public class MainActivity extends Activity {
                 break;
             }
         }
-        if(prefs.contains("resume_id")) addResume();
         addMyList();
         for(JSONObject r:rows){
             if("Streaming Services".equalsIgnoreCase(r.optString("name",""))) continue;
@@ -740,14 +739,6 @@ public class MainActivity extends Activity {
         String id=m.optString("id"); boolean has=prefs.getBoolean("fav_"+id,false);
         prefs.edit().putBoolean("fav_"+id,!has).apply();
         Toast.makeText(this,!has?"Added to My List":"Removed from My List",Toast.LENGTH_SHORT).show();
-    }
-
-    void addResume(){
-        String name=prefs.getString("resume_name",""); if(name.length()==0)return;
-        TextView t=label("Resume Watching",21,Color.WHITE); t.setPadding(0,dp(18),0,dp(8)); content.addView(t,new LinearLayout.LayoutParams(-1,dp(54)));
-        Button b=button("▶  "+name+"   •   Continue",Color.rgb(30,30,30),Color.WHITE);
-        b.setOnClickListener(v->play(prefs.getString("resume_type","movie"),prefs.getString("resume_id",""),name));
-        content.addView(b,new LinearLayout.LayoutParams(-1,dp(55)));
     }
 
     void addMyList(){
