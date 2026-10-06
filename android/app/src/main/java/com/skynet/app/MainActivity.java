@@ -68,13 +68,20 @@ public class MainActivity extends Activity {
 
     void styleTvCard(View card, View image){
         if(!isTv()) return;
-        // Clear, unmistakable Fire TV selection: a bright blue outline around
-        // the whole card, without covering the poster artwork.
-        card.setBackgroundColor(Color.TRANSPARENT);
+        // Rounded TV cards: the card itself owns the rounded outline so the
+        // poster/logo is clipped to the same corners. The blue focus ring
+        // remains a foreground outline and does not cover the artwork.
+        card.setBackground(bg(Color.TRANSPARENT,dp(10)));
+        card.setClipToOutline(true);
+        card.setOutlineProvider(new ViewOutlineProvider(){
+            @Override public void getOutline(View v, Outline outline){
+                outline.setRoundRect(0,0,v.getWidth(),v.getHeight(),dp(10));
+            }
+        });
         card.setOnFocusChangeListener((v,has)->{
             GradientDrawable border=new GradientDrawable();
             border.setColor(Color.TRANSPARENT);
-            border.setCornerRadius(dp(8));
+            border.setCornerRadius(dp(10));
             border.setStroke(dp(has?4:0), has?FOCUS_BLUE:Color.TRANSPARENT);
             v.setForeground(border);
             if(has){
@@ -427,7 +434,12 @@ public class MainActivity extends Activity {
             JSONObject m=metas.optJSONObject(i); if(m==null)continue;
             FrameLayout card=new FrameLayout(this); card.setFocusable(true); card.setClickable(true);
             int cardW=isTv()?210:125, cardH=isTv()?118:185;
-            ImageView im=new ImageView(this); im.setScaleType(ImageView.ScaleType.CENTER_CROP); im.setBackground(bg(Color.rgb(30,30,30),dp(7)));
+            String serviceId=m.optString("id","");
+            boolean serviceCard=serviceId.startsWith("skynet-service:");
+            ImageView im=new ImageView(this);
+            im.setScaleType(serviceCard?ImageView.ScaleType.CENTER_INSIDE:ImageView.ScaleType.CENTER_CROP);
+            im.setBackground(bg(Color.rgb(30,30,30),dp(10)));
+            if(serviceCard) im.setPadding(dp(14),dp(8),dp(14),dp(8));
             card.addView(im,new FrameLayout.LayoutParams(dp(cardW),dp(cardH)));
 
             TextView nameText=label(m.optString("name",""),12,Color.WHITE);
@@ -631,9 +643,13 @@ public class MainActivity extends Activity {
             FrameLayout card=new FrameLayout(this);
             card.setFocusable(true); card.setClickable(true);
             ImageView im=new ImageView(this);
-            im.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            im.setBackground(bg(Color.rgb(30,30,30),dp(7)));
+            String serviceId=m.optString("id","");
+            boolean serviceCard=serviceId.startsWith("skynet-service:");
+            im.setScaleType(serviceCard?ImageView.ScaleType.CENTER_INSIDE:ImageView.ScaleType.CENTER_CROP);
+            im.setBackground(bg(Color.rgb(30,30,30),dp(10)));
+            if(serviceCard) im.setPadding(dp(14),dp(8),dp(14),dp(8));
             card.addView(im,new FrameLayout.LayoutParams(dp(isTv()?210:125),dp(isTv()?118:185)));
+            card.setClipToOutline(true);
             TextView nt=label(ratingText(m)+"  "+m.optString("name",""),12,Color.WHITE);
             nt.setGravity(Gravity.BOTTOM|Gravity.LEFT);
             nt.setPadding(dp(7),0,dp(7),dp(7));
@@ -717,6 +733,7 @@ public class MainActivity extends Activity {
                     new int[]{Color.TRANSPARENT,Color.argb(235,0,0,0)}));
             card.addView(nt,new FrameLayout.LayoutParams(dp(isTv()?180:105),dp(isTv()?40:58),Gravity.BOTTOM));
             card.setOnClickListener(v->details(m.optString("type","movie"),m));
+            styleTvCard(card,im);
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(isTv()?180:105),dp(isTv()?105:175));
             cp.setMargins(0,0,dp(10),0);
             row.addView(card,cp);
