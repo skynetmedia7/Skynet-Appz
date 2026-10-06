@@ -23,10 +23,21 @@ jobs:
           echo "/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_PATH
       - run: yes | sdkmanager --licenses >/dev/null || true
       - run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
-      - run: gradle -p android assembleDebug
+      - name: Prepare release signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.SKYNET_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/skynet-release.jks"
+      - name: Build signed release APK
+        env:
+          SKYNET_KEYSTORE_PATH: ${{ runner.temp }}/skynet-release.jks
+          SKYNET_KEYSTORE_PASSWORD: ${{ secrets.SKYNET_KEYSTORE_PASSWORD }}
+          SKYNET_KEY_ALIAS: ${{ secrets.SKYNET_KEY_ALIAS }}
+          SKYNET_KEY_PASSWORD: ${{ secrets.SKYNET_KEY_PASSWORD }}
+        run: gradle -p android assembleRelease
       - uses: actions/upload-artifact@v4
         with:
-          name: Skynet-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Skynet-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
 
-# Trigger rebuild after ratings compile fix
+# Signed release build so future APKs can update the installed Skynet app.
