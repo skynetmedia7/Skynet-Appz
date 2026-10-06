@@ -43,6 +43,13 @@ app.use((req, _res, next) => {
   next();
 });
 
+// Require a valid, device-bound licence for playback requests.
+app.use((req,res,next)=>{
+  const protectedPaths=["/app/api/streams","/app/api/proxy","/app/api/play.m3u","/app/api/series-playlist"];
+  if(protectedPaths.some(p=>req.path===p || req.path.startsWith(p+"?"))) return requireLicense(req,res,next);
+  next();
+});
+
 const manifest = {
   id: "com.skynet.stremio.v21",
   version: "2.5.0",
@@ -1426,9 +1433,6 @@ app.get("/app/api/play.m3u", (req, res) => {
     res.status(400).send("Invalid stream URL");
   }
 });
-
-// Playback is licence-protected; catalogue browsing can remain public for Stremio compatibility.
-for (const p of ["/app/api/streams","/app/api/proxy","/app/api/play.m3u","/app/api/series-playlist"]) app.use(p, requireLicense);
 
 app.listen(PORT, () => console.log("Skynet listening on " + PORT));
 app.get("/aio-install", (_req, res) => {
