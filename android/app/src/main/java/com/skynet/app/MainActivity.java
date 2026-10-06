@@ -161,6 +161,9 @@ public class MainActivity extends Activity {
         ScrollView scroll=new ScrollView(this); scroll.setFillViewport(true);
         prepareTvNavigation(scroll);
         content=new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(0,0,dp(24),dp(30));
+        // The ScrollView must actually contain the catalogue. Without this,
+        // the TV shell renders but the entire content area stays empty.
+        scroll.addView(content,new ScrollView.LayoutParams(-1,-2));
 
         if(isTv()){
             LinearLayout tvBody=new LinearLayout(this);
