@@ -468,6 +468,14 @@ public class MainActivity extends Activity {
         return b;
     }
 
+    String tileArtwork(JSONObject m){
+        // Prefer the landscape/backdrop artwork for TV tiles. A portrait poster
+        // cropped into a 16:9 tile can lose faces, titles and important artwork.
+        String bgUrl=m.optString("background","").trim();
+        if(bgUrl.length()>0)return bgUrl;
+        return m.optString("poster","");
+    }
+
     void addRow(String name,String type,JSONArray metas){
         TextView title=label(name,21,Color.WHITE); title.setPadding(0,dp(18),0,dp(8));
         content.addView(title,new LinearLayout.LayoutParams(-1,dp(54)));
@@ -513,7 +521,7 @@ public class MainActivity extends Activity {
             }
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(cardW),dp(cardH));
             cp.setMargins(0,0,dp(isTv()?12:10),0); line.addView(card,cp);
-            loadImage(im,m.optString("poster"));
+            loadImage(im,tileArtwork(m));
         }
         hs.addView(line); content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?132:195)));
     }
@@ -704,7 +712,7 @@ public class MainActivity extends Activity {
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(125),dp(185));
             cp.setMargins(0,0,dp(10),0);
             line.addView(card,cp);
-            loadImage(im,m.optString("poster"));
+            loadImage(im,tileArtwork(m));
         }
         hs.addView(line);
         content.addView(hs,new LinearLayout.LayoutParams(-1,dp(195)));
@@ -779,7 +787,7 @@ public class MainActivity extends Activity {
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(isTv()?180:105),dp(isTv()?105:175));
             cp.setMargins(0,0,dp(10),0);
             row.addView(card,cp);
-            loadImage(im,m.optString("poster"));
+            loadImage(im,tileArtwork(m));
         }
         content.addView(grid);
         status.setText(found.size()+" result(s)");
