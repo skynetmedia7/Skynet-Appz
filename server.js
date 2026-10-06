@@ -873,38 +873,20 @@ app.get("/app/api/streams", async (req, res) => {
     // Only expose real media URLs. AIOStreams can return a debrid "Still
     // downloading" web page while a file is being prepared. Do not pass that
     // HTML page to VLC as if it were a video stream.
-    async function isPlayableMedia(stream) {
-      if (!stream) return false;
-      const source = String(stream.url || "");
-      if (!source || !/^https?:\/\//i.test(source)) return false;
-
-      try {
-        const parts = source.split("|");
-        const target = parts.shift();
-        const requestHeaders = stream.behaviorHints && stream.behaviorHints.proxyHeaders
-          ? (stream.behaviorHints.proxyHeaders.request || {})
-          : {};
-        const h = { ...requestHeaders, "range": "bytes=0-1" };
-        const upstream = await fetch(target, { headers: h, redirect: "follow" });
-        const ct = (upstream.headers.get("content-type") || "").toLowerCase();
-        const finalUrl = String(upstream.url || target).toLowerCase();
-
-        // A real video, audio stream or HLS playlist is playable.
-        if (/video\/|audio\/|mpegurl|vnd\.apple\.mpegurl/.test(ct)) return true;
-        if (/\.m3u8(?:$|[?#])/.test(finalUrl)) return true;
-
-        // HTML/text is a waiting/configuration page, not a playable source.
-        if (/text\/html|text\/plain|application\/json/.test(ct)) return false;
-        return false;
-      } catch (_) {
-        return false;
-      }
-    }
-
-    const readyStreams = [];
-    for (const s of streams.filter(x => x && x.url)) {
-      if (await isPlayableMedia(s)) readyStreams.push(s);
-    }
+    // Do not preflight AIOStreams/debrid URLs with HEAD/range requests.
+    // Signed, one-time and CDN media URLs can reject those probes even though
+    // VLC/ExoPlayer can play them normally. Only discard obvious waiting-page
+    // entries; the playback proxy will perform the real media request.
+    const readyStreams = streams.filter(s => {
+      if (!s || !s.url || !/^https?:\/\//i.test(String(s.url))) return false;
+      const text = String(
+        (s.name || "") + " " +
+        (s.title || "") + " " +
+        (s.description || "") + " " +
+        (s.behaviorHints || "")
+      ).toLowerCase();
+      return !/(still downloading|still_downloading|not ready|not-ready|waiting for|preparing)/.test(text);
+    });
 
     // Turn ready AIOStreams URLs into Skynet playback URLs, preserving the
     // request/response headers supplied in behaviorHints.
