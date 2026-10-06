@@ -293,7 +293,7 @@ public class MainActivity extends Activity {
         for(int i=0;i<Math.min(20,metas.length());i++){
             JSONObject m=metas.optJSONObject(i); if(m==null)continue;
             FrameLayout card=new FrameLayout(this); card.setFocusable(true); card.setClickable(true);
-            int cardW=isTv()?140:125, cardH=isTv()?165:185;
+            int cardW=isTv()?210:125, cardH=isTv()?118:185;
             ImageView im=new ImageView(this); im.setScaleType(ImageView.ScaleType.CENTER_CROP); im.setBackground(bg(Color.rgb(30,30,30),dp(7)));
             card.addView(im,new FrameLayout.LayoutParams(dp(cardW),dp(cardH)));
 
@@ -302,12 +302,12 @@ public class MainActivity extends Activity {
             GradientDrawable nameBg=new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                     new int[]{Color.TRANSPARENT,Color.argb(235,0,0,0)});
             nameText.setBackground(nameBg);
-            FrameLayout.LayoutParams np=new FrameLayout.LayoutParams(-1,dp(isTv()?55:65),Gravity.BOTTOM);
+            FrameLayout.LayoutParams np=new FrameLayout.LayoutParams(-1,dp(isTv()?42:65),Gravity.BOTTOM);
             card.addView(nameText,np);
 
             String id=m.optString("id","").toLowerCase(Locale.UK);
             TextView badge=label(id.contains("4k")?"4K":"HD",10,GOLD); badge.setGravity(Gravity.CENTER); badge.setBackground(bg(Color.argb(210,0,0,0),dp(5)));
-            FrameLayout.LayoutParams bp=new FrameLayout.LayoutParams(dp(38),dp(25),Gravity.TOP|Gravity.RIGHT);
+            FrameLayout.LayoutParams bp=new FrameLayout.LayoutParams(dp(isTv()?42:38),dp(isTv()?23:25),Gravity.TOP|Gravity.RIGHT);
             bp.setMargins(0,dp(6),dp(5),0); card.addView(badge,bp);
 
             String serviceId=m.optString("id","");
@@ -325,10 +325,10 @@ public class MainActivity extends Activity {
                 }
             }
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(cardW),dp(cardH));
-            cp.setMargins(0,0,dp(10),0); line.addView(card,cp);
+            cp.setMargins(0,0,dp(isTv()?12:10),0); line.addView(card,cp);
             loadImage(im,m.optString("poster"));
         }
-        hs.addView(line); content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?175:195)));
+        hs.addView(line); content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?132:195)));
     }
 
     void openServiceCatalog(String slug,String type){
@@ -408,14 +408,14 @@ public class MainActivity extends Activity {
             ImageView im=new ImageView(this);
             im.setScaleType(ImageView.ScaleType.CENTER_CROP);
             im.setBackground(bg(Color.rgb(30,30,30),dp(7)));
-            card.addView(im,new FrameLayout.LayoutParams(dp(125),dp(185)));
+            card.addView(im,new FrameLayout.LayoutParams(dp(isTv()?210:125),dp(isTv()?118:185)));
             TextView nt=label(m.optString("name",""),12,Color.WHITE);
             nt.setGravity(Gravity.BOTTOM|Gravity.LEFT);
             nt.setPadding(dp(7),0,dp(7),dp(7));
             nt.setMaxLines(2);
             nt.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                     new int[]{Color.TRANSPARENT,Color.argb(235,0,0,0)}));
-            card.addView(nt,new FrameLayout.LayoutParams(-1,dp(65),Gravity.BOTTOM));
+            card.addView(nt,new FrameLayout.LayoutParams(-1,dp(isTv()?42:65),Gravity.BOTTOM));
             card.setOnClickListener(v->details(m.optString("type","movie"),m));
             styleTvCard(card,im);
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(125),dp(185));
@@ -483,16 +483,16 @@ public class MainActivity extends Activity {
             ImageView im=new ImageView(this);
             im.setScaleType(ImageView.ScaleType.CENTER_CROP);
             im.setBackground(bg(Color.rgb(30,30,30),dp(7)));
-            card.addView(im,new FrameLayout.LayoutParams(dp(105),dp(175)));
+            card.addView(im,new FrameLayout.LayoutParams(dp(isTv()?180:105),dp(isTv()?105:175)));
             TextView nt=label(m.optString("name",""),11,Color.WHITE);
             nt.setGravity(Gravity.BOTTOM|Gravity.LEFT);
             nt.setPadding(dp(6),0,dp(6),dp(6));
             nt.setMaxLines(2);
             nt.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                     new int[]{Color.TRANSPARENT,Color.argb(235,0,0,0)}));
-            card.addView(nt,new FrameLayout.LayoutParams(dp(105),dp(58),Gravity.BOTTOM));
+            card.addView(nt,new FrameLayout.LayoutParams(dp(isTv()?180:105),dp(isTv()?40:58),Gravity.BOTTOM));
             card.setOnClickListener(v->details(m.optString("type","movie"),m));
-            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(105),dp(175));
+            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(isTv()?180:105),dp(isTv()?105:175));
             cp.setMargins(0,0,dp(10),0);
             row.addView(card,cp);
             loadImage(im,m.optString("poster"));
