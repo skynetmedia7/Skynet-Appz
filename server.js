@@ -641,6 +641,47 @@ app.get("/app/api/search", async (req, res) => {
 });
 
 
+app.get("/app/api/series-playlist", async (req, res) => {
+  try {
+    const tv = String(req.query.id || "").replace(/^tmdb:/, "");
+    const season = Math.max(1, parseInt(req.query.season || "1", 10));
+    const startEpisode = Math.max(1, parseInt(req.query.episode || "1", 10));
+    if (!tv) return res.status(400).send("Missing series id");
+
+    const data = await tmdb("/tv/" + encodeURIComponent(tv) + "/season/" + season + "?language=en-US");
+    const episodes = (data.episodes || []).filter(ep => Number(ep.episode_number) >= startEpisode);
+    const base = "http://127.0.0.1:" + PORT;
+    const publicBase = req.protocol + "://" + req.get("host");
+    const lines = ["#EXTM3U"];
+
+    for (const ep of episodes) {
+      const eid = "tmdb:" + tv + ":" + season + ":" + ep.episode_number;
+      try {
+        const r = await fetch(base + "/app/api/streams?type=series&id=" + encodeURIComponent(eid), {
+          headers: { Accept: "application/json", Host: req.get("host") }
+        });
+        if (!r.ok) continue;
+        const j = await r.json();
+        const stream = j.streams && j.streams[0];
+        if (!stream || !stream.url) continue;
+        const url = String(stream.url).replace(/^http:\/\/127\.0\.0\.1:\d+/, publicBase);
+        lines.push("#EXTINF:-1,S" + season + " E" + ep.episode_number + " - " + (ep.name || "Episode " + ep.episode_number));
+        lines.push(url);
+      } catch (_) {}
+    }
+
+    if (lines.length <= 1) return res.status(404).send("No playable episodes");
+    res.set({
+      "Content-Type": "audio/x-mpegurl; charset=utf-8",
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"
+    });
+    res.send(lines.join("\n") + "\n");
+  } catch (e) {
+    console.error("SERIES PLAYLIST ERROR " + e.message);
+    res.status(500).send("Could not build series playlist");
+  }
+});
+
 app.get("/app/api/proxy", async (req, res) => {
   try {
     const raw = String(req.query.url || "");
