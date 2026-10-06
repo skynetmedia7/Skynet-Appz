@@ -1,9 +1,31 @@
 import express from "express";
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 const TMDB_KEY = process.env.TMDB_API_KEY || "";
 const BASE_URL = (process.env.BASE_URL || "https://skynet-stremio-addon.onrender.com").replace(/\/+$/, "");
+
+app.use(express.json());
+
+// Simple server-side licence system for the Skynet Android/TV app.
+const LICENSE_FILE = process.env.SKYNET_LICENSE_FILE || path.join(process.cwd(), "licenses.json");
+const ADMIN_KEY = process.env.SKYNET_ADMIN_KEY || "";
+function loadLicenses(){ try { return JSON.parse(fs.readFileSync(LICENSE_FILE, "utf8")); } catch { return {}; } }
+function saveLicenses(x){ fs.writeFileSync(LICENSE_FILE, JSON.stringify(x, null, 2)); }
+function newCode(){ const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<12;i++) s+=chars[crypto.randomInt(chars.length)]; return s.slice(0,4)+"-"+s.slice(4,8)+"-"+s.slice(8); }
+function deviceId(req){ return String(req.get("X-Skynet-Device") || "").trim().slice(0,200); }
+function licenseFromReq(req){ const code=String(req.get("X-Skynet-License") || "").trim().toUpperCase(); const db=loadLicenses(); return {code, lic:db[code], db}; }
+function requireLicense(req,res,next){ const {code,lic}=licenseFromReq(req); if(!code||!lic)return res.status(401).json({ok:false,error:"LOGIN_REQUIRED"}); if(lic.suspended)return res.status(403).json({ok:false,error:"SUSPENDED"}); if(lic.expiresAt && Date.now()>Date.parse(lic.expiresAt))return res.status(403).json({ok:false,error:"EXPIRED"}); const dev=deviceId(req); if(!dev || !lic.devices.includes(dev))return res.status(403).json({ok:false,error:"DEVICE_NOT_AUTHORISED"}); next(); }
+
+app.post("/app/api/login", (req,res)=>{ const code=String(req.body?.code||"").trim().toUpperCase(); const dev=deviceId(req); if(!code||!dev)return res.status(400).json({ok:false,error:"CODE_REQUIRED"}); const db=loadLicenses(); const lic=db[code]; if(!lic)return res.status(401).json({ok:false,error:"INVALID_CODE"}); if(lic.suspended)return res.status(403).json({ok:false,error:"SUSPENDED"}); if(lic.expiresAt && Date.now()>Date.parse(lic.expiresAt))return res.status(403).json({ok:false,error:"EXPIRED"}); lic.devices=Array.isArray(lic.devices)?lic.devices:[]; if(!lic.devices.includes(dev) && lic.devices.length>=(lic.maxDevices||1))return res.status(403).json({ok:false,error:"DEVICE_LIMIT"}); if(!lic.devices.includes(dev)){lic.devices.push(dev);lic.lastLoginAt=new Date().toISOString();saveLicenses(db);} res.json({ok:true,code,expiresAt:lic.expiresAt||null}); });
+
+app.get("/app/admin/licenses", (req,res)=>{ if(!ADMIN_KEY || req.query.key!==ADMIN_KEY)return res.status(401).send("Unauthorised"); const db=loadLicenses(); res.json(Object.entries(db).map(([code,x])=>({code,status:x.suspended?"suspended":"active",devices:x.devices?.length||0,maxDevices:x.maxDevices||1,expiresAt:x.expiresAt||null}))); });
+app.post("/app/admin/licenses", (req,res)=>{ if(!ADMIN_KEY || req.get("X-Skynet-Admin")!==ADMIN_KEY)return res.status(401).json({ok:false}); const db=loadLicenses(); let code=newCode(); while(db[code])code=newCode(); const days=Math.max(0,Number(req.body?.days||30)); const expiresAt=days?new Date(Date.now()+days*86400000).toISOString():null; db[code]={devices:[],maxDevices:Math.max(1,Number(req.body?.maxDevices||1)),expiresAt,suspended:false,createdAt:new Date().toISOString()}; saveLicenses(db); res.json({ok:true,code,expiresAt,maxDevices:db[code].maxDevices}); });
+app.post("/app/admin/reset-device", (req,res)=>{ if(!ADMIN_KEY || req.get("X-Skynet-Admin")!==ADMIN_KEY)return res.status(401).json({ok:false}); const code=String(req.body?.code||"").trim().toUpperCase(); const db=loadLicenses(); if(!db[code])return res.status(404).json({ok:false}); db[code].devices=[]; saveLicenses(db); res.json({ok:true}); });
+app.post("/app/admin/suspend", (req,res)=>{ if(!ADMIN_KEY || req.get("X-Skynet-Admin")!==ADMIN_KEY)return res.status(401).json({ok:false}); const code=String(req.body?.code||"").trim().toUpperCase(); const db=loadLicenses(); if(!db[code])return res.status(404).json({ok:false}); db[code].suspended=!!req.body?.suspended; saveLicenses(db); res.json({ok:true,suspended:db[code].suspended}); });
 
 app.use((req, _res, next) => {
   console.log("REQUEST " + req.method + " " + req.originalUrl);
@@ -1404,6 +1426,9 @@ app.get("/app/api/play.m3u", (req, res) => {
     res.status(400).send("Invalid stream URL");
   }
 });
+
+// Playback is licence-protected; catalogue browsing can remain public for Stremio compatibility.
+for (const p of ["/app/api/streams","/app/api/proxy","/app/api/play.m3u","/app/api/series-playlist"]) app.use(p, requireLicense);
 
 app.listen(PORT, () => console.log("Skynet listening on " + PORT));
 app.get("/aio-install", (_req, res) => {
