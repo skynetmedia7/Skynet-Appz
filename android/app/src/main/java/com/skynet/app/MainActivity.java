@@ -359,15 +359,98 @@ public class MainActivity extends Activity {
     }
 
     void details(String type,JSONObject m){
-        final Dialog d=new Dialog(this); d.getWindow();
-        LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(dp(18),dp(18),dp(18),dp(18)); box.setBackground(bg(Color.rgb(18,18,18),dp(12)));
-        TextView t=label(m.optString("name","Title"),24,Color.WHITE); box.addView(t,new LinearLayout.LayoutParams(-1,dp(55)));
-        TextView desc=label(m.optString("description","No description available."),14,Color.LTGRAY); desc.setMaxLines(5); box.addView(desc,new LinearLayout.LayoutParams(-1,dp(110)));
-        LinearLayout bs=new LinearLayout(this); Button p=button("▶ PLAY",GOLD,Color.BLACK); Button f=button("+ MY LIST",Color.DKGRAY,Color.WHITE);
-        bs.addView(p,new LinearLayout.LayoutParams(dp(120),dp(45))); LinearLayout.LayoutParams fp=new LinearLayout.LayoutParams(dp(120),dp(45)); fp.setMargins(dp(8),0,0,0); bs.addView(f,fp); box.addView(bs);
-        p.setOnClickListener(v->{d.dismiss();play(type,m.optString("id"),m.optString("name"));}); f.setOnClickListener(v->toggleList(m));
-        d.setContentView(box); Window w=d.getWindow(); if(w!=null)w.setBackgroundDrawableResource(android.R.color.transparent);
-        d.show(); if(w!=null)w.setLayout(dp(360),WindowManager.LayoutParams.WRAP_CONTENT);
+        if(!"series".equals(type)){
+            final Dialog d=new Dialog(this); d.getWindow();
+            LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(dp(18),dp(18),dp(18),dp(18)); box.setBackground(bg(Color.rgb(18,18,18),dp(12)));
+            TextView t=label(m.optString("name","Title"),24,Color.WHITE); box.addView(t,new LinearLayout.LayoutParams(-1,dp(55)));
+            TextView desc=label(m.optString("description","No description available."),14,Color.LTGRAY); desc.setMaxLines(5); box.addView(desc,new LinearLayout.LayoutParams(-1,dp(110)));
+            LinearLayout bs=new LinearLayout(this); Button p=button("▶ PLAY",GOLD,Color.BLACK); Button f=button("+ MY LIST",Color.DKGRAY,Color.WHITE);
+            bs.addView(p,new LinearLayout.LayoutParams(dp(120),dp(45))); LinearLayout.LayoutParams fp=new LinearLayout.LayoutParams(dp(120),dp(45)); fp.setMargins(dp(8),0,0,0); bs.addView(f,fp); box.addView(bs);
+            p.setOnClickListener(v->{d.dismiss();play(type,m.optString("id"),m.optString("name"));}); f.setOnClickListener(v->toggleList(m));
+            d.setContentView(box); Window w=d.getWindow(); if(w!=null)w.setBackgroundDrawableResource(android.R.color.transparent);
+            d.show(); if(w!=null)w.setLayout(dp(360),WindowManager.LayoutParams.WRAP_CONTENT);
+            return;
+        }
+
+        final Dialog d=new Dialog(this);
+        LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(18),dp(18),dp(18),dp(18)); box.setBackground(bg(Color.rgb(18,18,18),dp(12)));
+        TextView title=label(m.optString("name","Series"),24,Color.WHITE); box.addView(title,new LinearLayout.LayoutParams(-1,dp(52)));
+        TextView loading=label("Loading seasons…",14,Color.LTGRAY); box.addView(loading,new LinearLayout.LayoutParams(-1,dp(42)));
+        d.setContentView(box);
+        Window w=d.getWindow(); if(w!=null)w.setBackgroundDrawableResource(android.R.color.transparent);
+        d.show(); if(w!=null)w.setLayout(dp(isTv()?620:360),WindowManager.LayoutParams.WRAP_CONTENT);
+
+        new Thread(()->{
+            try{
+                JSONObject data=new JSONObject(get(BASE+"/app/api/details?type=series&id="+URLEncoder.encode(m.optString("id"),"UTF-8")));
+                JSONArray seasons=data.optJSONArray("seasons");
+                runOnUiThread(()->{
+                    box.removeView(loading);
+                    if(seasons==null||seasons.length()==0){
+                        box.addView(label("No seasons found",14,Color.LTGRAY));
+                        return;
+                    }
+                    LinearLayout seasonRow=new LinearLayout(this); seasonRow.setOrientation(LinearLayout.HORIZONTAL);
+                    TextView sh=label("Season:",15,Color.WHITE); seasonRow.addView(sh,new LinearLayout.LayoutParams(dp(80),dp(48)));
+                    for(int i=0;i<seasons.length();i++){
+                        JSONObject s=seasons.optJSONObject(i); if(s==null)continue;
+                        int sn=s.optInt("season",s.optInt("season_number",1));
+                        Button sb=button("S"+sn,Color.rgb(45,45,45),Color.WHITE);
+                        sb.setOnClickListener(v->loadEpisodesIntoDialog(box,m,sn,d));
+                        seasonRow.addView(sb,new LinearLayout.LayoutParams(dp(70),dp(48)));
+                    }
+                    box.addView(seasonRow);
+                    loadEpisodesIntoDialog(box,m,seasons.optJSONObject(0).optInt("season",1),d);
+                });
+            }catch(Exception e){ runOnUiThread(()->loading.setText("Could not load seasons")); }
+        }).start();
+    }
+
+    void loadEpisodesIntoDialog(LinearLayout box, JSONObject series, int season, Dialog d){
+        while(box.getChildCount()>2)box.removeViewAt(2);
+        TextView loading=label("Loading episodes…",14,Color.LTGRAY); box.addView(loading);
+        new Thread(()->{
+            try{
+                JSONObject data=new JSONObject(get(BASE+"/app/api/episodes?id="+URLEncoder.encode(series.optString("id"),"UTF-8")+"&season="+season));
+                JSONArray eps=data.optJSONArray("episodes");
+                runOnUiThread(()->{
+                    box.removeView(loading);
+                    if(eps==null||eps.length()==0){box.addView(label("No episodes found",14,Color.LTGRAY));return;}
+                    for(int i=0;i<eps.length();i++){
+                        JSONObject ep=eps.optJSONObject(i); if(ep==null)continue;
+                        int en=ep.optInt("episode",i+1);
+                        Button eb=button("E"+en+"  "+ep.optString("name","Episode "+en),Color.rgb(35,35,35),Color.WHITE);
+                        eb.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);
+                        eb.setOnClickListener(v->{d.dismiss();playSeriesPlaylist(series.optString("id"),season,en,series.optString("name","Series"));});
+                        box.addView(eb,new LinearLayout.LayoutParams(-1,dp(48)));
+                    }
+                });
+            }catch(Exception e){runOnUiThread(()->loading.setText("Could not load episodes"));}
+        }).start();
+    }
+
+    void playSeriesPlaylist(String id,int season,int episode,String name){
+        status.setText("Preparing episode playlist…");
+        prefs.edit().putString("resume_id",id+":"+season+":"+episode).putString("resume_name",name+" • S"+season+" E"+episode).putString("resume_type","series").apply();
+        new Thread(()->{
+            try{
+                String u=BASE+"/app/api/series-playlist?id="+URLEncoder.encode(id,"UTF-8")+"&season="+season+"&episode="+episode;
+                runOnUiThread(()->{
+                    try{
+                        Intent vlc=new Intent(Intent.ACTION_VIEW);
+                        vlc.setDataAndType(Uri.parse(u),"audio/x-mpegurl");
+                        vlc.setPackage("org.videolan.vlc");
+                        vlc.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(vlc);
+                        status.setText("Playing "+name+" • S"+season+" E"+episode);
+                    }catch(Exception ex){
+                        status.setText("VLC could not play this series");
+                        Toast.makeText(this,"VLC could not open the series playlist",Toast.LENGTH_LONG).show();
+                    }
+                });
+            }catch(Exception e){runOnUiThread(()->status.setText("Could not prepare series playlist"));}
+        }).start();
     }
 
     void toggleList(JSONObject m){
