@@ -388,6 +388,12 @@ public class MainActivity extends Activity {
         TextView desc=label(m.optString("description",""),13,Color.LTGRAY); desc.setMaxLines(2); info.addView(desc,new LinearLayout.LayoutParams(-1,dp(56)));
         hero.addView(info,new FrameLayout.LayoutParams(-1,dp(heroH)));
         content.addView(hero,new LinearLayout.LayoutParams(-1,dp(heroH)));
+
+        // Clear down-arrow hint so Fire TV users know there is more content below.
+        TextView down=label("⌄",30,Color.LTGRAY);
+        down.setGravity(Gravity.CENTER);
+        down.setAlpha(0.9f);
+        content.addView(down,new LinearLayout.LayoutParams(-1,dp(34)));
         loadImage(image,m.optString("background",m.optString("poster")));
 
         // Rotate the hero artwork automatically on the TV/home screen.
