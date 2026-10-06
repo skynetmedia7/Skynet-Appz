@@ -22,7 +22,7 @@ jobs:
           echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
           echo "/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_PATH
       - run: yes | sdkmanager --licenses >/dev/null || true
-      - run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - run: sdkmanager "platforms;android-36" "build-tools;35.0.0"
       - name: Prepare release signing key
         env:
           KEYSTORE_BASE64: ${{ secrets.SKYNET_KEYSTORE_BASE64 }}
