@@ -1078,6 +1078,8 @@ public class MainActivity extends Activity {
 }
     @Override protected void onDestroy(){
         releaseInternalPlayer();
+    @Override protected void onDestroy(){
+        releaseInternalPlayer();
         super.onDestroy();
     }
-
+}
