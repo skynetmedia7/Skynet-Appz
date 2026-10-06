@@ -362,9 +362,20 @@ public class MainActivity extends Activity {
         if(rows.size()==0){ status.setText("No catalogue data returned"); return; }
         JSONObject hero=rows.get(0).optJSONArray("metas").optJSONObject(0);
         if(hero!=null) addHero(hero,rows.get(0).optString("type","movie"), rows.get(0).optJSONArray("metas"));
+
+        // Put all streaming-service shortcuts directly underneath the hero.
+        for(JSONObject r:rows){
+            if("Streaming Services".equalsIgnoreCase(r.optString("name",""))){
+                try{ addServiceBar(r.optString("type","movie"),r.getJSONArray("metas")); }catch(Exception ignored){}
+                break;
+            }
+        }
+        addScrollHint();
+
         if(prefs.contains("resume_id")) addResume();
         addMyList();
         for(JSONObject r:rows){
+            if("Streaming Services".equalsIgnoreCase(r.optString("name",""))) continue;
             try{ addRow(r.optString("name","Skynet"),r.optString("type","movie"),r.getJSONArray("metas")); }catch(Exception ignored){}
         }
         status.setText("SKYNET • Connected");
@@ -389,11 +400,6 @@ public class MainActivity extends Activity {
         hero.addView(info,new FrameLayout.LayoutParams(-1,dp(heroH)));
         content.addView(hero,new LinearLayout.LayoutParams(-1,dp(heroH)));
 
-        // Clear down-arrow hint so Fire TV users know there is more content below.
-        TextView down=label("⌄",30,Color.LTGRAY);
-        down.setGravity(Gravity.CENTER);
-        down.setAlpha(0.9f);
-        content.addView(down,new LinearLayout.LayoutParams(-1,dp(34)));
         loadImage(image,m.optString("background",m.optString("poster")));
 
         // Rotate the hero artwork automatically on the TV/home screen.
@@ -412,6 +418,60 @@ public class MainActivity extends Activity {
                 }
             },10000);
         }
+    }
+
+    void addServiceBar(String type,JSONArray metas){
+        if(metas==null||metas.length()==0)return;
+        HorizontalScrollView hs=new HorizontalScrollView(this);
+        hs.setHorizontalScrollBarEnabled(false);
+        hs.setFocusable(false);
+        LinearLayout line=new LinearLayout(this);
+        line.setGravity(Gravity.CENTER_VERTICAL);
+        line.setPadding(0,dp(2),dp(12),dp(2));
+
+        for(int i=0;i<metas.length();i++){
+            JSONObject m=metas.optJSONObject(i);
+            if(m==null)continue;
+            String serviceId=m.optString("id","");
+            if(!serviceId.startsWith("skynet-service:"))continue;
+
+            FrameLayout card=new FrameLayout(this);
+            card.setFocusable(true);
+            card.setClickable(true);
+
+            ImageView im=new ImageView(this);
+            im.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            im.setPadding(dp(7),dp(5),dp(7),dp(5));
+            im.setBackground(bg(Color.rgb(28,28,28),dp(10)));
+            card.addView(im,new FrameLayout.LayoutParams(dp(isTv()?78:62),dp(isTv()?54:46)));
+
+            TextView nt=label(m.optString("name",""),9,Color.WHITE);
+            nt.setGravity(Gravity.CENTER);
+            nt.setSingleLine(true);
+            nt.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            nt.setPadding(dp(3),0,dp(3),0);
+            FrameLayout.LayoutParams np=new FrameLayout.LayoutParams(-1,dp(18),Gravity.BOTTOM);
+            card.addView(nt,np);
+
+            card.setOnClickListener(v->openServiceCatalog(
+                    serviceId.substring("skynet-service:".length()),type));
+            styleTvCard(card,im);
+
+            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(
+                    dp(isTv()?78:62),dp(isTv()?54:46));
+            cp.setMargins(0,0,dp(isTv()?8:6),0);
+            line.addView(card,cp);
+            loadImage(im,m.optString("poster"));
+        }
+        hs.addView(line);
+        content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?62:54)));
+    }
+
+    void addScrollHint(){
+        TextView down=label("⌄",30,Color.LTGRAY);
+        down.setGravity(Gravity.CENTER);
+        down.setAlpha(0.9f);
+        content.addView(down,new LinearLayout.LayoutParams(-1,dp(30)));
     }
 
     Button button(String s,int c,int tc){
