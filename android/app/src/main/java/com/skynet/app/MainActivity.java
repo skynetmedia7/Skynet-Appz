@@ -487,7 +487,14 @@ public class MainActivity extends Activity {
             grid.setPadding(0,0,dp(12),0);
 
             final int columns=5;
-            final int cardW=200, cardH=112;
+            final int cardH=112;
+            // Fit exactly five TV tiles across the available display width.
+            // The old fixed 200dp width could overflow on some TVs and show
+            // part of a sixth tile.
+            final int screenW=getResources().getDisplayMetrics().widthPixels;
+            final int gap=dp(8);
+            final int sidePadding=dp(12);
+            final int cardW=Math.max(dp(120),(screenW-sidePadding-gap*(columns-1))/columns);
             LinearLayout row=null;
 
             for(int i=0;i<Math.min(50,metas.length());i++){
