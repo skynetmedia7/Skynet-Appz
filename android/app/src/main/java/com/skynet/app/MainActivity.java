@@ -218,12 +218,43 @@ public class MainActivity extends Activity {
             FrameLayout.LayoutParams bp=new FrameLayout.LayoutParams(dp(38),dp(25),Gravity.TOP|Gravity.RIGHT);
             bp.setMargins(0,dp(6),dp(5),0); card.addView(badge,bp);
 
-            card.setOnClickListener(v->details(type,m));
+            String serviceId=m.optString("id","");
+            if(serviceId.startsWith("skynet-service:")){
+                card.setOnClickListener(v->openServiceCatalog(serviceId.substring("skynet-service:".length), type));
+            }else{
+                card.setOnClickListener(v->details(type,m));
+            }
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(125),dp(185));
             cp.setMargins(0,0,dp(10),0); line.addView(card,cp);
             loadImage(im,m.optString("poster"));
         }
         hs.addView(line); content.addView(hs,new LinearLayout.LayoutParams(-1,dp(195)));
+    }
+
+    void openServiceCatalog(String slug,String type){
+        String catalogId="skynet-"+slug+"-"+(type.equals("series")?"series":"movies");
+        String url=BASE+"/catalog/"+type+"/"+catalogId+".json";
+        status.setText("Opening "+slug.replace("-"," ")+"…");
+        new Thread(()->{
+            try{
+                JSONObject data=new JSONObject(get(url));
+                JSONArray metas=data.optJSONArray("metas");
+                ArrayList<JSONObject> list=new ArrayList<>();
+                if(metas!=null) for(int i=0;i<metas.length();i++){
+                    JSONObject x=metas.optJSONObject(i);
+                    if(x!=null) list.add(x);
+                }
+                JSONObject row=new JSONObject();
+                row.put("type",type);
+                row.put("name",slug.equals("prime-video")?"Prime Video":slug.equals("disney-plus")?"Disney+":slug.equals("apple-tv-plus")?"Apple TV+":slug.equals("bbc-iplayer")?"BBC iPlayer":slug.equals("channel-4")?"Channel 4":slug.equals("itvx")?"ITVX":slug.equals("paramount-plus")?"Paramount+":slug.equals("netflix")?"Netflix":slug.equals("max")?"Max":slug);
+                row.put("metas",new JSONArray(list));
+                ArrayList<JSONObject> rows=new ArrayList<>();
+                rows.add(row);
+                runOnUiThread(()->render(rows));
+            }catch(Exception e){
+                runOnUiThread(()->status.setText("Could not open streaming service"));
+            }
+        }).start();
     }
 
     void details(String type,JSONObject m){
