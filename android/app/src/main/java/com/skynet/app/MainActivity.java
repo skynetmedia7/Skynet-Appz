@@ -17,6 +17,7 @@ import org.json.*;
 public class MainActivity extends Activity {
     static final String BASE = "http://158.220.86.53:10000";
     static final int GOLD = Color.rgb(242,201,76);
+    static final int FOCUS_BLUE = Color.rgb(33,150,243);
     static final int BG = Color.rgb(5,5,5);
     LinearLayout root, content;
     TextView status;
@@ -68,7 +69,7 @@ public class MainActivity extends Activity {
         card.setOnFocusChangeListener((v,has)->{
             if(has){
                 v.animate().scaleX(1.06f).scaleY(1.06f).setDuration(100).start();
-                image.setBackground(bg(GOLD,dp(8)));
+                image.setBackground(bg(FOCUS_BLUE,dp(8)));
             }else{
                 v.animate().scaleX(1f).scaleY(1f).setDuration(100).start();
                 image.setBackground(bg(Color.rgb(30,30,30),dp(7)));
@@ -398,6 +399,7 @@ public class MainActivity extends Activity {
                     new int[]{Color.TRANSPARENT,Color.argb(235,0,0,0)}));
             card.addView(nt,new FrameLayout.LayoutParams(-1,dp(65),Gravity.BOTTOM));
             card.setOnClickListener(v->details(m.optString("type","movie"),m));
+            styleTvCard(card,im);
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(125),dp(185));
             cp.setMargins(0,0,dp(10),0);
             line.addView(card,cp);
