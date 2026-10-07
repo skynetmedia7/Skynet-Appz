@@ -684,8 +684,8 @@ app.get("/meta/series/:id.json", (req, res) =>
 app.get("/install", (_req, res) => {
   const manifestUrl = BASE_URL + "/manifest.json";
   const stremioUrl = "stremio://" + manifestUrl.replace(/^https?:\/\//, "");
-  const stremioIntent = "intent://addon/" + encodeURIComponent(manifestUrl) +
-    "#Intent;scheme=stremio;package=com.stremio.one;action=android.intent.action.VIEW;end";
+  const stremioIntent = "intent://" + manifestUrl.replace(/^https?:\\/\\//, "") +
+    "#Intent;scheme=stremio;package=com.stremio.one;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.browser_fallback_url=" + encodeURIComponent(webInstallUrl) + ";end";
   const webInstallUrl = "https://web.stremio.com/#/addons?addon=" + encodeURIComponent(manifestUrl);
   const aioMetadataUrl = "https://aiometadata.elfhosted.com/configure/";
   const aioStreamsUrl = "https://skynet-aiostreams.duckdns.org/configure";
@@ -710,7 +710,7 @@ small{display:block;color:#888;margin-top:12px;word-break:break-all}
 <h1>Install Skynet</h1>
 <p>Firestick / Android TV friendly installation.</p>
 
-<a class="btn" id="installStremio" href="\${stremioUrl}">1. INSTALL SKYNET IN STREMIO</a>
+<a class="btn" id="installStremio" href="\${stremioIntent}">1. INSTALL SKYNET IN STREMIO</a>
 <div class="note">
 <strong>Firestick:</strong>
 <p style="margin:8px 0">Press the button above. If Stremio is installed, Firestick will hand the manifest to Stremio. If nothing happens, use the web option or copy the manifest URL.</p>
@@ -753,9 +753,13 @@ document.getElementById("installStremio").onclick=function(){
   function went(){hidden=true;document.removeEventListener("visibilitychange",went);}
   document.addEventListener("visibilitychange",went);
   setTimeout(function(){
+    if(hidden) return;
+    location.href="\${stremioUrl}";
+  },900);
+  setTimeout(function(){
     document.removeEventListener("visibilitychange",went);
     if(!hidden) location.href="\${webInstallUrl}";
-  },1800);
+  },2800);
 };
 </script>
 </body></html>\`;
