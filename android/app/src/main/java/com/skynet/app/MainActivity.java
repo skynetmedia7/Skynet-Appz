@@ -875,7 +875,7 @@ public class MainActivity extends Activity {
             TextView nt=label(ratingText(m)+"  "+m.optString("name",""),12,Color.WHITE);
             nt.setGravity(Gravity.BOTTOM|Gravity.LEFT);
             nt.setPadding(dp(7),0,dp(7),dp(7));
-            nt.setMaxLines(2);
+            nt.setMaxLines(2); nt.setEllipsize(android.text.TextUtils.TruncateAt.END);
             nt.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                     new int[]{Color.TRANSPARENT,Color.argb(235,0,0,0)}));
             card.addView(nt,new FrameLayout.LayoutParams(-1,dp(isTv()?42:65),Gravity.BOTTOM));
