@@ -10,6 +10,16 @@ const BASE_URL = (process.env.BASE_URL || "https://skynet-stremio-addon.onrender
 
 app.use(express.json());
 
+// Stremio fetches addon manifests/catalogues directly from the TV/device app.
+// Allow cross-origin requests so Firestick/Android TV Stremio can fetch the addon.
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
 // Simple server-side licence system for the Skynet Android/TV app.
 const LICENSE_FILE = process.env.SKYNET_LICENSE_FILE || path.join(process.cwd(), "licenses.json");
 const ADMIN_KEY = process.env.SKYNET_ADMIN_KEY || "";
