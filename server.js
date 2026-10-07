@@ -683,11 +683,10 @@ app.get("/meta/series/:id.json", (req, res) =>
 
 app.get("/install", (_req, res) => {
   const manifestUrl = BASE_URL + "/manifest.json";
-  const moviesManifestUrl = BASE_URL + "/movies/manifest.json";
-  const seriesManifestUrl = BASE_URL + "/series/manifest.json";
   const stremioUrl = "stremio://" + manifestUrl.replace(/^https?:\/\//, "");
-  const moviesStremioUrl = "stremio://" + moviesManifestUrl.replace(/^https?:\/\//, "");
-  const seriesStremioUrl = "stremio://" + seriesManifestUrl.replace(/^https?:\/\//, "");
+  const webInstallUrl = "https://web.stremio.com/#/addons?addon=" + encodeURIComponent(manifestUrl);
+  const aioMetadataUrl = "https://aiometadata.elfhosted.com/configure/";
+  const aioStreamsUrl = "https://skynet-aiostreams.duckdns.org/configure";
   const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -696,46 +695,57 @@ app.get("/install", (_req, res) => {
 <title>Install Skynet</title>
 <style>
 body{margin:0;background:#0b0b0f;color:#fff;font-family:Arial,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center}
-.card{width:min(520px,90%);text-align:center;background:#17171d;border-radius:22px;padding:30px;box-sizing:border-box;box-shadow:0 10px 40px #0008}
-.logo{max-width:190px;max-height:90px;object-fit:contain;margin-bottom:15px}
-h1{margin:5px 0 10px;font-size:32px}p{color:#bbb;line-height:1.5}
-.btn{display:block;text-decoration:none;background:#ffd400;color:#000;font-weight:700;font-size:19px;padding:16px;border-radius:12px;margin:20px 0}
-.alt{display:block;color:#fff;border:1px solid #555;padding:13px;border-radius:10px;text-decoration:none;margin-top:10px}.aiometa{background:#e53935;border-color:#e53935;color:#fff;font-weight:700}.aiostreams{background:#1976d2;border-color:#1976d2;color:#fff;font-weight:700}
-small{display:block;color:#888;margin-top:18px;word-break:break-all}
-
-.detailOverlay{display:none;position:fixed;inset:0;z-index:100;background:#07090df5;overflow:auto}
-.detailOverlay.show{display:block}.detailBox{min-height:100vh;background:#0a0d12}.detailBg{min-height:560px;background-size:cover;background-position:center;position:relative}
-.detailBg:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#07090df5 0%,#07090db8 50%,#07090d55),linear-gradient(0deg,#0a0d12,transparent 55%)}
-.detailCopy{position:relative;z-index:2;max-width:760px;padding:100px 6vw 60px}.detailCopy h1{font-size:clamp(42px,6vw,76px);margin:10px 0}
-.closeBtn{position:fixed;right:22px;top:18px;z-index:110;border:0;background:#252c36;color:#fff;width:46px;height:46px;border-radius:50%;font-size:25px}
-.modal{max-width:620px;margin:12vh auto;background:#11151c;border:1px solid #303844;border-radius:18px;padding:25px;width:calc(100% - 30px)}
-.field{width:100%;background:#090c11;border:1px solid #3b4350;color:#fff;border-radius:8px;padding:12px;margin:8px 0 14px}
-.help{color:#9ba3ad;font-size:14px;line-height:1.5}.stream{display:block;background:#191f28;color:#fff;text-decoration:none;padding:14px;border-radius:10px;margin:9px 0;border:1px solid #303844}
-.stream small{display:block;color:#aab2bd;margin-top:4px}
-@media(max-width:900px){.detailCopy{padding:90px 22px 45px}.detailBg{min-height:520px}}
+.card{width:min(620px,92%);text-align:center;background:#17171d;border-radius:22px;padding:28px;box-sizing:border-box;box-shadow:0 10px 40px #0008}
+h1{margin:5px 0 10px;font-size:34px}p{color:#bbb;line-height:1.5}
+.btn{display:block;text-decoration:none;background:#ffd400;color:#000;font-weight:800;font-size:19px;padding:16px;border-radius:12px;margin:14px 0;border:0;width:100%;box-sizing:border-box}
+.web{background:#27a8ff;color:#fff}.copy{background:#35c759;color:#fff}.alt{display:block;color:#fff;border:1px solid #555;padding:14px;border-radius:10px;text-decoration:none;margin-top:10px}.aiometa{background:#e53935;border-color:#e53935;font-weight:700}.aiostreams{background:#1976d2;border-color:#1976d2;font-weight:700}
+.manifest{width:100%;box-sizing:border-box;background:#0c0e12;color:#fff;border:1px solid #555;border-radius:10px;padding:12px;font-size:13px;text-align:left}
+.note{background:#111118;border:1px solid #444;border-radius:12px;padding:14px;text-align:left;margin-top:18px}
+small{display:block;color:#888;margin-top:12px;word-break:break-all}
 </style>
 </head>
 <body><div class="card">
-<img class="logo" src="https://raw.githubusercontent.com/skynetmedia7/Skynet-Appz/main/logo.png" alt="Skynet">
 <h1>Install Skynet</h1>
-<p>Install everything in one addon — Movies and Series together.</p>
-<a class="btn" href="${stremioUrl}">1. INSTALL SKYNET ALL IN ONE ADDON</a>
-<hr style="border:0;border-top:1px solid #333;margin:24px 0">
-<p style="font-size:14px;font-weight:700;color:#fff;margin-top:24px">2. INSTALL AIOMETADATA</p>
-<a class="alt aiometa" href="https://aiometadata.elfhosted.com/configure/">INSTALL AIOMETADATA</a>
-<p style="font-size:14px;font-weight:700;color:#fff;margin-top:18px">3. INSTALL AIOSTREAMS</p>
-<a class="alt aiostreams" href="https://aiostreams.elfhosted.com/stremio/configure">INSTALL AIOSTREAMS</a>
-<div style="margin-top:24px;padding:16px;border:1px solid #555;border-radius:12px;background:#111118">
-<strong style="color:#fff;font-size:18px">⚠️ IMPORTANT</strong>
-<p style="margin:8px 0 0;color:#fff;font-weight:700">YOU MUST INSTALL ALL 3 ADDONS BELOW.</p>
-<p style="margin:8px 0 0;color:#bbb">1. Skynet All in One<br>2. AIOMetadata<br>3. AIOStreams</p>
-<p style="margin:8px 0 0;color:#bbb">If you do not install all 3, Skynet will not work correctly.</p>
+<p>Firestick / Android TV friendly installation.</p>
+
+<a class="btn web" href="${webInstallUrl}" target="_blank" rel="noopener">1. OPEN STREMIO WEB</a>
+
+<div class="note">
+<strong>On Firestick:</strong>
+<p style="margin:8px 0">If the button above does not install automatically, open Stremio → <b>Add-ons</b> → <b>+</b> → <b>Add Addon</b>, then enter the manifest URL below.</p>
+<input id="manifest" class="manifest" readonly value="${manifestUrl}">
+<button class="btn copy" id="copy" type="button">COPY MANIFEST URL</button>
 </div>
-</div></body></html>`;
+
+<a class="btn" href="${stremioUrl}">TRY OPEN IN STREMIO APP</a>
+
+<hr style="border:0;border-top:1px solid #333;margin:24px 0">
+
+<p style="font-size:14px;font-weight:700;color:#fff">2. INSTALL AIOMETADATA</p>
+<a class="alt aiometa" href="${aioMetadataUrl}" target="_blank" rel="noopener">INSTALL AIOMETADATA</a>
+
+<p style="font-size:14px;font-weight:700;color:#fff;margin-top:18px">3. INSTALL / CONFIGURE AIOSTREAMS</p>
+<a class="alt aiostreams" href="${aioStreamsUrl}" target="_blank" rel="noopener">OPEN SKYNET AIOSTREAMS</a>
+
+<div class="note">
+<strong>Important</strong>
+<p style="margin:8px 0 0">Skynet provides the Movies and Series catalogue. AIOStreams provides the playable sources. Install/configure both in the same Stremio account.</p>
+</div>
+
+<small>Skynet manifest: ${manifestUrl}</small>
+</div>
+<script>
+document.getElementById("copy").onclick=function(){
+  var x=document.getElementById("manifest");
+  x.focus(); x.select(); x.setSelectionRange(0,99999);
+  try{navigator.clipboard.writeText(x.value).then(function(){this.textContent="COPIED ✓";}.bind(this)).catch(function(){document.execCommand("copy");this.textContent="COPIED ✓";}.bind(this));}
+  catch(e){document.execCommand("copy");this.textContent="COPIED ✓";}
+};
+</script>
+</body></html>`;
   res.set("Content-Type","text/html; charset=utf-8");
   res.send(html);
 });
-
 
 /* -------------------------------------------------------------------------- */
 /* Skynet standalone app UI                                                   */
