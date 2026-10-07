@@ -689,7 +689,7 @@ app.get("/install", (_req, res) => {
     "#Intent;scheme=stremio;package=com.stremio.one;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.browser_fallback_url=" + encodeURIComponent(webInstallUrl) + ";end";
   const aioMetadataUrl = "https://aiometadata.elfhosted.com/configure/";
   const aioStreamsUrl = "https://skynet-aiostreams.duckdns.org/configure";
-  const html = \`<!doctype html>
+  const html = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -762,7 +762,7 @@ document.getElementById("installStremio").onclick=function(){
   },2800);
 };
 </script>
-</body></html>\`;
+</body></html>`;
   res.set("Content-Type","text/html; charset=utf-8");
   res.send(html);
 });
