@@ -90,7 +90,8 @@ public class MainActivity extends Activity {
             GradientDrawable border=new GradientDrawable();
             border.setColor(Color.TRANSPARENT);
             border.setCornerRadius(dp(12));
-            border.setStroke(dp(has?4:0), has?FOCUS_BLUE:Color.TRANSPARENT);
+            // Subtle edge at rest; blue focus ring when selected.
+            border.setStroke(dp(has?4:1), has?FOCUS_BLUE:Color.rgb(70,75,85));
             v.setForeground(border);
             if(has){
                 v.animate().scaleX(1.06f).scaleY(1.06f).setDuration(100).start();
