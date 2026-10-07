@@ -1,5 +1,6 @@
 plugins { id 'com.android.application' }
-android { namespace 'com.skynet.app'; compileSdk 36; defaultConfig { applicationId 'com.skynet.app'; minSdk 23; targetSdk 35; versionCode 24; versionName '1.0.24' } }
+android { namespace 'com.skynet.app'; compileSdk 36; defaultConfig { applicationId 'com.skynet.app'; minSdk 23; targetSdk 35; versionCode 24; versionName '1.0.24' }
+    buildTypes { release { minifyEnabled true; shrinkResources true; proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro' } } }
 
 dependencies {
     implementation 'androidx.media3:media3-exoplayer:1.10.0'
