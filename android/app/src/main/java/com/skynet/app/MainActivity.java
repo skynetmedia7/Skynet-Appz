@@ -12,7 +12,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import androidx.media3.common.MediaItem;
 import androidx.media3.exoplayer.ExoPlayer;
-import androidx.media3.ui.StyledPlayerView;
+import androidx.media3.ui.PlayerView;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -32,6 +32,8 @@ public class MainActivity extends Activity {
     // should return here instead of immediately leaving the app.
     boolean showingHome = true;
     int heroPlayId = View.NO_ID;
+    ExoPlayer player;
+    PlayerView playerView;
 
     int dp(float n){ return (int)(n*getResources().getDisplayMetrics().density+0.5f); }
 
@@ -1043,9 +1045,9 @@ public class MainActivity extends Activity {
 
     void startInternalPlayer(String streamUrl,String name){
         releaseInternalPlayer();
-        playerView=new StyledPlayerView(this);
+        playerView=new PlayerView(this);
         playerView.setUseController(true);
-        playerView.setShowBuffering(StyledPlayerView.SHOW_BUFFERING_WHEN_PLAYING);
+        playerView.setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING);
         playerView.setBackgroundColor(Color.BLACK);
         playerView.setFocusable(true);
         playerView.setKeepScreenOn(true);
