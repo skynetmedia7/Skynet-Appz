@@ -684,10 +684,12 @@ app.get("/meta/series/:id.json", (req, res) =>
 app.get("/install", (_req, res) => {
   const manifestUrl = BASE_URL + "/manifest.json";
   const stremioUrl = "stremio://" + manifestUrl.replace(/^https?:\/\//, "");
+  const stremioIntent = "intent://addon/" + encodeURIComponent(manifestUrl) +
+    "#Intent;scheme=stremio;package=com.stremio.one;action=android.intent.action.VIEW;end";
   const webInstallUrl = "https://web.stremio.com/#/addons?addon=" + encodeURIComponent(manifestUrl);
   const aioMetadataUrl = "https://aiometadata.elfhosted.com/configure/";
   const aioStreamsUrl = "https://skynet-aiostreams.duckdns.org/configure";
-  const html = `<!doctype html>
+  const html = \`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -697,7 +699,7 @@ app.get("/install", (_req, res) => {
 body{margin:0;background:#0b0b0f;color:#fff;font-family:Arial,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center}
 .card{width:min(620px,92%);text-align:center;background:#17171d;border-radius:22px;padding:28px;box-sizing:border-box;box-shadow:0 10px 40px #0008}
 h1{margin:5px 0 10px;font-size:34px}p{color:#bbb;line-height:1.5}
-.btn{display:block;text-decoration:none;background:#ffd400;color:#000;font-weight:800;font-size:19px;padding:16px;border-radius:12px;margin:14px 0;border:0;width:100%;box-sizing:border-box}
+.btn{display:block;text-decoration:none;background:#ffd400;color:#000;font-weight:800;font-size:19px;padding:16px;border-radius:12px;margin:14px 0;border:0;width:100%;box-sizing:border-box;cursor:pointer}
 .web{background:#27a8ff;color:#fff}.copy{background:#35c759;color:#fff}.alt{display:block;color:#fff;border:1px solid #555;padding:14px;border-radius:10px;text-decoration:none;margin-top:10px}.aiometa{background:#e53935;border-color:#e53935;font-weight:700}.aiostreams{background:#1976d2;border-color:#1976d2;font-weight:700}
 .manifest{width:100%;box-sizing:border-box;background:#0c0e12;color:#fff;border:1px solid #555;border-radius:10px;padding:12px;font-size:13px;text-align:left}
 .note{background:#111118;border:1px solid #444;border-radius:12px;padding:14px;text-align:left;margin-top:18px}
@@ -708,31 +710,36 @@ small{display:block;color:#888;margin-top:12px;word-break:break-all}
 <h1>Install Skynet</h1>
 <p>Firestick / Android TV friendly installation.</p>
 
-<a class="btn web" href="${webInstallUrl}" target="_blank" rel="noopener">1. OPEN STREMIO WEB</a>
-
+<a class="btn" id="installStremio" href="\${stremioUrl}">1. INSTALL SKYNET IN STREMIO</a>
 <div class="note">
-<strong>On Firestick:</strong>
-<p style="margin:8px 0">If the button above does not install automatically, open Stremio → <b>Add-ons</b> → <b>+</b> → <b>Add Addon</b>, then enter the manifest URL below.</p>
-<input id="manifest" class="manifest" readonly value="${manifestUrl}">
-<button class="btn copy" id="copy" type="button">COPY MANIFEST URL</button>
+<strong>Firestick:</strong>
+<p style="margin:8px 0">Press the button above. If Stremio is installed, Firestick will hand the manifest to Stremio. If nothing happens, use the web option or copy the manifest URL.</p>
+<a class="alt web" href="\${webInstallUrl}" target="_blank" rel="noopener">OPEN STREMIO WEB INSTALLER</a>
 </div>
 
-<a class="btn" href="${stremioUrl}">TRY OPEN IN STREMIO APP</a>
+<div class="note">
+<strong>Manifest URL</strong>
+<input id="manifest" class="manifest" readonly value="\${manifestUrl}">
+<button class="btn copy" id="copy" type="button">COPY MANIFEST URL</button>
+<p style="margin-bottom:0">In Stremio: Add-ons → + → Add Addon, then paste the URL.</p>
+</div>
+
+<a class="btn" href="\${stremioIntent}">TRY ANDROID TV STREMIO</a>
 
 <hr style="border:0;border-top:1px solid #333;margin:24px 0">
 
 <p style="font-size:14px;font-weight:700;color:#fff">2. INSTALL AIOMETADATA</p>
-<a class="alt aiometa" href="${aioMetadataUrl}" target="_blank" rel="noopener">INSTALL AIOMETADATA</a>
+<a class="alt aiometa" href="\${aioMetadataUrl}" target="_blank" rel="noopener">INSTALL AIOMETADATA</a>
 
 <p style="font-size:14px;font-weight:700;color:#fff;margin-top:18px">3. INSTALL / CONFIGURE AIOSTREAMS</p>
-<a class="alt aiostreams" href="${aioStreamsUrl}" target="_blank" rel="noopener">OPEN SKYNET AIOSTREAMS</a>
+<a class="alt aiostreams" href="\${aioStreamsUrl}" target="_blank" rel="noopener">OPEN SKYNET AIOSTREAMS</a>
 
 <div class="note">
 <strong>Important</strong>
 <p style="margin:8px 0 0">Skynet provides the Movies and Series catalogue. AIOStreams provides the playable sources. Install/configure both in the same Stremio account.</p>
 </div>
 
-<small>Skynet manifest: ${manifestUrl}</small>
+<small>Skynet manifest: \${manifestUrl}</small>
 </div>
 <script>
 document.getElementById("copy").onclick=function(){
@@ -741,8 +748,17 @@ document.getElementById("copy").onclick=function(){
   try{navigator.clipboard.writeText(x.value).then(function(){this.textContent="COPIED ✓";}.bind(this)).catch(function(){document.execCommand("copy");this.textContent="COPIED ✓";}.bind(this));}
   catch(e){document.execCommand("copy");this.textContent="COPIED ✓";}
 };
+document.getElementById("installStremio").onclick=function(){
+  var hidden=false;
+  function went(){hidden=true;document.removeEventListener("visibilitychange",went);}
+  document.addEventListener("visibilitychange",went);
+  setTimeout(function(){
+    document.removeEventListener("visibilitychange",went);
+    if(!hidden) location.href="\${webInstallUrl}";
+  },1800);
+};
 </script>
-</body></html>`;
+</body></html>\`;
   res.set("Content-Type","text/html; charset=utf-8");
   res.send(html);
 });
