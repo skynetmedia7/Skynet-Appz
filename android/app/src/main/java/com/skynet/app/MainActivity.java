@@ -602,9 +602,14 @@ public class MainActivity extends Activity {
             line.setPadding(dp(6),0,dp(24),0);
             line.setGravity(Gravity.CENTER_VERTICAL);
 
-            final int cardW=130;
-            final int cardH=190;
+            // Size TV posters to the actual catalogue width so they fit
+            // cleanly beneath the hero on different TV resolutions.
+            int available=content.getWidth();
+            if(available<=0) available=getResources().getDisplayMetrics().widthPixels-dp(78)-dp(16);
+            int posterCount=Math.max(6,Math.min(8,available/120));
             final int gap=10;
+            final int cardW=Math.max(95,(available-(posterCount-1)*dp(gap))/posterCount);
+            final int cardH=Math.round(cardW*1.48f);
             for(int i=0;i<Math.min(50,metas.length());i++){
                 JSONObject m=metas.optJSONObject(i); if(m==null)continue;
                 LinearLayout card=new LinearLayout(this);
