@@ -13,6 +13,9 @@ import android.widget.*;
 import androidx.media3.common.MediaItem;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.PlayerView;
+import androidx.media3.datasource.DefaultDataSource;
+import androidx.media3.datasource.DefaultHttpDataSource;
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -785,17 +788,16 @@ public class MainActivity extends Activity {
         new Thread(()->{
             try{
                 String u=BASE+"/app/api/series-playlist?id="+URLEncoder.encode(id,"UTF-8")+"&season="+season+"&episode="+episode;
+                // Series now uses the same internal Media3 player path.
+                // The playlist endpoint remains available for compatibility,
+                // but Skyflix no longer launches VLC.
                 runOnUiThread(()->{
                     try{
-                        Intent vlc=new Intent(Intent.ACTION_VIEW);
-                        vlc.setDataAndType(Uri.parse(u),"audio/x-mpegurl");
-                        vlc.setPackage("org.videolan.vlc");
-                        vlc.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(vlc);
+                        startInternalPlayer(u,name+" • S"+season+" E"+episode,null);
                         status.setText("Playing "+name+" • S"+season+" E"+episode);
                     }catch(Exception ex){
-                        status.setText("VLC could not play this series");
-                        Toast.makeText(this,"VLC could not open the series playlist",Toast.LENGTH_LONG).show();
+                        status.setText("Could not play this series");
+                        Toast.makeText(this,"Skyflix could not play the series",Toast.LENGTH_LONG).show();
                     }
                 });
             }catch(Exception e){runOnUiThread(()->status.setText("Could not prepare series playlist"));}
@@ -992,17 +994,31 @@ public class MainActivity extends Activity {
     // Signed media URLs commonly reject HEAD requests even when VLC can play them.
     JSONObject findPlayableStream(JSONArray a){
         if(a==null)return null;
+
+        // Nuvio/Stremio-style priority: a real media URL is playable; an
+        // externalUrl is only a browser destination unless it is clearly a
+        // media asset. Prefer the server-preserved original URL when present.
         for(int i=0;i<a.length();i++){
             JSONObject s=a.optJSONObject(i);
             if(s==null||looksLikeWaitingStream(s))continue;
+
+            String original=s.optString("skyflixOriginalUrl","");
+            if(looksLikePlayableUrl(original))return s;
+
             String u=s.optString("url","");
             if(looksLikePlayableUrl(u))return s;
         }
+
         for(int i=0;i<a.length();i++){
             JSONObject s=a.optJSONObject(i);
             if(s==null||looksLikeWaitingStream(s))continue;
             String u=s.optString("externalUrl","");
-            if(looksLikePlayableUrl(u))return s;
+            if(looksLikePlayableUrl(u) &&
+               (u.toLowerCase(Locale.UK).contains(".m3u8") ||
+                u.toLowerCase(Locale.UK).contains(".mp4") ||
+                u.toLowerCase(Locale.UK).contains(".mpd"))){
+                return s;
+            }
         }
         return null;
     }
@@ -1027,12 +1043,15 @@ public class MainActivity extends Activity {
                     }
                 }
                 if(stream==null) throw new Exception(lastMessage);
-                String u=stream.optString("url","");
-                if(u.length()==0)u=stream.optString("externalUrl","");
-                if(u.length()==0)throw new Exception("No stream URL");
+                String u=stream.optString("skyflixOriginalUrl","");
+                if(!looksLikePlayableUrl(u))u=stream.optString("url","");
+                if(!looksLikePlayableUrl(u))u=stream.optString("externalUrl","");
+                if(!looksLikePlayableUrl(u))throw new Exception("No stream URL");
+
                 final String streamUrl=u;
-                reportDiagnostic("playback_start","source_found");
-                runOnUiThread(()->startInternalPlayer(streamUrl,name));
+                final JSONObject selectedStream=stream;
+                reportDiagnostic("playback_start","source_found:" + stream.optString("skyflixSource","Stremio"));
+                runOnUiThread(()->startInternalPlayer(streamUrl,name,selectedStream));
             }catch(Exception e){
                 runOnUiThread(()->{
                     status.setText("No playable source returned");
@@ -1043,7 +1062,7 @@ public class MainActivity extends Activity {
         }).start();
     }
 
-    void startInternalPlayer(String streamUrl,String name){
+    void startInternalPlayer(String streamUrl,String name,JSONObject stream){
         releaseInternalPlayer();
         playerView=new PlayerView(this);
         playerView.setUseController(true);
@@ -1051,10 +1070,55 @@ public class MainActivity extends Activity {
         playerView.setBackgroundColor(Color.BLACK);
         playerView.setFocusable(true);
         playerView.setKeepScreenOn(true);
-        player=new ExoPlayer.Builder(this).build();
+
+        // Match Nuvio's HTTP source handling: honour addon proxyHeaders
+        // instead of throwing them away before ExoPlayer starts.
+        Map<String,String> headers=new HashMap<>();
+        try{
+            JSONObject h=stream==null?null:stream.optJSONObject("skyflixRequestHeaders");
+            if(h==null && stream!=null){
+                JSONObject bh=stream.optJSONObject("behaviorHints");
+                JSONObject ph=bh==null?null:bh.optJSONObject("proxyHeaders");
+                h=ph==null?null:ph.optJSONObject("request");
+            }
+            if(h!=null){
+                Iterator<String> keys=h.keys();
+                while(keys.hasNext()){
+                    String k=keys.next();
+                    String v=h.optString(k,"");
+                    if(k.length()>0 && v.length()>0)headers.put(k,v);
+                }
+            }
+        }catch(Exception ignored){}
+
+        DefaultHttpDataSource.Factory http=new DefaultHttpDataSource.Factory()
+                .setAllowCrossProtocolRedirects(true);
+        if(!headers.isEmpty())http.setDefaultRequestProperties(headers);
+        DefaultDataSource.Factory data=new DefaultDataSource.Factory(this,http);
+        DefaultMediaSourceFactory mediaFactory=new DefaultMediaSourceFactory(this)
+                .setDataSourceFactory(data);
+
+        player=new ExoPlayer.Builder(this)
+                .setMediaSourceFactory(mediaFactory)
+                .build();
         playerView.setPlayer(player);
         root.addView(playerView,new LinearLayout.LayoutParams(-1,0,1));
-        player.setMediaItem(MediaItem.fromUri(Uri.parse(streamUrl)));
+
+        // AIOStreams/Nuvio sources sometimes use a URL with no .m3u8 suffix.
+        // Let Media3 infer normal files, but explicitly mark obvious HLS/DASH.
+        String low=streamUrl.toLowerCase(Locale.UK);
+        MediaItem item;
+        if(low.contains(".m3u8")){
+            item=new MediaItem.Builder().setUri(Uri.parse(streamUrl))
+                    .setMimeType(androidx.media3.common.MimeTypes.APPLICATION_M3U8).build();
+        }else if(low.contains(".mpd")){
+            item=new MediaItem.Builder().setUri(Uri.parse(streamUrl))
+                    .setMimeType(androidx.media3.common.MimeTypes.APPLICATION_MPD).build();
+        }else{
+            item=MediaItem.fromUri(Uri.parse(streamUrl));
+        }
+
+        player.setMediaItem(item);
         player.prepare();
         player.play();
         status.setText("Playing "+name);
