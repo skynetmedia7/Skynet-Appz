@@ -20,6 +20,7 @@ function deviceId(req){ return String(req.get("X-Skynet-Device") || "").trim().s
 function licenseFromReq(req){ const code=String(req.get("X-Skynet-License") || "").trim().toUpperCase(); const db=loadLicenses(); return {code, lic:db[code], db}; }
 function requireLicense(req,res,next){ const {code,lic}=licenseFromReq(req); if(!code||!lic)return res.status(401).json({ok:false,error:"LOGIN_REQUIRED"}); if(lic.suspended)return res.status(403).json({ok:false,error:"SUSPENDED"}); if(lic.expiresAt && Date.now()>Date.parse(lic.expiresAt))return res.status(403).json({ok:false,error:"EXPIRED"}); const dev=deviceId(req); if(!dev || !lic.devices.includes(dev))return res.status(403).json({ok:false,error:"DEVICE_NOT_AUTHORISED"}); next(); }
 
+const DATA_DIR = process.env.SKYNET_DATA_DIR || path.join(process.cwd(), "data");
 const DIAGNOSTICS_FILE = path.join(DATA_DIR, "diagnostics.json");
 function loadDiagnostics(){ try { const x=JSON.parse(fs.readFileSync(DIAGNOSTICS_FILE,"utf8")); return Array.isArray(x)?x:[]; } catch(e){ return []; } }
 function saveDiagnostic(event){ try { const a=loadDiagnostics(); a.push(event); const cutoff=Date.now()-7*24*60*60*1000; const kept=a.filter(x=>Date.parse(x.ts||"")>=cutoff).slice(-5000); fs.mkdirSync(DATA_DIR,{recursive:true}); fs.writeFileSync(DIAGNOSTICS_FILE,JSON.stringify(kept)); } catch(e){ console.error("DIAGNOSTICS SAVE ERROR "+e.message); } }
