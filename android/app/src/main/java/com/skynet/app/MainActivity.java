@@ -150,19 +150,13 @@ public class MainActivity extends Activity {
         mark.setGravity(Gravity.CENTER_VERTICAL);
         mark.setPadding(0,0,0,0);
 
-        TextView play=label("▶",textSize+2,Color.rgb(35,175,255));
-        play.setGravity(Gravity.CENTER);
-        play.setTypeface(null,Typeface.BOLD);
-        mark.addView(play,new LinearLayout.LayoutParams(dp(textSize*1.05f),dp(textSize+8)));
-
-        TextView sky=label("SKY",textSize,Color.WHITE);
-        sky.setLetterSpacing(.04f);
-        sky.setTypeface(null,Typeface.BOLD);
-        TextView flix=label("FLIX",textSize,Color.rgb(35,175,255));
-        flix.setLetterSpacing(.04f);
-        flix.setTypeface(null,Typeface.BOLD);
-        mark.addView(sky,new LinearLayout.LayoutParams(dp(textSize*2.0f),dp(textSize+8)));
-        mark.addView(flix,new LinearLayout.LayoutParams(dp(textSize*2.05f),dp(textSize+8)));
+        ImageView logo=new ImageView(this);
+        logo.setImageResource(R.drawable.skyflix_logo);
+        logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        logo.setAdjustViewBounds(true);
+        int w=dp(textSize*8.8f);
+        int h=dp(textSize*1.72f);
+        mark.addView(logo,new LinearLayout.LayoutParams(w,h));
         return mark;
     }
 
