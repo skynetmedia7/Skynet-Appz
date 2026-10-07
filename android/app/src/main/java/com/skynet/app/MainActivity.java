@@ -168,15 +168,15 @@ public class MainActivity extends Activity {
         LinearLayout mark=new LinearLayout(this);
         mark.setOrientation(LinearLayout.HORIZONTAL);
         mark.setGravity(Gravity.CENTER_VERTICAL);
-        mark.setPadding(0,0,0,0);
 
-        ImageView logo=new ImageView(this);
-        logo.setImageResource(R.drawable.skyflix_logo);
-        logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        logo.setAdjustViewBounds(true);
-        int w=dp(textSize*8.8f);
-        int h=dp(textSize*1.72f);
-        mark.addView(logo,new LinearLayout.LayoutParams(w,h));
+        TextView play=label("▶",textSize*0.92f,Color.rgb(35,175,255));
+        mark.addView(play,new LinearLayout.LayoutParams(dp(textSize*1.35f),dp(textSize*1.72f)));
+
+        TextView logo=label("SKYFLIX",textSize,Color.rgb(35,175,255));
+        logo.setGravity(Gravity.CENTER_VERTICAL|Gravity.LEFT);
+        logo.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));
+        logo.setLetterSpacing(0.01f);
+        mark.addView(logo,new LinearLayout.LayoutParams(dp(textSize*6.4f),dp(textSize*1.72f)));
         return mark;
     }
 
