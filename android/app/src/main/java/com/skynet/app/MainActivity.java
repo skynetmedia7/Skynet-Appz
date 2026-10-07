@@ -54,6 +54,15 @@ public class MainActivity extends Activity {
     void focusFirstTvCard(){
         if(!isTv()) return;
         content.postDelayed(()->{
+            // The hero is the focal point when Skyflix opens. Do not jump the
+            // ScrollView down to the first catalogue card.
+            if(heroPlayId!=View.NO_ID){
+                View hero=content.findViewById(heroPlayId);
+                if(hero!=null && hero.isFocusable()){
+                    hero.requestFocus();
+                    return;
+                }
+            }
             for(int i=0;i<content.getChildCount();i++){
                 View v=content.getChildAt(i);
                 View card=findFirstFocusable(v);
@@ -188,7 +197,7 @@ public class MainActivity extends Activity {
 
         ScrollView scroll=new ScrollView(this); scroll.setFillViewport(true);
         prepareTvNavigation(scroll);
-        content=new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(0,0,dp(24),dp(30));
+        content=new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(0,0,dp(16),dp(30));
         // The ScrollView must actually contain the catalogue. Without this,
         // the TV shell renders but the entire content area stays empty.
         scroll.addView(content,new ScrollView.LayoutParams(-1,-2));
@@ -467,7 +476,19 @@ public class MainActivity extends Activity {
         // the compact layout on phones/tablets.
         int heroH=isTv()?300:250;
         FrameLayout hero=new FrameLayout(this); hero.setBackground(bg(Color.rgb(15,15,15),dp(14))); hero.setClipToOutline(true);
-        hero.setFocusable(false);
+        hero.setId(View.generateViewId());
+        heroPlayId=hero.getId();
+        hero.setFocusable(true);
+        hero.setClickable(true);
+        hero.setOnFocusChangeListener((v,has)->{
+            GradientDrawable b=new GradientDrawable();
+            b.setColor(Color.TRANSPARENT);
+            b.setCornerRadius(dp(14));
+            b.setStroke(dp(has?3:1),has?FOCUS_BLUE:Color.rgb(42,45,52));
+            v.setForeground(b);
+            v.animate().scaleX(has?1.015f:1f).scaleY(has?1.015f:1f).setDuration(100).start();
+        });
+        hero.setOnClickListener(v->details(type,m));
         hero.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
         ImageView image=new ImageView(this); image.setScaleType(ImageView.ScaleType.CENTER_CROP);
         hero.addView(image,new FrameLayout.LayoutParams(-1,dp(heroH)));
@@ -528,7 +549,7 @@ public class MainActivity extends Activity {
             im.setAdjustViewBounds(true);
             im.setPadding(dp(4),dp(4),dp(4),dp(4));
             im.setBackground(bg(Color.rgb(28,28,28),dp(12)));
-            int serviceW=isTv()?200:82, serviceH=isTv()?88:50;
+            int serviceW=isTv()?140:82, serviceH=isTv()?62:50;
             card.addView(im,new FrameLayout.LayoutParams(dp(serviceW),dp(serviceH)));
 
             card.setOnClickListener(v->openServiceCatalog(
@@ -537,12 +558,12 @@ public class MainActivity extends Activity {
 
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(
                     dp(serviceW),dp(serviceH));
-            cp.setMargins(0,0,dp(isTv()?10:6),0);
+            cp.setMargins(0,0,dp(isTv()?8:6),0);
             line.addView(card,cp);
             loadImage(im,m.optString("poster"));
         }
         hs.addView(line);
-        content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?104:58)));
+        content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?78:58)));
     }
 
     Button button(String s,int c,int tc){
@@ -571,12 +592,12 @@ public class MainActivity extends Activity {
             hs.setFocusable(false);
             hs.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
             LinearLayout line=new LinearLayout(this);
-            line.setPadding(0,0,dp(12),0);
+            line.setPadding(dp(6),0,dp(24),0);
             line.setGravity(Gravity.CENTER_VERTICAL);
 
-            final int cardW=150;
-            final int cardH=220;
-            final int gap=12;
+            final int cardW=130;
+            final int cardH=190;
+            final int gap=10;
             for(int i=0;i<Math.min(50,metas.length());i++){
                 JSONObject m=metas.optJSONObject(i); if(m==null)continue;
                 LinearLayout card=new LinearLayout(this);
@@ -622,7 +643,7 @@ public class MainActivity extends Activity {
             line.addView(seeAll,new LinearLayout.LayoutParams(dp(130),dp(90)));
 
             hs.addView(line);
-            content.addView(hs,new LinearLayout.LayoutParams(-1,dp(cardH+82)));
+            content.addView(hs,new LinearLayout.LayoutParams(-1,dp(cardH+72)));
             return;
         }
 
