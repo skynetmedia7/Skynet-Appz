@@ -961,6 +961,12 @@ app.get("/app/api/streams", async (req, res) => {
 
       return {
         ...s,
+        // Keep the original Stremio stream URL and request headers so the
+        // Android TV player can behave like a Nuvio source player instead of
+        // being forced through a generic proxy URL.
+        skyflixOriginalUrl: mediaUrl,
+        skyflixRequestHeaders: requestHeaders,
+        skyflixResponseHeaders: responseHeaders,
         url: req.protocol + "://" + req.get("host") + "/app/api/proxy?" + q.toString(),
         skyflixSource: "AIOStreams"
       };
