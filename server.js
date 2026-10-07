@@ -23,6 +23,33 @@ app.use((req, res, next) => {
 // Simple server-side licence system for the Skynet Android/TV app.
 const LICENSE_FILE = process.env.SKYNET_LICENSE_FILE || path.join(process.cwd(), "licenses.json");
 const ADMIN_KEY = process.env.SKYNET_ADMIN_KEY || "";
+
+// Browser admin sessions: the real admin key stays server-side and is never stored in localStorage.
+const ADMIN_SESSION_TTL = 8 * 60 * 60 * 1000;
+const adminSessions = new Map();
+function parseCookies(req){
+  const out={};
+  String(req.headers.cookie||"").split(";").forEach(part=>{
+    const i=part.indexOf("=");
+    if(i>0) out[part.slice(0,i).trim()]=decodeURIComponent(part.slice(i+1).trim());
+  });
+  return out;
+}
+function createAdminSession(remember){
+  const token=crypto.randomBytes(32).toString("hex");
+  adminSessions.set(token,{expiresAt:Date.now()+ADMIN_SESSION_TTL});
+  return token;
+}
+function adminAuthorized(req){
+  const cookies=parseCookies(req);
+  const session=adminSessions.get(cookies.skynet_admin_session);
+  if(session){
+    if(Date.now() < session.expiresAt) return true;
+    adminSessions.delete(cookies.skynet_admin_session);
+  }
+  return Boolean(ADMIN_KEY && req.get("X-Skynet-Admin")===ADMIN_KEY);
+}
+
 function loadLicenses(){ try { return JSON.parse(fs.readFileSync(LICENSE_FILE, "utf8")); } catch { return {}; } }
 function saveLicenses(x){ fs.writeFileSync(LICENSE_FILE, JSON.stringify(x, null, 2)); }
 function newCode(){ const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<12;i++) s+=chars[crypto.randomInt(chars.length)]; return s.slice(0,4)+"-"+s.slice(4,8)+"-"+s.slice(8); }
@@ -53,72 +80,63 @@ app.get("/app/api/health", (_req,res)=>{
 
 app.post("/app/api/login", (req,res)=>{ const code=String(req.body?.code||"").trim().toUpperCase(); const dev=deviceId(req); if(!code||!dev)return res.status(400).json({ok:false,error:"CODE_REQUIRED"}); const db=loadLicenses(); const lic=db[code]; if(!lic)return res.status(401).json({ok:false,error:"INVALID_CODE"}); if(lic.suspended)return res.status(403).json({ok:false,error:"SUSPENDED"}); if(lic.expiresAt && Date.now()>Date.parse(lic.expiresAt))return res.status(403).json({ok:false,error:"EXPIRED"}); lic.devices=Array.isArray(lic.devices)?lic.devices:[]; if(!lic.devices.includes(dev) && lic.devices.length>=(lic.maxDevices||1))return res.status(403).json({ok:false,error:"DEVICE_LIMIT"}); if(!lic.devices.includes(dev)){lic.devices.push(dev);lic.lastLoginAt=new Date().toISOString();saveLicenses(db);} res.json({ok:true,code,expiresAt:lic.expiresAt||null}); });
 
-app.get("/app/admin/licenses", (req,res)=>{ if(!ADMIN_KEY || req.query.key!==ADMIN_KEY)return res.status(401).send("Unauthorised"); const db=loadLicenses(); res.json(Object.entries(db).map(([code,x])=>({code,name:x.name||"",status:x.suspended?"suspended":"active",devices:x.devices?.length||0,maxDevices:x.maxDevices||1,expiresAt:x.expiresAt||null,createdAt:x.createdAt||null}))); });
-app.post("/app/admin/licenses", (req,res)=>{ if(!ADMIN_KEY || req.get("X-Skynet-Admin")!==ADMIN_KEY)return res.status(401).json({ok:false}); const db=loadLicenses(); let code=String(req.body?.code||"").trim().toUpperCase(); if(!/^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)){code=newCode();} if(db[code])return res.status(409).json({ok:false,error:"CODE_EXISTS"}); const name=String(req.body?.name||"").trim().slice(0,100); const days=Math.max(0,Number(req.body?.days||365)); const expiresAt=days?new Date(Date.now()+days*86400000).toISOString():null; db[code]={name,devices:[],maxDevices:Math.max(1,Number(req.body?.maxDevices||1)),expiresAt,suspended:false,createdAt:new Date().toISOString()}; saveLicenses(db); res.json({ok:true,code,name,expiresAt,maxDevices:db[code].maxDevices}); });
+app.post("/app/admin/login", (req,res)=>{ const key=String(req.body?.key||""); if(!ADMIN_KEY || key!==ADMIN_KEY)return res.status(401).json({ok:false,error:"UNAUTHORISED"}); const token=createAdminSession(!!req.body?.remember); const maxAge=req.body?.remember?ADMIN_SESSION_TTL:undefined; const cookie=["skynet_admin_session="+encodeURIComponent(token),"Path=/","HttpOnly","SameSite=Lax"].concat(maxAge?["Max-Age="+Math.floor(maxAge/1000)]:[]).join("; "); res.set("Set-Cookie",cookie); res.json({ok:true}); });
+app.post("/app/admin/logout", (req,res)=>{ const token=parseCookies(req).skynet_admin_session; if(token)adminSessions.delete(token); res.set("Set-Cookie","skynet_admin_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"); res.json({ok:true}); });
+app.get("/app/admin/licenses", (req,res)=>{ if(!adminAuthorized(req))return res.status(401).send("Unauthorised"); const db=loadLicenses(); res.json(Object.entries(db).map(([code,x])=>({code,name:x.name||"",status:x.suspended?"suspended":"active",devices:x.devices?.length||0,maxDevices:x.maxDevices||1,expiresAt:x.expiresAt||null,createdAt:x.createdAt||null}))); });
+app.post("/app/admin/licenses", (req,res)=>{ if(!adminAuthorized(req))return res.status(401).json({ok:false}); const db=loadLicenses(); let code=String(req.body?.code||"").trim().toUpperCase(); if(!/^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)){code=newCode();} if(db[code])return res.status(409).json({ok:false,error:"CODE_EXISTS"}); const name=String(req.body?.name||"").trim().slice(0,100); const days=Math.max(0,Number(req.body?.days||365)); const expiresAt=days?new Date(Date.now()+days*86400000).toISOString():null; db[code]={name,devices:[],maxDevices:Math.max(1,Number(req.body?.maxDevices||1)),expiresAt,suspended:false,createdAt:new Date().toISOString()}; saveLicenses(db); res.json({ok:true,code,name,expiresAt,maxDevices:db[code].maxDevices}); });
 app.get("/app/admin", (_req,res)=>{
   res.set("Content-Type","text/html; charset=utf-8");
-  res.send(`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Skynet Licence Admin</title><style>body{font-family:Arial;background:#08090d;color:#fff;margin:0;padding:24px}h1{color:#20b7ff}.box{background:#151820;padding:18px;border-radius:14px;margin-bottom:18px}input,select,button{padding:12px;border-radius:8px;border:1px solid #343943;background:#0e1117;color:#fff;margin:5px}button{cursor:pointer;background:#20b7ff;color:#000;font-weight:800}.danger{background:#ff4050;color:#fff}.ok{color:#59e391}.table{overflow:auto}table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid #292d35;text-align:left;white-space:nowrap}.code{font-family:monospace;font-weight:800}</style></head><body><h1>SKYNET Licence Admin</h1><div class="box"><input id="key" type="password" placeholder="Admin key" style="width:280px"><label style="display:block;margin:8px 5px"><input id="remember" type="checkbox"> Remember on this device</label><button id="loadBtn">LOAD</button></div><div class="box"><h2>Create Licence</h2><input id="name" placeholder="Customer name"><div style="margin:8px 5px;color:#20b7ff;font-weight:800">AUTO-GENERATED LICENCE KEY</div><input id="code" readonly style="width:280px;font-family:monospace;font-weight:800"><select id="days"><option value="365">12 months</option><option value="30">30 days</option><option value="90">90 days</option><option value="0">No expiry</option></select><select id="devices"><option value="1">1 device</option><option value="2">2 devices</option><option value="3">3 devices</option></select><button id="createBtn">CREATE LICENCE</button><div id="msg"></div></div><div class="box"><h2>Licences</h2><div class="table"><table><thead><tr><th>Name</th><th>Code</th><th>Expires</th><th>Devices</th><th>Status</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div></div><script>
-let key=localStorage.getItem("skynet_admin_key")||"";
-function hdr(){return {"X-Skynet-Admin":key,"Content-Type":"application/json"}}
+  res.send(`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Skynet Licence Admin</title><style>body{font-family:Arial;background:#08090d;color:#fff;margin:0;padding:24px}h1{color:#20b7ff}.box{background:#151820;padding:18px;border-radius:14px;margin-bottom:18px}input,select,button{padding:12px;border-radius:8px;border:1px solid #343943;background:#0e1117;color:#fff;margin:5px}button{cursor:pointer;background:#20b7ff;color:#000;font-weight:800}.danger{background:#ff4050;color:#fff}.ok{color:#59e391}.table{overflow:auto}table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid #292d35;text-align:left;white-space:nowrap}.code{font-family:monospace;font-weight:800}</style></head><body><h1>SKYNET Licence Admin</h1><div class="box"><input id="key" type="password" placeholder="Admin key" style="width:280px"><label style="display:block;margin:8px 5px"><input id="remember" type="checkbox"> Remember on this device</label><button id="loadBtn">LOAD</button></div><div class="box"><h2>Create Licence</h2><input id="name" placeholder="Customer name"><div style="margin:8px 5px;color:#20b7ff;font-weight:800">AUTO-GENERATED LICENCE KEY</div><input id="code" readonly style="width:280px;font-family:monospace;font-weight:800"><select id="days"><option value="365">12 months</option><option value="30">30 days</option><option value="90">90 days</option><option value="0">No expiry</option></select><select id="devices"><option value="1">1 device</option><option value="2">2 devices</option><option value="3">3 devices</option></select><button id="createBtn">CREATE LICENCE</button><div id="msg"></div></div><div class="box"><h2>Licences</h2><div class="table"><table><thead><tr><th>Name</th><th>Code</th><th>Expires</th><th>Devices</th><th>Status</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div></div><script>let authenticated=false;
 function esc(s){return String(s||"").replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]})}
 function makePreviewCode(){const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="";for(let i=0;i<12;i++)s+=chars[Math.floor(Math.random()*chars.length)];return s.slice(0,4)+"-"+s.slice(4,8)+"-"+s.slice(8)}
 function refreshCode(){document.getElementById("code").value=makePreviewCode()}
-function initKey(){const el=document.getElementById("key");const rem=document.getElementById("remember");if(key){el.value=key;rem.checked=true}}
-async function load(){
- key=document.getElementById("key").value.trim()||localStorage.getItem("skynet_admin_key")||"";
- const rem=document.getElementById("remember").checked;
- if(rem&&key)localStorage.setItem("skynet_admin_key",key);else if(!rem)localStorage.removeItem("skynet_admin_key");
- const msg=document.getElementById("msg");
- if(!key){msg.innerHTML='<p style="color:#ff4050">Enter your admin key first.</p>';return}
- msg.innerHTML="<p>Checking admin key…</p>";
+function showLogin(){document.getElementById("key").value="";document.getElementById("remember").checked=false;document.getElementById("loadBtn").textContent="LOGIN";document.getElementById("msg").innerHTML='<p>Enter the admin key to start a secure session.</p>'}
+async function login(){
+ const key=document.getElementById("key").value.trim(), remember=document.getElementById("remember").checked, msg=document.getElementById("msg");
+ if(!key){msg.innerHTML='<p style="color:#ff4050">Enter your admin key first.</p>';return false}
  try{
-  const r=await fetch("/app/admin/licenses?key="+encodeURIComponent(key),{cache:"no-store"});
+  const r=await fetch("/app/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key,remember})});
+  if(!r.ok){msg.innerHTML='<p style="color:#ff4050">Admin key rejected.</p>';return false}
+  authenticated=true;document.getElementById("key").value="";document.getElementById("loadBtn").textContent="LOGGED IN";
+  await load();return true;
+ }catch(e){msg.innerHTML='<p style="color:#ff4050">Connection error: '+esc(e.message)+"</p>";return false}
+}
+async function load(){
+ const msg=document.getElementById("msg");msg.innerHTML="<p>Checking secure admin session…</p>";
+ try{
+  const r=await fetch("/app/admin/licenses",{cache:"no-store"});
   const raw=await r.text();let d=[];try{d=JSON.parse(raw)}catch(e){}
-  if(!r.ok){msg.innerHTML="<p style='color:#ff4050'>Admin key rejected ("+r.status+").</p>";return}
-  document.getElementById("rows").innerHTML=d.map(x=>"<tr><td>"+esc(x.name)+"</td><td class=code>"+x.code+"</td><td>"+(x.expiresAt?new Date(x.expiresAt).toLocaleDateString():"Never")+"</td><td>"+x.devices+"/"+x.maxDevices+"</td><td>"+x.status+"</td><td><button onclick="editLicence('"+x.code+"','"+esc(x.name).replace(/'/g,"&#39;")+"')">EDIT</button> <button onclick="resetDevice('"+x.code+"')">RESET DEVICE</button> <button onclick="toggleSuspend('"+x.code+"',"+(x.status==="suspended"?"false":"true")+")">"+(x.status==="suspended"?"UNSUSPEND":"SUSPEND")+"</button> <button class="danger" onclick="deleteLicence('"+x.code+"')">DELETE</button></td></tr>").join("");
-  msg.innerHTML="<p class=ok>Admin key accepted — "+d.length+" licence"+(d.length===1?"":"s")+" found.</p>";
+  if(r.status===401){authenticated=false;showLogin();return}
+  if(!r.ok){msg.innerHTML="<p style='color:#ff4050'>Admin request failed ("+r.status+").</p>";return}
+  authenticated=true;
+  document.getElementById("rows").innerHTML=d.map(x=>"<tr><td>"+esc(x.name)+"</td><td class=code>"+x.code+"</td><td>"+(x.expiresAt?new Date(x.expiresAt).toLocaleDateString():"Never")+"</td><td>"+x.devices+"/"+x.maxDevices+"</td><td>"+x.status+"</td><td><button onclick=\"editLicence('"+x.code+"','"+esc(x.name).replace(/'/g,"&#39;")+"')\">EDIT</button> <button onclick=\"resetDevice('"+x.code+"')\">RESET DEVICE</button> <button onclick=\"toggleSuspend('"+x.code+"',"+(x.status==="suspended"?"false":"true")+")\">"+(x.status==="suspended"?"UNSUSPEND":"SUSPEND")+"</button> <button class=\"danger\" onclick=\"deleteLicence('"+x.code+"')\">DELETE</button></td></tr>").join("");
+  msg.innerHTML="<p class=ok>Secure admin session active — "+d.length+" licence"+(d.length===1?"":"s")+" found.</p>";
  }catch(e){msg.innerHTML="<p style='color:#ff4050'>Connection error: "+esc(e.message)+"</p>"}
 }
 async function create(){
- const btn=document.getElementById("createBtn");
- key=document.getElementById("key").value.trim()||localStorage.getItem("skynet_admin_key")||"";
- const name=document.getElementById("name").value.trim();
- const code=document.getElementById("code").value.trim();
- const days=Number(document.getElementById("days").value);
- const maxDevices=Number(document.getElementById("devices").value);
- const msg=document.getElementById("msg");
- if(!key){msg.innerHTML='<p style="color:#ff4050">Admin key is missing.</p>';return}
+ const btn=document.getElementById("createBtn"), name=document.getElementById("name").value.trim(), code=document.getElementById("code").value.trim(), days=Number(document.getElementById("days").value), maxDevices=Number(document.getElementById("devices").value), msg=document.getElementById("msg");
+ if(!authenticated){if(!(await login()))return}
  if(!name){msg.innerHTML='<p style="color:#ff4050">Enter the customer name.</p>';return}
  btn.disabled=true;btn.textContent="CREATING…";msg.innerHTML="<p>Creating licence…</p>";
  try{
-  const r=await fetch("/app/admin/licenses",{method:"POST",headers:hdr(),body:JSON.stringify({name,code,days,maxDevices})});
+  const r=await fetch("/app/admin/licenses",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,code,days,maxDevices})});
   const raw=await r.text();let d={};try{d=JSON.parse(raw)}catch(e){}
+  if(r.status===401){authenticated=false;showLogin();return}
   if(!r.ok){msg.innerHTML='<p style="color:#ff4050">Create failed ('+r.status+'): '+esc(d.error||raw||"Server rejected the request")+"</p>";return}
   if(d.ok){msg.innerHTML="<p class=ok>Created for "+esc(name)+": <b class=code>"+esc(d.code)+"</b></p>";document.getElementById("name").value="";refreshCode();await load()}
   else msg.innerHTML='<p style="color:#ff4050">Create failed: '+esc(d.error||"Unknown error")+"</p>";
  }catch(e){msg.innerHTML='<p style="color:#ff4050">Connection error: '+esc(e.message)+"</p>"}
  finally{btn.disabled=false;btn.textContent="CREATE LICENCE"}
 }
-async function postAdmin(path,body){const r=await fetch(path,{method:"POST",headers:hdr(),body:JSON.stringify(body)});const raw=await r.text();let d={};try{d=JSON.parse(raw)}catch(e){}if(!r.ok)throw Error(d.error||("Request failed ("+r.status+")"));return d}
-async function editLicence(code,currentName){
- const name=prompt("Customer name:",currentName||""); if(name===null)return;
- try{await postAdmin("/app/admin/rename",{code,name});await load()}catch(e){alert(e.message)}
-}
-async function resetDevice(code){
- if(!confirm("Reset the device binding for "+code+"?"))return;
- try{await postAdmin("/app/admin/reset-device",{code});await load()}catch(e){alert(e.message)}
-}
-async function toggleSuspend(code,suspended){
- if(!confirm((suspended?"Suspend ":"Unsuspend ")+code+"?"))return;
- try{await postAdmin("/app/admin/suspend",{code,suspended});await load()}catch(e){alert(e.message)}
-}
-async function deleteLicence(code){
- if(!confirm("DELETE licence "+code+"? This cannot be undone."))return;
- try{await postAdmin("/app/admin/delete",{code});await load()}catch(e){alert(e.message)}
-}
-document.getElementById("loadBtn").onclick=load;
+async function postAdmin(path,body){if(!authenticated&&!(await login()))throw Error("Admin login required");const r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const raw=await r.text();let d={};try{d=JSON.parse(raw)}catch(e){}if(r.status===401){authenticated=false;showLogin();throw Error("Admin session expired")}if(!r.ok)throw Error(d.error||("Request failed ("+r.status+")"));return d}
+async function editLicence(code,currentName){const name=prompt("Customer name:",currentName||"");if(name===null)return;try{await postAdmin("/app/admin/rename",{code,name});await load()}catch(e){alert(e.message)}}
+async function resetDevice(code){if(!confirm("Reset the device binding for "+code+"?"))return;try{await postAdmin("/app/admin/reset-device",{code});await load()}catch(e){alert(e.message)}}
+async function toggleSuspend(code,suspended){if(!confirm((suspended?"Suspend ":"Unsuspend ")+code+"?"))return;try{await postAdmin("/app/admin/suspend",{code,suspended});await load()}catch(e){alert(e.message)}}
+async function deleteLicence(code){if(!confirm("DELETE licence "+code+"? This cannot be undone."))return;try{await postAdmin("/app/admin/delete",{code});await load()}catch(e){alert(e.message)}}
+document.getElementById("loadBtn").onclick=login;
 document.getElementById("createBtn").onclick=create;
-refreshCode();initKey();if(key)setTimeout(load,100);
+refreshCode();
+load();
 </script></body></html>`);
 });
 app.post("/app/admin/rename", (req,res)=>{ if(!ADMIN_KEY || req.get("X-Skynet-Admin")!==ADMIN_KEY)return res.status(401).json({ok:false}); const code=String(req.body?.code||"").trim().toUpperCase(); const name=String(req.body?.name||"").trim().slice(0,100); const db=loadLicenses(); if(!db[code])return res.status(404).json({ok:false,error:"NOT_FOUND"}); db[code].name=name; saveLicenses(db); res.json({ok:true,code,name}); });
