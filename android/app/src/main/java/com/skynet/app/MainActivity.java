@@ -121,7 +121,7 @@ public class MainActivity extends Activity {
         String[] labels={"⌂","⌕","▣","⚙"};
         String[] names={"Home","Search","Library","Settings"};
         for(int i=0;i<labels.length;i++){
-            TextView item=label(labels[i],28,Color.rgb(70,170,255));
+            TextView item=label(labels[i],23,Color.rgb(70,170,255));
             item.setGravity(Gravity.CENTER);
             item.setFocusable(true);
             item.setClickable(true);
@@ -137,8 +137,11 @@ public class MainActivity extends Activity {
                 else if(which==1){ search.requestFocus(); }
                 else status.setText(names[which]+" • Coming soon");
             });
-            LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(dp(64),dp(64));
-            p.setMargins(0,dp(4),0,dp(14));
+            // Slightly smaller TV navigation icons, following Nuvio's
+            // content-first sidebar approach while keeping them easy to see
+            // and use with a D-pad from the sofa.
+            LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(dp(56),dp(56));
+            p.setMargins(0,dp(2),0,dp(10));
             nav.addView(item,p);
         }
         return nav;
