@@ -999,11 +999,15 @@ public class MainActivity extends Activity {
             JSONObject s=a.optJSONObject(i);
             if(s==null||looksLikeWaitingStream(s))continue;
 
-            String original=s.optString("skyflixOriginalUrl","");
-            if(looksLikePlayableUrl(original))return s;
-
+            // Always prefer Skyflix's licence-protected playback URL.
+            // It carries the AIOStreams request headers and keeps playback
+            // behind /app/api/proxy instead of bypassing the server path.
             String u=s.optString("url","");
             if(looksLikePlayableUrl(u))return s;
+
+            // Fallback only when a source was not wrapped by Skyflix.
+            String original=s.optString("skyflixOriginalUrl","");
+            if(looksLikePlayableUrl(original))return s;
         }
 
         for(int i=0;i<a.length();i++){
@@ -1040,8 +1044,10 @@ public class MainActivity extends Activity {
                     }
                 }
                 if(stream==null) throw new Exception(lastMessage);
-                String u=stream.optString("skyflixOriginalUrl","");
-                if(!looksLikePlayableUrl(u))u=stream.optString("url","");
+                // The server-generated URL is the canonical playback path:
+                // licence check -> proxy -> upstream stream -> Media3.
+                String u=stream.optString("url","");
+                if(!looksLikePlayableUrl(u))u=stream.optString("skyflixOriginalUrl","");
                 if(!looksLikePlayableUrl(u))u=stream.optString("externalUrl","");
                 if(!looksLikePlayableUrl(u))throw new Exception("No stream URL");
 
