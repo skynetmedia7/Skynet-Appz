@@ -684,9 +684,9 @@ app.get("/meta/series/:id.json", (req, res) =>
 app.get("/install", (_req, res) => {
   const manifestUrl = BASE_URL + "/manifest.json";
   const stremioUrl = "stremio://" + manifestUrl.replace(/^https?:\/\//, "");
-  const stremioIntent = "intent://" + manifestUrl.replace(/^https?:\\/\\//, "") +
-    "#Intent;scheme=stremio;package=com.stremio.one;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.browser_fallback_url=" + encodeURIComponent(webInstallUrl) + ";end";
   const webInstallUrl = "https://web.stremio.com/#/addons?addon=" + encodeURIComponent(manifestUrl);
+  const stremioIntent = "intent://" + manifestUrl.replace(/^https?:\/\//, "") +
+    "#Intent;scheme=stremio;package=com.stremio.one;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.browser_fallback_url=" + encodeURIComponent(webInstallUrl) + ";end";
   const aioMetadataUrl = "https://aiometadata.elfhosted.com/configure/";
   const aioStreamsUrl = "https://skynet-aiostreams.duckdns.org/configure";
   const html = \`<!doctype html>
