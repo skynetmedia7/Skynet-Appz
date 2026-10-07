@@ -710,36 +710,36 @@ small{display:block;color:#888;margin-top:12px;word-break:break-all}
 <h1>Install Skynet</h1>
 <p>Firestick / Android TV friendly installation.</p>
 
-<a class="btn" id="installStremio" href="\${stremioIntent}">1. INSTALL SKYNET IN STREMIO</a>
+<a class="btn" id="installStremio" href="${stremioIntent}">1. INSTALL SKYNET IN STREMIO</a>
 <div class="note">
 <strong>Firestick:</strong>
 <p style="margin:8px 0">Press the button above. If Stremio is installed, Firestick will hand the manifest to Stremio. If nothing happens, use the web option or copy the manifest URL.</p>
-<a class="alt web" href="\${webInstallUrl}" target="_blank" rel="noopener">OPEN STREMIO WEB INSTALLER</a>
+<a class="alt web" href="${webInstallUrl}" target="_blank" rel="noopener">OPEN STREMIO WEB INSTALLER</a>
 </div>
 
 <div class="note">
 <strong>Manifest URL</strong>
-<input id="manifest" class="manifest" readonly value="\${manifestUrl}">
+<input id="manifest" class="manifest" readonly value="${manifestUrl}">
 <button class="btn copy" id="copy" type="button">COPY MANIFEST URL</button>
 <p style="margin-bottom:0">In Stremio: Add-ons → + → Add Addon, then paste the URL.</p>
 </div>
 
-<a class="btn" href="\${stremioIntent}">TRY ANDROID TV STREMIO</a>
+<a class="btn" href="${stremioIntent}">TRY ANDROID TV STREMIO</a>
 
 <hr style="border:0;border-top:1px solid #333;margin:24px 0">
 
 <p style="font-size:14px;font-weight:700;color:#fff">2. INSTALL AIOMETADATA</p>
-<a class="alt aiometa" href="\${aioMetadataUrl}" target="_blank" rel="noopener">INSTALL AIOMETADATA</a>
+<a class="alt aiometa" href="${aioMetadataUrl}" target="_blank" rel="noopener">INSTALL AIOMETADATA</a>
 
 <p style="font-size:14px;font-weight:700;color:#fff;margin-top:18px">3. INSTALL / CONFIGURE AIOSTREAMS</p>
-<a class="alt aiostreams" href="\${aioStreamsUrl}" target="_blank" rel="noopener">OPEN SKYNET AIOSTREAMS</a>
+<a class="alt aiostreams" href="${aioStreamsUrl}" target="_blank" rel="noopener">OPEN SKYNET AIOSTREAMS</a>
 
 <div class="note">
 <strong>Important</strong>
 <p style="margin:8px 0 0">Skynet provides the Movies and Series catalogue. AIOStreams provides the playable sources. Install/configure both in the same Stremio account.</p>
 </div>
 
-<small>Skynet manifest: \${manifestUrl}</small>
+<small>Skynet manifest: ${manifestUrl}</small>
 </div>
 <script>
 document.getElementById("copy").onclick=function(){
@@ -754,11 +754,11 @@ document.getElementById("installStremio").onclick=function(){
   document.addEventListener("visibilitychange",went);
   setTimeout(function(){
     if(hidden) return;
-    location.href="\${stremioUrl}";
+    location.href="${stremioUrl}";
   },900);
   setTimeout(function(){
     document.removeEventListener("visibilitychange",went);
-    if(!hidden) location.href="\${webInstallUrl}";
+    if(!hidden) location.href="${webInstallUrl}";
   },2800);
 };
 </script>
