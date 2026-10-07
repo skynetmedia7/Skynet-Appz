@@ -923,36 +923,52 @@ app.get("/app/api/streams", async (req, res) => {
     // Signed, one-time and CDN media URLs can reject those probes even though
     // VLC/ExoPlayer can play them normally. Only discard obvious waiting-page
     // entries; the playback proxy will perform the real media request.
-    const readyStreams = streams.filter(s => {
-      if (!s || !s.url || !/^https?:\/\//i.test(String(s.url))) return false;
+    const readyStreams = streams.map(s => {
+      if (!s || typeof s !== "object") return null;
+
+      let mediaUrl = String(s.url || "").trim();
+      if (!/^https?:\/\//i.test(mediaUrl)) {
+        const external = String(s.externalUrl || "").trim();
+        if (/^https?:\/\//i.test(external) &&
+            /(?:\.m3u8(?:[?#]|$)|\.mp4(?:[?#]|$)|\.mkv(?:[?#]|$)|\.webm(?:[?#]|$)|\.mpd(?:[?#]|$))/i.test(external)) {
+          mediaUrl = external;
+        }
+      }
+      if (!/^https?:\/\//i.test(mediaUrl)) return null;
+
       const text = String(
         (s.name || "") + " " +
         (s.title || "") + " " +
         (s.description || "") + " " +
-        (s.behaviorHints || "")
+        JSON.stringify(s.behaviorHints || {})
       ).toLowerCase();
-      return !/(still downloading|still_downloading|not ready|not-ready|waiting for|preparing)/.test(text);
-    });
 
-    // Turn ready AIOStreams URLs into Skynet playback URLs, preserving the
-    // request/response headers supplied in behaviorHints.
-    const playback = readyStreams.map(s => {
+      if (/(still downloading|still_downloading|not ready|not-ready|waiting for|preparing)/.test(text)) return null;
+
       const requestHeaders = s.behaviorHints && s.behaviorHints.proxyHeaders
         ? (s.behaviorHints.proxyHeaders.request || {})
         : {};
       const responseHeaders = s.behaviorHints && s.behaviorHints.proxyHeaders
         ? (s.behaviorHints.proxyHeaders.response || {})
         : {};
+
       const q = new URLSearchParams({
-        url: s.url,
+        url: mediaUrl,
         h: Buffer.from(JSON.stringify(requestHeaders), "utf8").toString("base64url"),
         r: Buffer.from(JSON.stringify(responseHeaders), "utf8").toString("base64url")
       });
-      return { ...s, url: req.protocol + "://" + req.get("host") + "/app/api/proxy?" + q.toString() };
-    });
+
+      return {
+        ...s,
+        url: req.protocol + "://" + req.get("host") + "/app/api/proxy?" + q.toString(),
+        skyflixSource: "AIOStreams"
+      };
+    }).filter(Boolean);
+
+    console.log("AIOSTREAMS PLAYABLE " + readyStreams.length + " / " + streams.length + " type=" + type + " id=" + requestedId);
 
     res.set("Cache-Control", "no-store");
-    res.json({ streams: playback });
+    res.json({ streams: readyStreams, sourceCount: streams.length, playableCount: readyStreams.length });
   } catch (e) {
     console.error("APP STREAMS ERROR " + e.message);
     res.json({ streams: [] });
@@ -962,7 +978,7 @@ app.get("/app/api/streams", async (req, res) => {
 app.get("/app/api/proxy", async (req, res) => {
   try {
     const target = String(req.query.url || "");
-    if (!/^https:\/\//i.test(target)) return res.status(400).send("Invalid playback URL");
+    if (!/^https?:\/\//i.test(target)) return res.status(400).send("Invalid playback URL");
 
     const u = new URL(target);
     const host = (u.hostname || "").toLowerCase();
