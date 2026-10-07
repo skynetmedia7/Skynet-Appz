@@ -54,12 +54,19 @@ public class MainActivity extends Activity {
     void focusFirstTvCard(){
         if(!isTv()) return;
         content.postDelayed(()->{
-            // The hero is the focal point when Skyflix opens. Do not jump the
-            // ScrollView down to the first catalogue card.
+            // Always start at the top of the home page. Android TV can
+            // automatically focus the first poster while the ScrollView is
+            // laying out, which otherwise hides most of the hero.
+            ViewParent p=content.getParent();
+            while(p!=null && !(p instanceof ScrollView)) p=p.getParent();
+            if(p instanceof ScrollView) ((ScrollView)p).scrollTo(0,0);
+
             if(heroPlayId!=View.NO_ID){
                 View hero=content.findViewById(heroPlayId);
-                if(hero!=null && hero.isFocusable()){
+                if(hero!=null){
+                    hero.setFocusable(true);
                     hero.requestFocus();
+                    if(p instanceof ScrollView) ((ScrollView)p).scrollTo(0,0);
                     return;
                 }
             }
@@ -68,7 +75,7 @@ public class MainActivity extends Activity {
                 View card=findFirstFocusable(v);
                 if(card!=null){ card.requestFocus(); return; }
             }
-        },120);
+        },450);
     }
 
     View findFirstFocusable(View v){
