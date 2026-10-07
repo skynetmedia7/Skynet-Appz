@@ -21,7 +21,11 @@ app.use((req, res, next) => {
 });
 
 // Simple server-side licence system for the Skynet Android/TV app.
-const LICENSE_FILE = process.env.SKYNET_LICENSE_FILE || path.join(process.cwd(), "licenses.json");
+const DATA_DIR = process.env.SKYNET_DATA_DIR || path.join(process.cwd(), "data");
+const LICENSE_FILE = process.env.SKYNET_LICENSE_FILE || path.join(DATA_DIR, "licenses.json");
+// Keep the licence database in the persistent data directory so Docker rebuilds do not erase customers.
+function ensureLicenseStore(){ try { fs.mkdirSync(path.dirname(LICENSE_FILE), {recursive:true}); if(!fs.existsSync(LICENSE_FILE)){ const legacy=path.join(process.cwd(),"licenses.json"); if(legacy!==LICENSE_FILE && fs.existsSync(legacy)) fs.copyFileSync(legacy, LICENSE_FILE); } } catch(e){ console.error("LICENCE STORE ERROR "+e.message); } }
+ensureLicenseStore();
 const ADMIN_KEY = process.env.SKYNET_ADMIN_KEY || "";
 function loadLicenses(){ try { return JSON.parse(fs.readFileSync(LICENSE_FILE, "utf8")); } catch { return {}; } }
 function saveLicenses(x){ fs.writeFileSync(LICENSE_FILE, JSON.stringify(x, null, 2)); }
@@ -30,7 +34,6 @@ function deviceId(req){ return String(req.get("X-Skynet-Device") || "").trim().s
 function licenseFromReq(req){ const code=String(req.get("X-Skynet-License") || "").trim().toUpperCase(); const db=loadLicenses(); return {code, lic:db[code], db}; }
 function requireLicense(req,res,next){ const {code,lic}=licenseFromReq(req); if(!code||!lic)return res.status(401).json({ok:false,error:"LOGIN_REQUIRED"}); if(lic.suspended)return res.status(403).json({ok:false,error:"SUSPENDED"}); if(lic.expiresAt && Date.now()>Date.parse(lic.expiresAt))return res.status(403).json({ok:false,error:"EXPIRED"}); const dev=deviceId(req); if(!dev || !lic.devices.includes(dev))return res.status(403).json({ok:false,error:"DEVICE_NOT_AUTHORISED"}); next(); }
 
-const DATA_DIR = process.env.SKYNET_DATA_DIR || path.join(process.cwd(), "data");
 const DIAGNOSTICS_FILE = path.join(DATA_DIR, "diagnostics.json");
 function loadDiagnostics(){ try { const x=JSON.parse(fs.readFileSync(DIAGNOSTICS_FILE,"utf8")); return Array.isArray(x)?x:[]; } catch(e){ return []; } }
 function saveDiagnostic(event){ try { const a=loadDiagnostics(); a.push(event); const cutoff=Date.now()-7*24*60*60*1000; const kept=a.filter(x=>Date.parse(x.ts||"")>=cutoff).slice(-5000); fs.mkdirSync(DATA_DIR,{recursive:true}); fs.writeFileSync(DIAGNOSTICS_FILE,JSON.stringify(kept)); } catch(e){ console.error("DIAGNOSTICS SAVE ERROR "+e.message); } }
