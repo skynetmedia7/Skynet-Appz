@@ -48,8 +48,12 @@ public class MainActivity extends Activity {
     void prepareTvNavigation(ScrollView scroll){
         scroll.setFocusable(false);
         scroll.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
-        // Keep the search field focusable on TV so the sidebar Search button
-        // can actually move focus into it and open the keyboard.
+        // Do not let Android TV auto-focus the search box when Skyflix starts.
+        // Search is enabled only after the user selects the Search sidebar icon.
+        if(isTv() && search!=null){
+            search.setFocusable(false);
+            search.setFocusableInTouchMode(false);
+        }
     }
 
     void focusFirstTvCard(){
@@ -154,7 +158,12 @@ public class MainActivity extends Activity {
                 if(which==0) showHome();
                 else if(which==1){
                     search.setFocusable(true);
+                    search.setFocusableInTouchMode(true);
                     search.requestFocus();
+                    search.postDelayed(()->{
+                        InputMethodManager imm=(InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
+                        if(imm!=null) imm.showSoftInput(search,InputMethodManager.SHOW_IMPLICIT);
+                    },120);
                 }else if(which==2){
                     showLibrary();
                 }else if(which==3){
@@ -171,20 +180,66 @@ public class MainActivity extends Activity {
         return nav;
     }
 
-    LinearLayout skyflixBrand(float textSize){
-        LinearLayout mark=new LinearLayout(this);
-        mark.setOrientation(LinearLayout.HORIZONTAL);
-        mark.setGravity(Gravity.CENTER_VERTICAL);
+    // Proper Skyflix brand mark: glowing play emblem, swoosh and italic wordmark.
+    // Drawn locally so the logo is crisp on Android TV at any resolution.
+    class SkyflixLogoView extends View {
+        Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);
+        float textSize;
 
-        TextView play=label("▶",textSize*0.92f,Color.rgb(35,175,255));
-        mark.addView(play,new LinearLayout.LayoutParams(dp(textSize*1.35f),dp(textSize*1.72f)));
+        SkyflixLogoView(Context ctx,float size){
+            super(ctx);
+            textSize=dp(size);
+            setLayerType(View.LAYER_TYPE_SOFTWARE,null);
+            setContentDescription("Skyflix");
+        }
 
-        TextView logo=label("SKYFLIX",textSize,Color.rgb(35,175,255));
-        logo.setGravity(Gravity.CENTER_VERTICAL|Gravity.LEFT);
-        logo.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));
-        logo.setLetterSpacing(0.01f);
-        mark.addView(logo,new LinearLayout.LayoutParams(dp(textSize*6.4f),dp(textSize*1.72f)));
-        return mark;
+        @Override protected void onDraw(Canvas canvas){
+            super.onDraw(canvas);
+            float h=getHeight();
+            float s=textSize;
+            p.setStyle(Paint.Style.FILL);
+            p.setTypeface(Typeface.create("sans-serif",Typeface.BOLD_ITALIC));
+            p.setTextSize(s);
+            p.setStrokeWidth(Math.max(2,dp(2)));
+
+            // Blue glow behind the emblem/wordmark.
+            p.setShadowLayer(dp(7),0,0,Color.argb(190,20,140,255));
+
+            Path tri=new Path();
+            float cy=h*0.53f;
+            tri.moveTo(dp(5),cy-dp(20));
+            tri.lineTo(dp(5),cy+dp(20));
+            tri.lineTo(dp(34),cy);
+            tri.close();
+            p.setStyle(Paint.Style.FILL);
+            p.setShader(new LinearGradient(0,cy-dp(20),0,cy+dp(20),
+                    Color.rgb(85,205,255),Color.rgb(20,105,255),Shader.TileMode.CLAMP));
+            canvas.drawPath(tri,p);
+            p.setShader(null);
+
+            // The sweeping Skyflix arc above the wordmark.
+            p.setStyle(Paint.Style.STROKE);
+            p.setStrokeCap(Paint.Cap.ROUND);
+            p.setStrokeWidth(dp(3));
+            Path arc=new Path();
+            arc.moveTo(dp(34),cy-dp(17));
+            arc.cubicTo(dp(58),dp(2),dp(105),dp(1),dp(126),dp(13));
+            canvas.drawPath(arc,p);
+
+            // SKYFLIX wordmark.
+            p.setStyle(Paint.Style.FILL);
+            p.setTypeface(Typeface.create("sans-serif",Typeface.BOLD_ITALIC));
+            p.setTextSize(s);
+            p.setShader(new LinearGradient(0,cy-dp(24),0,cy+dp(20),
+                    Color.WHITE,Color.rgb(120,185,245),Shader.TileMode.CLAMP));
+            canvas.drawText("SKYFLIX",dp(39),cy+dp(16),p);
+            p.setShader(null);
+            p.clearShadowLayer();
+        }
+    }
+
+    SkyflixLogoView skyflixBrand(float textSize){
+        return new SkyflixLogoView(this,textSize);
     }
 
     @Override public void onCreate(Bundle b){
