@@ -182,12 +182,13 @@ public class MainActivity extends Activity {
 
     // Proper Skyflix brand mark: glowing play emblem, swoosh and italic wordmark.
     // Drawn locally so the logo is crisp on Android TV at any resolution.
-    class SkyflixLogoView extends View {
+    class SkyflixLogoView extends LinearLayout {
         Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);
         float textSize;
 
         SkyflixLogoView(Context ctx,float size){
             super(ctx);
+            setWillNotDraw(false);
             textSize=dp(size);
             setLayerType(View.LAYER_TYPE_SOFTWARE,null);
             setContentDescription("Skyflix");
