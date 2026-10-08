@@ -867,8 +867,15 @@ public class MainActivity extends Activity {
                         int en=ep.optInt("episode",i+1);
                         Button eb=button("E"+en+"  "+ep.optString("name","Episode "+en),Color.rgb(35,35,35),Color.WHITE);
                         eb.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);
-                        eb.setOnClickListener(v->{d.dismiss();playSeriesPlaylist(series.optString("id"),season,en,series.optString("name","Series"));});
+                        eb.setFocusable(true);
+                        eb.setFocusableInTouchMode(true);
+                        eb.setOnFocusChangeListener((v,has)->{
+                            v.setBackground(bg(has?FOCUS_BLUE:Color.rgb(35,35,35),dp(10)));
+                            if(v instanceof TextView) ((TextView)v).setTextColor(Color.WHITE);
+                        });
+                        eb.setOnClickListener(v->{d.dismiss();playSeriesPlaylist(series.optString("id",""),season,en,series.optString("name","Series"));});
                         box.addView(eb,new LinearLayout.LayoutParams(-1,dp(48)));
+                        if(i==0) eb.postDelayed(()->{eb.requestFocus();eb.requestFocusFromTouch();},120);
                     }
                 });
             }catch(Exception e){runOnUiThread(()->loading.setText("Could not load episodes"));}
