@@ -1277,6 +1277,13 @@ public class MainActivity extends Activity {
         // Match Nuvio's HTTP source handling: honour addon proxyHeaders
         // instead of throwing them away before ExoPlayer starts.
         Map<String,String> headers=new HashMap<>();
+        // Internal Skyflix endpoints are licence-protected too. Series
+        // playlists were being opened by Media3 without the same headers
+        // used by the normal API calls, leaving the player stuck at 00:00.
+        String licenseHeader=prefs==null?"":prefs.getString("license_code","");
+        if(licenseHeader.length()>0) headers.put("X-Skyflix-License",licenseHeader);
+        String deviceHeader=deviceId();
+        if(deviceHeader!=null && deviceHeader.length()>0) headers.put("X-Skyflix-Device",deviceHeader);
         try{
             JSONObject h=stream==null?null:stream.optJSONObject("skyflixRequestHeaders");
             if(h==null && stream!=null){
