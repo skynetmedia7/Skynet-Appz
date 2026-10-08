@@ -251,7 +251,7 @@ public class MainActivity extends Activity {
         root.setPadding(dp(16),dp(24),0,0);
 
         LinearLayout top=new LinearLayout(this); top.setGravity(Gravity.CENTER_VERTICAL);
-        LinearLayout skyflixLogo=skyflixBrand(28);
+        SkyflixLogoView skyflixLogo=skyflixBrand(28);
         top.addView(skyflixLogo,new LinearLayout.LayoutParams(0,dp(54),1));
 
         search=new EditText(this);
@@ -325,7 +325,7 @@ public class MainActivity extends Activity {
         card.gravity=Gravity.CENTER;
         card.setMargins(dp(18),dp(30),dp(18),dp(30));
 
-        LinearLayout logo=skyflixBrand(42);
+        SkyflixLogoView logo=skyflixBrand(42);
         logo.setGravity(Gravity.CENTER);
         box.addView(logo,new LinearLayout.LayoutParams(-1,dp(66)));
 
