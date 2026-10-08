@@ -612,19 +612,20 @@ public class MainActivity extends Activity {
             card.setClickable(true);
 
             ImageView im=new ImageView(this);
-            // The provider artwork already contains its own logo and wording.
-            // Show the complete artwork inside the tile — never crop it or
-            // overlay another service name on top.
+            // Premium TV service tiles: keep the provider artwork crisp and
+            // remove the old flat grey pill that made the row look washed out.
             im.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
             im.setAdjustViewBounds(true);
-            im.setPadding(dp(4),dp(4),dp(4),dp(4));
-            im.setBackground(bg(Color.rgb(28,28,28),dp(12)));
-            int serviceW=isTv()?140:82, serviceH=isTv()?62:50;
+            im.setPadding(dp(10),dp(6),dp(10),dp(6));
+            im.setBackgroundColor(Color.TRANSPARENT);
+            int serviceW=isTv()?154:82, serviceH=isTv()?68:50;
             card.addView(im,new FrameLayout.LayoutParams(dp(serviceW),dp(serviceH)));
 
             card.setOnClickListener(v->openServiceCatalog(
                     serviceId.substring("skynet-service:".length()),type));
             styleTvCard(card,im);
+            card.setBackground(bg(Color.rgb(12,20,32),dp(14)));
+            card.setElevation(dp(isTv()?4:0));
 
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(
                     dp(serviceW),dp(serviceH));
