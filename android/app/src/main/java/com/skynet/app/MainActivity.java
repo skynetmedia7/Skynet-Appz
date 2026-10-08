@@ -614,9 +614,11 @@ public class MainActivity extends Activity {
             ImageView im=new ImageView(this);
             // Premium TV service tiles: keep the provider artwork crisp and
             // remove the old flat grey pill that made the row look washed out.
-            im.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            // Let the provider logo artwork fill the service tile while
+            // preserving its aspect ratio. Minimal padding keeps logos large.
+            im.setScaleType(ImageView.ScaleType.FIT_CENTER);
             im.setAdjustViewBounds(true);
-            im.setPadding(dp(10),dp(6),dp(10),dp(6));
+            im.setPadding(dp(2),dp(2),dp(2),dp(2));
             im.setBackgroundColor(Color.TRANSPARENT);
             int serviceW=isTv()?154:82, serviceH=isTv()?68:50;
             card.addView(im,new FrameLayout.LayoutParams(dp(serviceW),dp(serviceH)));
