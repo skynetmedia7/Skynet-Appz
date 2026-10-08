@@ -976,7 +976,9 @@ app.get("/app/api/streams", async (req, res) => {
         skyflixOriginalUrl: mediaUrl,
         skyflixRequestHeaders: requestHeaders,
         skyflixResponseHeaders: responseHeaders,
-        url: req.protocol + "://" + req.get("host") + "/app/api/proxy?" + q.toString(),
+        // Return the normal playable source URL directly. The Android
+        // player will use the source's proxy headers when supplied.
+        url: mediaUrl,
         skyflixSource: "AIOStreams"
       };
     }).filter(Boolean);
