@@ -602,14 +602,12 @@ public class MainActivity extends Activity {
             line.setPadding(dp(6),0,dp(24),0);
             line.setGravity(Gravity.CENTER_VERTICAL);
 
-            // Size TV posters to the actual catalogue width so they fit
-            // cleanly beneath the hero on different TV resolutions.
-            int available=content.getWidth();
-            if(available<=0) available=getResources().getDisplayMetrics().widthPixels-dp(78)-dp(16);
-            int posterCount=Math.max(6,Math.min(8,available/120));
+            // Nuvio-style TV layout: fixed compact portrait posters.
+            // Do not stretch cards to fill the screen; the shelf should show
+            // several consistent tiles with tight spacing, like Nuvio Android TV.
             final int gap=10;
-            final int cardW=Math.max(95,(available-(posterCount-1)*dp(gap))/posterCount);
-            final int cardH=Math.round(cardW*1.48f);
+            final int cardW=125;
+            final int cardH=185;
             for(int i=0;i<Math.min(50,metas.length());i++){
                 JSONObject m=metas.optJSONObject(i); if(m==null)continue;
                 LinearLayout card=new LinearLayout(this);
