@@ -101,7 +101,7 @@ public class MainActivity extends Activity {
         // poster/logo is clipped to the same corners. The blue focus ring
         // remains a foreground outline and does not cover the artwork.
         card.setBackground(bg(Color.TRANSPARENT,dp(12)));
-        card.setClipToOutline(true);
+        // Keep the focus ring fully visible on all four edges.\n        // Clipping the foreground outline can hide the top/bottom stroke on TV tiles.\n        card.setClipToOutline(false);
         card.setOutlineProvider(new ViewOutlineProvider(){
             @Override public void getOutline(View v, Outline outline){
                 outline.setRoundRect(0,0,v.getWidth(),v.getHeight(),dp(12));
