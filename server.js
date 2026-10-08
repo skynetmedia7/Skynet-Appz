@@ -968,17 +968,27 @@ app.get("/app/api/streams", async (req, res) => {
         r: Buffer.from(JSON.stringify(responseHeaders), "utf8").toString("base64url")
       });
 
+      // Always give Skyflix a licence-protected playback URL. This is
+      // important for AIOStreams/debrid sources whose signed CDN URLs need
+      // their proxy headers and can fail when opened directly by Media3.
+      // Keep the real source too so the client can fall back when needed.
+      const proxyUrl = "/app/api/proxy?" + q.toString();
+
       return {
         ...s,
-        // Keep the original Stremio stream URL and request headers so the
-        // Android TV player can behave like a Nuvio source player instead of
-        // being forced through a generic proxy URL.
         skyflixOriginalUrl: mediaUrl,
         skyflixRequestHeaders: requestHeaders,
         skyflixResponseHeaders: responseHeaders,
-        // Return the normal playable source URL directly. The Android
-        // player will use the source's proxy headers when supplied.
-        url: mediaUrl,
+        skyflixProxyUrl: proxyUrl,
+        url: proxyUrl,
+        behaviorHints: {
+          ...(s.behaviorHints || {}),
+          notWebReady: true,
+          proxyHeaders: {
+            request: requestHeaders,
+            response: responseHeaders
+          }
+        },
         skyflixSource: "AIOStreams"
       };
     }).filter(Boolean);
