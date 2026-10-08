@@ -972,7 +972,7 @@ app.get("/app/api/streams", async (req, res) => {
       // important for AIOStreams/debrid sources whose signed CDN URLs need
       // their proxy headers and can fail when opened directly by Media3.
       // Keep the real source too so the client can fall back when needed.
-      const proxyUrl = "/app/api/proxy?" + q.toString();
+      const proxyUrl = req.protocol + "://" + req.get("host") + "/app/api/proxy?" + q.toString();
 
       return {
         ...s,
