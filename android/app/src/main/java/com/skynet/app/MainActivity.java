@@ -48,7 +48,8 @@ public class MainActivity extends Activity {
     void prepareTvNavigation(ScrollView scroll){
         scroll.setFocusable(false);
         scroll.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
-        if(isTv()) search.setFocusable(false);
+        // Keep the search field focusable on TV so the sidebar Search button
+        // can actually move focus into it and open the keyboard.
     }
 
     void focusFirstTvCard(){
@@ -151,8 +152,14 @@ public class MainActivity extends Activity {
             });
             item.setOnClickListener(v->{
                 if(which==0) showHome();
-                else if(which==1){ search.requestFocus(); }
-                else status.setText(names[which]+" • Coming soon");
+                else if(which==1){
+                    search.setFocusable(true);
+                    search.requestFocus();
+                }else if(which==2){
+                    showLibrary();
+                }else if(which==3){
+                    showSettings();
+                }
             });
             // Slightly smaller TV navigation icons, following Nuvio's
             // content-first sidebar approach while keeping them easy to see
@@ -967,6 +974,103 @@ public class MainActivity extends Activity {
         content.addView(grid);
         status.setText(found.size()+" result(s)");
     }
+    void showLibrary(){
+        showingHome=false;
+        content.removeAllViews();
+        TextView h=label("My List",22,Color.WHITE);
+        h.setPadding(0,dp(18),0,dp(10));
+        content.addView(h,new LinearLayout.LayoutParams(-1,dp(54)));
+
+        ArrayList<JSONObject> favs=new ArrayList<>();
+        for(JSONObject m:allMetas){
+            String id=m.optString("id","");
+            if(id.length()>0 && prefs.getBoolean("fav_"+id,false)){
+                boolean duplicate=false;
+                for(JSONObject x:favs) if(id.equals(x.optString("id",""))){duplicate=true;break;}
+                if(!duplicate) favs.add(m);
+            }
+        }
+
+        if(favs.size()==0){
+            TextView empty=label("Your list is empty",17,Color.GRAY);
+            empty.setPadding(0,dp(20),0,dp(20));
+            content.addView(empty);
+            status.setText("My List • Empty");
+            focusFirstTvCard();
+            return;
+        }
+
+        HorizontalScrollView hs=new HorizontalScrollView(this);
+        hs.setHorizontalScrollBarEnabled(false);
+        LinearLayout line=new LinearLayout(this);
+        line.setPadding(0,0,dp(12),0);
+        for(JSONObject m:favs){
+            FrameLayout card=new FrameLayout(this);
+            card.setFocusable(true); card.setClickable(true);
+            ImageView im=new ImageView(this);
+            im.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            im.setBackground(bg(Color.rgb(30,30,30),dp(10)));
+            card.addView(im,new FrameLayout.LayoutParams(dp(125),dp(185)));
+            TextView nt=label(ratingText(m)+"  "+m.optString("name",""),12,Color.WHITE);
+            nt.setGravity(Gravity.BOTTOM|Gravity.LEFT);
+            nt.setPadding(dp(7),0,dp(7),dp(7));
+            nt.setMaxLines(2);
+            nt.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            nt.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                    new int[]{Color.TRANSPARENT,Color.argb(235,0,0,0)}));
+            card.addView(nt,new FrameLayout.LayoutParams(-1,dp(42),Gravity.BOTTOM));
+            card.setOnClickListener(v->details(m.optString("type","movie"),m));
+            styleTvCard(card,im);
+            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(125),dp(185));
+            cp.setMargins(0,0,dp(10),0);
+            line.addView(card,cp);
+            loadImage(im,tileArtwork(m));
+        }
+        hs.addView(line);
+        content.addView(hs,new LinearLayout.LayoutParams(-1,dp(195)));
+        status.setText("My List • "+favs.size()+" title(s)");
+        focusFirstTvCard();
+    }
+
+    void showSettings(){
+        showingHome=false;
+        content.removeAllViews();
+
+        TextView h=label("Settings",22,Color.WHITE);
+        h.setPadding(0,dp(18),0,dp(10));
+        content.addView(h,new LinearLayout.LayoutParams(-1,dp(54)));
+
+        TextView account=label("Skyflix account",16,Color.WHITE);
+        account.setPadding(dp(14),0,dp(14),0);
+        content.addView(account,new LinearLayout.LayoutParams(-1,dp(48)));
+
+        TextView device=label("Device ID: "+deviceId(),13,Color.GRAY);
+        device.setPadding(dp(14),0,dp(14),0);
+        device.setMaxLines(1);
+        device.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);
+        content.addView(device,new LinearLayout.LayoutParams(-1,dp(42)));
+
+        Button clear=button("CLEAR MY LIST",Color.rgb(35,35,35),Color.WHITE);
+        clear.setAllCaps(false);
+        clear.setTextSize(14);
+        clear.setOnClickListener(v->{
+            for(JSONObject m:allMetas){
+                String id=m.optString("id","");
+                if(id.length()>0)prefs.edit().remove("fav_"+id).apply();
+            }
+            status.setText("My List cleared");
+            showSettings();
+        });
+        content.addView(clear,new LinearLayout.LayoutParams(isTv()?dp(220):-1,dp(52)));
+
+        TextView version=label("Skyflix",13,Color.DKGRAY);
+        version.setPadding(dp(14),dp(18),dp(14),0);
+        content.addView(version,new LinearLayout.LayoutParams(-1,dp(48)));
+
+        status.setText("Settings");
+        focusFirstTvCard();
+    }
+
     void showHome(){ search.setText(""); load(); }
 
 
