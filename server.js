@@ -149,7 +149,14 @@ const manifest = {
     { type: "movie", id: "skynet-max-movies", name: "Max" },
     { type: "movie", id: "skynet-bbc-iplayer-movies", name: "BBC iPlayer" },
     { type: "movie", id: "skynet-itvx-movies", name: "ITVX" },
-    { type: "movie", id: "skynet-channel-4-movies", name: "Channel 4" }
+    { type: "movie", id: "skynet-channel-4-movies", name: "Channel 4" },
+    { type: "movie", id: "skynet-movies-1970s", name: "1970s Movies" },
+    { type: "movie", id: "skynet-movies-1980s", name: "1980s Movies" },
+    { type: "movie", id: "skynet-movies-1990s", name: "1990s Movies" },
+    { type: "movie", id: "skynet-movies-2000s", name: "2000s Movies" },
+    { type: "movie", id: "skynet-movies-2010s", name: "2010s Movies" },
+    { type: "movie", id: "skynet-movies-2020s", name: "2020s Movies" },
+    { type: "movie", id: "skynet-latest-movies", name: "Latest Movies" }
   ],
 
   behaviorHints: {
@@ -188,7 +195,14 @@ const seriesManifest = {
     { type: "series", id: "skynet-max-series", name: "Max" },
     { type: "series", id: "skynet-bbc-iplayer-series", name: "BBC iPlayer" },
     { type: "series", id: "skynet-itvx-series", name: "ITVX" },
-    { type: "series", id: "skynet-channel-4-series", name: "Channel 4" }
+    { type: "series", id: "skynet-channel-4-series", name: "Channel 4" },
+    { type: "series", id: "skynet-series-1970s", name: "1970s TV" },
+    { type: "series", id: "skynet-series-1980s", name: "1980s TV" },
+    { type: "series", id: "skynet-series-1990s", name: "1990s TV" },
+    { type: "series", id: "skynet-series-2000s", name: "2000s TV" },
+    { type: "series", id: "skynet-series-2010s", name: "2010s TV" },
+    { type: "series", id: "skynet-series-2020s", name: "2020s TV" },
+    { type: "series", id: "skynet-latest-series", name: "Latest Series" }
   ],
 
   behaviorHints: {
@@ -219,6 +233,13 @@ const allInOneManifest = {
     { type: "movie", id: "skynet-bbc-iplayer-movies", name: "BBC iPlayer" },
     { type: "movie", id: "skynet-itvx-movies", name: "ITVX" },
     { type: "movie", id: "skynet-channel-4-movies", name: "Channel 4" },
+    { type: "movie", id: "skynet-movies-1970s", name: "1970s Movies" },
+    { type: "movie", id: "skynet-movies-1980s", name: "1980s Movies" },
+    { type: "movie", id: "skynet-movies-1990s", name: "1990s Movies" },
+    { type: "movie", id: "skynet-movies-2000s", name: "2000s Movies" },
+    { type: "movie", id: "skynet-movies-2010s", name: "2010s Movies" },
+    { type: "movie", id: "skynet-movies-2020s", name: "2020s Movies" },
+    { type: "movie", id: "skynet-latest-movies", name: "Latest Movies" },
     { type: "series", id: "skynet-services-series", name: "Streaming Services" },
     { type: "series", id: "skynet-netflix-series", name: "Netflix" },
     { type: "series", id: "skynet-prime-video-series", name: "Prime Video" },
@@ -228,7 +249,14 @@ const allInOneManifest = {
     { type: "series", id: "skynet-max-series", name: "Max" },
     { type: "series", id: "skynet-bbc-iplayer-series", name: "BBC iPlayer" },
     { type: "series", id: "skynet-itvx-series", name: "ITVX" },
-    { type: "series", id: "skynet-channel-4-series", name: "Channel 4" }
+    { type: "series", id: "skynet-channel-4-series", name: "Channel 4" },
+    { type: "series", id: "skynet-series-1970s", name: "1970s TV" },
+    { type: "series", id: "skynet-series-1980s", name: "1980s TV" },
+    { type: "series", id: "skynet-series-1990s", name: "1990s TV" },
+    { type: "series", id: "skynet-series-2000s", name: "2000s TV" },
+    { type: "series", id: "skynet-series-2010s", name: "2010s TV" },
+    { type: "series", id: "skynet-series-2020s", name: "2020s TV" },
+    { type: "series", id: "skynet-latest-series", name: "Latest Series" }
   ],
   behaviorHints: { configurable: false }
 };
@@ -378,24 +406,26 @@ async function sendCatalog(res, paths, type, limit = 50, catalogId = "unknown", 
   }
 }
 
-app.get("/catalog/movie/skynet-latest-movies.json", (_req, res) =>
-  sendCatalog(
+app.get("/catalog/movie/skynet-latest-movies.json", (_req, res) => {
+  const today = new Date().toISOString().slice(0, 10);
+  return sendCatalog(
     res,
-    [1, 2, 3].map(page => "/discover/movie?language=en-US&region=GB&sort_by=primary_release_date.desc&release_date.lte=2026-09-24&page=" + page),
-    "movie", 10
-  )
-);
+    [1, 2, 3].map(page => "/discover/movie?language=en-US&region=GB&sort_by=primary_release_date.desc&release_date.lte=" + today + "&page=" + page),
+    "movie", 50, "skynet-latest-movies", "Latest Movies"
+  );
+});
 
 
-app.get("/catalog/movie/skynet-new-releases-movies.json", (_req, res) =>
-  sendCatalog(
+app.get("/catalog/movie/skynet-new-releases-movies.json", (_req, res) => {
+  const today = new Date();
+  const since = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const until = today.toISOString().slice(0, 10);
+  return sendCatalog(
     res,
-    [1, 2, 3, 4, 5].map(page => "/discover/movie?language=en-US&region=GB&sort_by=primary_release_date.desc&primary_release_date.gte=2026-06-26&primary_release_date.lte=2026-09-24&page=" + page),
-    "movie", 50,
-    "skynet-new-releases-movies",
-    "New Releases"
-  )
-);
+    [1, 2, 3, 4, 5].map(page => "/discover/movie?language=en-US&region=GB&sort_by=primary_release_date.desc&primary_release_date.gte=" + since + "&primary_release_date.lte=" + until + "&page=" + page),
+    "movie", 50, "skynet-new-releases-movies", "New Releases"
+  );
+});
 
 // Backward-compatible movie endpoints for older Stremio/TiviGlass installs that still cache the previous manifest IDs.
 app.get("/catalog/movie/skynet-trending-movies.json", (_req, res) =>
@@ -462,6 +492,38 @@ app.get("/catalog/series/skynet-on-air-series.json", (_req, res) =>
   )
 );
 
+
+// Decade catalogues: browse titles from the 1970s through the current decade.
+// These are metadata/catalogue results; they do not claim that every title has a free playable stream.
+const decadeRanges = [
+  { decade: "1970s", start: "1970-01-01", end: "1979-12-31" },
+  { decade: "1980s", start: "1980-01-01", end: "1989-12-31" },
+  { decade: "1990s", start: "1990-01-01", end: "1999-12-31" },
+  { decade: "2000s", start: "2000-01-01", end: "2009-12-31" },
+  { decade: "2010s", start: "2010-01-01", end: "2019-12-31" },
+  { decade: "2020s", start: "2020-01-01", end: new Date().toISOString().slice(0, 10) }
+];
+
+for (const range of decadeRanges) {
+  const slug = range.decade.toLowerCase();
+  app.get("/catalog/movie/skynet-movies-" + slug + ".json", (_req, res) =>
+    sendCatalog(res, [1, 2, 3, 4, 5].map(page =>
+      "/discover/movie?language=en-US&region=GB&release_date.gte=" + range.start + "&release_date.lte=" + range.end + "&sort_by=popularity.desc&page=" + page
+    ), "movie", 50, "skynet-movies-" + slug, range.decade + " Movies")
+  );
+  app.get("/catalog/series/skynet-series-" + slug + ".json", (_req, res) =>
+    sendCatalog(res, [1, 2, 3, 4, 5].map(page =>
+      "/discover/tv?language=en-US&first_air_date.gte=" + range.start + "&first_air_date.lte=" + range.end + "&sort_by=popularity.desc&page=" + page
+    ), "series", 50, "skynet-series-" + slug, range.decade + " TV")
+  );
+}
+
+app.get("/catalog/series/skynet-latest-series.json", (_req, res) => {
+  const today = new Date().toISOString().slice(0, 10);
+  return sendCatalog(res, [1, 2, 3, 4, 5].map(page =>
+    "/discover/tv?language=en-US&first_air_date.lte=" + today + "&sort_by=first_air_date.desc&page=" + page
+  ), "series", 50, "skynet-latest-series", "Latest Series");
+});
 
 const movieGenres = {
   "action": 28, "adventure": 12, "animation": 16, "comedy": 35,
