@@ -1167,7 +1167,7 @@ public class MainActivity extends Activity {
                 q.setRequestMethod("POST"); q.setConnectTimeout(4000); q.setReadTimeout(5000);
                 q.setDoOutput(true); q.setRequestProperty("Content-Type","application/json");
                 String lic=prefs==null?"":prefs.getString("license_code","");
-                q.setRequestProperty("X-Skyflix-License",lic); q.setRequestProperty("X-Skynet-Device",deviceId());
+                q.setRequestProperty("X-Skynet-License",lic); q.setRequestProperty("X-Skynet-Device",deviceId());
                 JSONObject body=new JSONObject(); body.put("type",type); body.put("detail",detail==null?"":detail); body.put("app","android"); body.put("version","1.0.24");
                 byte[] bytes=body.toString().getBytes("UTF-8"); q.setFixedLengthStreamingMode(bytes.length);
                 OutputStream out=q.getOutputStream(); out.write(bytes); out.close(); q.getResponseCode(); q.disconnect();
@@ -1302,7 +1302,7 @@ public class MainActivity extends Activity {
         // playlists were being opened by Media3 without the same headers
         // used by the normal API calls, leaving the player stuck at 00:00.
         String licenseHeader=prefs==null?"":prefs.getString("license_code","");
-        if(licenseHeader.length()>0) headers.put("X-Skyflix-License",licenseHeader);
+        if(licenseHeader.length()>0) headers.put("X-Skynet-License",licenseHeader);
         String deviceHeader=deviceId();
         if(deviceHeader!=null && deviceHeader.length()>0) headers.put("X-Skynet-Device",deviceHeader);
         try{
@@ -1368,7 +1368,7 @@ public class MainActivity extends Activity {
 
     String get(String u)throws Exception{
         HttpURLConnection c=(HttpURLConnection)new URL(u).openConnection(); c.setConnectTimeout(10000); c.setReadTimeout(15000);
-        String license=prefs==null?"":prefs.getString("license_code",""); if(license.length()>0)c.setRequestProperty("X-Skyflix-License",license); c.setRequestProperty("X-Skynet-Device",deviceId());
+        String license=prefs==null?"":prefs.getString("license_code",""); if(license.length()>0)c.setRequestProperty("X-Skynet-License",license); c.setRequestProperty("X-Skynet-Device",deviceId());
         BufferedReader b=new BufferedReader(new InputStreamReader(c.getInputStream())); StringBuilder s=new StringBuilder(); String l;
         while((l=b.readLine())!=null)s.append(l); b.close(); return s.toString();
     }
