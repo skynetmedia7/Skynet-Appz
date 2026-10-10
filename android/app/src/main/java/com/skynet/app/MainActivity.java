@@ -659,7 +659,10 @@ public class MainActivity extends Activity {
         if(title.isEmpty())return title;
         // Some metadata providers return titles with a lowercase first letter.
         // Fix only the first character, preserving intentional internal casing.
-        return title.substring(0,1).toUpperCase(Locale.UK)+title.substring(1);
+        title=title.substring(0,1).toUpperCase(Locale.UK)+title.substring(1);
+        // Normalize the common Spider-Man spelling when metadata omits the hyphen.
+        title=title.replaceAll("(?i)spiderman","Spider-Man");
+        return title;
     }
 
     String tileArtwork(JSONObject m){
