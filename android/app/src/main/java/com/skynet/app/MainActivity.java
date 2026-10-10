@@ -676,32 +676,38 @@ public class MainActivity extends Activity {
             final int cardH=185;
             for(int i=0;i<Math.min(50,metas.length());i++){
                 JSONObject m=metas.optJSONObject(i); if(m==null)continue;
-                LinearLayout card=new LinearLayout(this);
-                card.setOrientation(LinearLayout.VERTICAL);
+                FrameLayout card=new FrameLayout(this);
                 card.setFocusable(true); card.setClickable(true);
+                card.setBackground(bg(Color.rgb(24,24,24),dp(12)));
+                card.setClipToOutline(true);
 
                 ImageView im=new ImageView(this);
                 im.setScaleType(ImageView.ScaleType.CENTER_CROP);
                 im.setBackground(bg(Color.rgb(30,30,30),dp(12)));
-                card.addView(im,new LinearLayout.LayoutParams(dp(cardW),dp(cardH)));
+                card.addView(im,new FrameLayout.LayoutParams(-1,-1));
 
-                TextView nameText=label(m.optString("name",""),14,Color.WHITE);
-                nameText.setGravity(Gravity.CENTER_VERTICAL|Gravity.LEFT);
-                nameText.setPadding(dp(5),0,dp(5),0);
-                nameText.setMaxLines(1);
+                // Netflix-style poster caption: title and year sit over the
+                // bottom of the artwork, so no extra label rows make tiles tall.
+                LinearLayout caption=new LinearLayout(this);
+                caption.setOrientation(LinearLayout.VERTICAL);
+                caption.setGravity(Gravity.BOTTOM);
+                caption.setPadding(dp(7),dp(18),dp(7),dp(7));
+                caption.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                        new int[]{Color.TRANSPARENT,Color.argb(245,0,0,0)}));
+                TextView nameText=label(m.optString("name",""),13,Color.WHITE);
+                nameText.setGravity(Gravity.BOTTOM|Gravity.LEFT);
+                nameText.setMaxLines(2);
                 nameText.setEllipsize(android.text.TextUtils.TruncateAt.END);
-                LinearLayout.LayoutParams nl=new LinearLayout.LayoutParams(dp(cardW),dp(31));
-                nl.topMargin=dp(7);
-                card.addView(nameText,nl);
-
-                TextView year=label(m.optString("releaseInfo",""),12,Color.LTGRAY);
-                year.setGravity(Gravity.CENTER_VERTICAL|Gravity.LEFT);
-                year.setPadding(dp(5),0,0,0);
-                card.addView(year,new LinearLayout.LayoutParams(dp(cardW),dp(21)));
+                caption.addView(nameText,new LinearLayout.LayoutParams(-1,dp(38)));
+                TextView year=label(m.optString("releaseInfo",""),11,Color.LTGRAY);
+                year.setGravity(Gravity.BOTTOM|Gravity.LEFT);
+                caption.addView(year,new LinearLayout.LayoutParams(-1,dp(18)));
+                card.addView(caption,new FrameLayout.LayoutParams(-1,dp(64),Gravity.BOTTOM));
 
                 card.setOnClickListener(v->details(type,m));
                 styleTvCard(card,im);
-                LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(cardW),dp(cardH+59));
+                card.setClipToOutline(true);
+                LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(cardW),dp(cardH));
                 cp.setMargins(0,0,dp(gap),dp(8));
                 line.addView(card,cp);
                 loadImage(im,tileArtwork(m));
@@ -719,7 +725,9 @@ public class MainActivity extends Activity {
             line.addView(seeAll,new LinearLayout.LayoutParams(dp(130),dp(90)));
 
             hs.addView(line);
-            content.addView(hs,new LinearLayout.LayoutParams(-1,dp(cardH+72)));
+            // Compact shelf height: title/year are part of each poster now.
+            hs.setClipToPadding(false);
+            content.addView(hs,new LinearLayout.LayoutParams(-1,dp(cardH+18)));
             return;
         }
 
