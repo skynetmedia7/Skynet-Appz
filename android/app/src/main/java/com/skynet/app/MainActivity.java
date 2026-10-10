@@ -666,11 +666,12 @@ public class MainActivity extends Activity {
     }
 
     String tileArtwork(JSONObject m){
-        // Prefer the landscape/backdrop artwork for TV tiles. A portrait poster
-        // cropped into a 16:9 tile can lose faces, titles and important artwork.
-        String bgUrl=m.optString("background","").trim();
-        if(bgUrl.length()>0)return bgUrl;
-        return m.optString("poster","");
+        // Catalogue cards are portrait posters (2:3), so use the portrait poster
+        // first. Cropping a landscape backdrop into these cards cuts off artwork
+        // and any title lettering printed on the poster itself.
+        String poster=m.optString("poster","").trim();
+        if(poster.length()>0)return poster;
+        return m.optString("background","").trim();
     }
 
     void addRow(String name,String type,JSONArray metas){
@@ -711,18 +712,18 @@ public class MainActivity extends Activity {
                 LinearLayout caption=new LinearLayout(this);
                 caption.setOrientation(LinearLayout.VERTICAL);
                 caption.setGravity(Gravity.BOTTOM);
-                caption.setPadding(dp(7),dp(18),dp(7),dp(7));
+                caption.setPadding(dp(7),dp(12),dp(7),dp(7));
                 caption.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                         new int[]{Color.TRANSPARENT,Color.argb(245,0,0,0)}));
-                TextView nameText=label(displayTitle(m.optString("name","")),12,Color.WHITE);
+                TextView nameText=label(displayTitle(m.optString("name","")),11,Color.WHITE);
                 nameText.setGravity(Gravity.BOTTOM|Gravity.LEFT);
-                nameText.setMaxLines(2);
+                nameText.setMaxLines(3);
                 nameText.setEllipsize(android.text.TextUtils.TruncateAt.END);
-                caption.addView(nameText,new LinearLayout.LayoutParams(-1,dp(38)));
+                caption.addView(nameText,new LinearLayout.LayoutParams(-1,dp(48)));
                 TextView year=label(m.optString("releaseInfo",""),11,Color.LTGRAY);
                 year.setGravity(Gravity.BOTTOM|Gravity.LEFT);
                 caption.addView(year,new LinearLayout.LayoutParams(-1,dp(18)));
-                card.addView(caption,new FrameLayout.LayoutParams(-1,dp(64),Gravity.BOTTOM));
+                card.addView(caption,new FrameLayout.LayoutParams(-1,dp(76),Gravity.BOTTOM));
 
                 card.setOnClickListener(v->details(type,m));
                 styleTvCard(card,im);
