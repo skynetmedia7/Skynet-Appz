@@ -885,13 +885,40 @@ app.get("/app/api/proxy", async (req, res) => {
     });
     const u = new URL(target);
     if (["localhost","127.0.0.1","0.0.0.0","::1"].includes(u.hostname)) return res.status(403).send("Blocked");
+    // Streams include base64url-encoded AIOStreams request/response headers
+    // in the h/r query parameters. Decode them here; previously these values
+    // were ignored, causing protected CDN streams to fail at playback.
+    function decodeHeaderMap(value) {
+      try {
+        const parsed = JSON.parse(Buffer.from(String(value || ""), "base64url").toString("utf8"));
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+    const blockedHeaders = new Set([
+      "host", "content-length", "connection", "keep-alive", "transfer-encoding",
+      "upgrade", "proxy-authorization", "proxy-authenticate", "te", "trailer",
+      "accept-encoding"
+    ]);
+    function safeHeaderEntries(map) {
+      return Object.entries(map || {}).filter(([name, value]) =>
+        /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(name) &&
+        !blockedHeaders.has(name.toLowerCase()) &&
+        value != null && (typeof value === "string" || typeof value === "number")
+      );
+    }
     const headers = {};
+    for (const [name, value] of safeHeaderEntries(decodeHeaderMap(req.query.h))) {
+      headers[name] = String(value);
+    }
+    // Preserve compatibility with older pipe-delimited URLs.
     if (opts["user-agent"]) headers["user-agent"] = opts["user-agent"];
     if (opts["referer"]) headers["referer"] = opts["referer"];
     if (opts["origin"]) headers["origin"] = opts["origin"];
     if (req.headers.range) headers["range"] = req.headers.range;
+    const responseHeaders = decodeHeaderMap(req.query.r);
     const upstream = await fetch(target, {headers, redirect:"follow"});
-    if (!upstream.ok && upstream.status !== 206) return res.status(upstream.status).send("Upstream stream error");
     const ct = upstream.headers.get("content-type") || "";
     if (/mpegurl|vnd\.apple\.mpegurl/i.test(ct) || /\.m3u8(?:$|[?#])/i.test(u.pathname)) {
       const body = await upstream.text();
@@ -901,12 +928,20 @@ app.get("/app/api/proxy", async (req, res) => {
         try { return "/app/api/proxy?url=" + encodeURIComponent(new URL(t, target).href); }
         catch (_) { return line; }
       }).join("\n");
+      for (const [name, value] of safeHeaderEntries(responseHeaders)) {
+        const lower = name.toLowerCase();
+        if (!["content-length", "content-range", "content-encoding", "transfer-encoding"].includes(lower)) res.set(name, String(value));
+      }
       res.set({"Content-Type":"application/vnd.apple.mpegurl","Cache-Control":"no-store"});
       return res.status(upstream.status).send(rewritten);
     }
     ["content-type","content-length","content-range","accept-ranges"].forEach(h => {
       const v=upstream.headers.get(h); if(v) res.set(h,v);
     });
+    for (const [name, value] of safeHeaderEntries(responseHeaders)) {
+      const lower = name.toLowerCase();
+      if (!["content-length", "content-range", "content-encoding", "transfer-encoding"].includes(lower)) res.set(name, String(value));
+    }
     res.set("Cache-Control","no-store");
     if (!upstream.body) return res.status(502).send("No upstream body");
     for await (const chunk of upstream.body) res.write(Buffer.from(chunk));
