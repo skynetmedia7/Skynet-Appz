@@ -621,33 +621,31 @@ public class MainActivity extends Activity {
             card.setClickable(true);
 
             ImageView im=new ImageView(this);
-            // Premium TV service tiles: keep the provider artwork crisp and
-            // remove the old flat grey pill that made the row look washed out.
-            // Let the provider logo artwork fill the service tile while
-            // preserving its aspect ratio. Minimal padding keeps logos large.
+            // Square, app-style service tiles inspired by the user's reference:
+            // original service artwork is large, with no stretched blue side panels.
             im.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            im.setAdjustViewBounds(true);
+            im.setAdjustViewBounds(false);
             im.setPadding(dp(2),dp(2),dp(2),dp(2));
             im.setBackgroundColor(Color.TRANSPARENT);
-            // Make the TV service shortcuts noticeably larger and easier to select with a remote.
-            // The row scrolls horizontally, so larger tiles do not squeeze the logos.
-            int serviceW=isTv()?200:96, serviceH=isTv()?88:58;
+            int serviceW=isTv()?112:72, serviceH=isTv()?112:72;
             card.addView(im,new FrameLayout.LayoutParams(dp(serviceW),dp(serviceH)));
 
             card.setOnClickListener(v->openServiceCatalog(
                     serviceId.substring("skynet-service:".length()),type));
             styleTvCard(card,im);
-            card.setBackground(bg(Color.rgb(12,20,32),dp(14)));
-            card.setElevation(dp(isTv()?4:0));
+            card.setBackground(bg(Color.rgb(18,20,28),dp(18)));
+            card.setElevation(dp(isTv()?3:0));
+            card.setClipChildren(false);
+            card.setClipToPadding(false);
 
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(
                     dp(serviceW),dp(serviceH));
-            cp.setMargins(0,0,dp(isTv()?8:6),0);
+            cp.setMargins(0,0,dp(isTv()?10:8),0);
             line.addView(card,cp);
             loadImage(im,m.optString("poster"));
         }
         hs.addView(line);
-        content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?78:58)));
+        content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?126:80)));
     }
 
     Button button(String s,int c,int tc){
