@@ -620,7 +620,9 @@ public class MainActivity extends Activity {
             im.setAdjustViewBounds(true);
             im.setPadding(dp(2),dp(2),dp(2),dp(2));
             im.setBackgroundColor(Color.TRANSPARENT);
-            int serviceW=isTv()?154:82, serviceH=isTv()?68:50;
+            // Make the TV service shortcuts noticeably larger and easier to select with a remote.
+            // The row scrolls horizontally, so larger tiles do not squeeze the logos.
+            int serviceW=isTv()?200:96, serviceH=isTv()?88:58;
             card.addView(im,new FrameLayout.LayoutParams(dp(serviceW),dp(serviceH)));
 
             card.setOnClickListener(v->openServiceCatalog(
