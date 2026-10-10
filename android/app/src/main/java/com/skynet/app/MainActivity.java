@@ -432,7 +432,7 @@ public class MainActivity extends Activity {
     }
 
     String postJson(String u,String body)throws Exception{
-        HttpURLConnection c=(HttpURLConnection)new URL(u).openConnection(); c.setRequestMethod("POST"); c.setConnectTimeout(10000); c.setReadTimeout(15000); c.setDoOutput(true); c.setRequestProperty("Content-Type","application/json"); c.setRequestProperty("X-Skyflix-Device",deviceId());
+        HttpURLConnection c=(HttpURLConnection)new URL(u).openConnection(); c.setRequestMethod("POST"); c.setConnectTimeout(10000); c.setReadTimeout(15000); c.setDoOutput(true); c.setRequestProperty("Content-Type","application/json"); c.setRequestProperty("X-Skynet-Device",deviceId());
         c.getOutputStream().write(body.getBytes("UTF-8")); c.getOutputStream().close();
         InputStream in=c.getResponseCode()>=400?c.getErrorStream():c.getInputStream(); BufferedReader b=new BufferedReader(new InputStreamReader(in)); StringBuilder s=new StringBuilder(); String l; while((l=b.readLine())!=null)s.append(l); b.close(); return s.toString();
     }
@@ -1167,7 +1167,7 @@ public class MainActivity extends Activity {
                 q.setRequestMethod("POST"); q.setConnectTimeout(4000); q.setReadTimeout(5000);
                 q.setDoOutput(true); q.setRequestProperty("Content-Type","application/json");
                 String lic=prefs==null?"":prefs.getString("license_code","");
-                q.setRequestProperty("X-Skyflix-License",lic); q.setRequestProperty("X-Skyflix-Device",deviceId());
+                q.setRequestProperty("X-Skyflix-License",lic); q.setRequestProperty("X-Skynet-Device",deviceId());
                 JSONObject body=new JSONObject(); body.put("type",type); body.put("detail",detail==null?"":detail); body.put("app","android"); body.put("version","1.0.24");
                 byte[] bytes=body.toString().getBytes("UTF-8"); q.setFixedLengthStreamingMode(bytes.length);
                 OutputStream out=q.getOutputStream(); out.write(bytes); out.close(); q.getResponseCode(); q.disconnect();
@@ -1304,7 +1304,7 @@ public class MainActivity extends Activity {
         String licenseHeader=prefs==null?"":prefs.getString("license_code","");
         if(licenseHeader.length()>0) headers.put("X-Skyflix-License",licenseHeader);
         String deviceHeader=deviceId();
-        if(deviceHeader!=null && deviceHeader.length()>0) headers.put("X-Skyflix-Device",deviceHeader);
+        if(deviceHeader!=null && deviceHeader.length()>0) headers.put("X-Skynet-Device",deviceHeader);
         try{
             JSONObject h=stream==null?null:stream.optJSONObject("skyflixRequestHeaders");
             if(h==null && stream!=null){
@@ -1368,7 +1368,7 @@ public class MainActivity extends Activity {
 
     String get(String u)throws Exception{
         HttpURLConnection c=(HttpURLConnection)new URL(u).openConnection(); c.setConnectTimeout(10000); c.setReadTimeout(15000);
-        String license=prefs==null?"":prefs.getString("license_code",""); if(license.length()>0)c.setRequestProperty("X-Skyflix-License",license); c.setRequestProperty("X-Skyflix-Device",deviceId());
+        String license=prefs==null?"":prefs.getString("license_code",""); if(license.length()>0)c.setRequestProperty("X-Skyflix-License",license); c.setRequestProperty("X-Skynet-Device",deviceId());
         BufferedReader b=new BufferedReader(new InputStreamReader(c.getInputStream())); StringBuilder s=new StringBuilder(); String l;
         while((l=b.readLine())!=null)s.append(l); b.close(); return s.toString();
     }
