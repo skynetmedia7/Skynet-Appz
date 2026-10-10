@@ -654,6 +654,14 @@ public class MainActivity extends Activity {
         return b;
     }
 
+    String displayTitle(String raw){
+        String title=raw==null?"":raw.trim();
+        if(title.isEmpty())return title;
+        // Some metadata providers return titles with a lowercase first letter.
+        // Fix only the first character, preserving intentional internal casing.
+        return title.substring(0,1).toUpperCase(Locale.UK)+title.substring(1);
+    }
+
     String tileArtwork(JSONObject m){
         // Prefer the landscape/backdrop artwork for TV tiles. A portrait poster
         // cropped into a 16:9 tile can lose faces, titles and important artwork.
@@ -703,7 +711,7 @@ public class MainActivity extends Activity {
                 caption.setPadding(dp(7),dp(18),dp(7),dp(7));
                 caption.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                         new int[]{Color.TRANSPARENT,Color.argb(245,0,0,0)}));
-                TextView nameText=label(m.optString("name",""),13,Color.WHITE);
+                TextView nameText=label(displayTitle(m.optString("name","")),12,Color.WHITE);
                 nameText.setGravity(Gravity.BOTTOM|Gravity.LEFT);
                 nameText.setMaxLines(2);
                 nameText.setEllipsize(android.text.TextUtils.TruncateAt.END);
