@@ -919,6 +919,7 @@ app.get("/app/api/proxy", async (req, res) => {
     if (req.headers.range) headers["range"] = req.headers.range;
     const responseHeaders = decodeHeaderMap(req.query.r);
     const upstream = await fetch(target, {headers, redirect:"follow"});
+    if (!upstream.ok && upstream.status !== 206) return res.status(upstream.status).send("Upstream stream error");
     const ct = upstream.headers.get("content-type") || "";
     if (/mpegurl|vnd\.apple\.mpegurl/i.test(ct) || /\.m3u8(?:$|[?#])/i.test(u.pathname)) {
       const body = await upstream.text();
