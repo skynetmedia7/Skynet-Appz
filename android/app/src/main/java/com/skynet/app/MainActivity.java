@@ -308,7 +308,16 @@ public class MainActivity extends Activity {
     }
 
     String deviceId(){
-        return Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        // Keep a stable per-install device identity in app-private storage.
+        // ANDROID_ID can differ across builds/signing identities on some Android TV devices,
+        // which makes a valid licence look like it belongs to a different device.
+        if(prefs==null) prefs=getSharedPreferences("skynet",0);
+        String id=prefs.getString("device_id","");
+        if(id==null || id.trim().isEmpty()){
+            id=UUID.randomUUID().toString();
+            prefs.edit().putString("device_id",id).commit();
+        }
+        return id;
     }
 
     void showLogin(){
