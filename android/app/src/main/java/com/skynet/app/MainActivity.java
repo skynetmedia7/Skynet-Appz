@@ -1355,10 +1355,10 @@ public class MainActivity extends Activity {
         playerView.setPlayer(player);
         player.addListener(new androidx.media3.common.Player.Listener() {
             @Override public void onPlayerError(androidx.media3.common.PlaybackException error) {
-                String detail="Media3 "+error.errorCodeName+": "+String.valueOf(error.getMessage());
-                status.setText("Playback failed — "+error.errorCodeName);
+                String detail="Media3 "+error.errorCode+": "+String.valueOf(error.getMessage());
+                status.setText("Playback failed — "+error.errorCode);
                 reportDiagnostic("media3_error",detail);
-                runOnUiThread(()->Toast.makeText(MainActivity.this,"Playback failed: "+error.errorCodeName,Toast.LENGTH_LONG).show());
+                runOnUiThread(()->Toast.makeText(MainActivity.this,"Playback failed: "+error.errorCode,Toast.LENGTH_LONG).show());
             }
         });
         root.addView(playerView,new LinearLayout.LayoutParams(-1,0,1));
