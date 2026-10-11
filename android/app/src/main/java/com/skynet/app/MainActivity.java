@@ -1285,7 +1285,17 @@ public class MainActivity extends Activity {
                 final String streamUrl=u;
                 final JSONObject selectedStream=stream;
                 reportDiagnostic("playback_start","source_found:" + stream.optString("skyflixSource","Stremio"));
-                runOnUiThread(()->startInternalPlayer(streamUrl,name,selectedStream));
+                runOnUiThread(()->{
+                    try {
+                        startInternalPlayer(streamUrl,name,selectedStream);
+                    } catch (Throwable ex) {
+                        String detail=ex.getClass().getSimpleName()+": "+String.valueOf(ex.getMessage());
+                        status.setText("Playback could not start");
+                        reportDiagnostic("playback_start_exception",detail);
+                        Toast.makeText(this,"Skyflix couldn't start playback: "+ex.getClass().getSimpleName(),Toast.LENGTH_LONG).show();
+                        releaseInternalPlayer();
+                    }
+                });
             }catch(Exception e){
                 runOnUiThread(()->{
                     status.setText("No playable source returned");
@@ -1343,6 +1353,14 @@ public class MainActivity extends Activity {
                 .setMediaSourceFactory(mediaFactory)
                 .build();
         playerView.setPlayer(player);
+        player.addListener(new androidx.media3.common.Player.Listener() {
+            @Override public void onPlayerError(androidx.media3.common.PlaybackException error) {
+                String detail="Media3 "+error.errorCodeName+": "+String.valueOf(error.getMessage());
+                status.setText("Playback failed — "+error.errorCodeName);
+                reportDiagnostic("media3_error",detail);
+                runOnUiThread(()->Toast.makeText(MainActivity.this,"Playback failed: "+error.errorCodeName,Toast.LENGTH_LONG).show());
+            }
+        });
         root.addView(playerView,new LinearLayout.LayoutParams(-1,0,1));
 
         // AIOStreams/Nuvio sources sometimes use a URL with no .m3u8 suffix.
