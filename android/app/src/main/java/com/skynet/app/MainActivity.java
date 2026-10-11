@@ -642,7 +642,7 @@ public class MainActivity extends Activity {
                     dp(serviceW),dp(serviceH));
             cp.setMargins(0,0,dp(isTv()?10:8),0);
             line.addView(card,cp);
-            loadImage(im,m.optString("poster"));
+            loadImage(im,m.optString("poster"),true);
         }
         hs.addView(line);
         content.addView(hs,new LinearLayout.LayoutParams(-1,dp(isTv()?126:80)));
@@ -1389,10 +1389,76 @@ public class MainActivity extends Activity {
         if(player!=null){ player.release(); player=null; }
     }
 
-    void loadImage(ImageView v,String url){ if(url==null||url.length()==0)return; new Thread(()->{try{
-        HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection(); c.setConnectTimeout(8000); c.setReadTimeout(10000); c.connect();
-        InputStream in=c.getInputStream(); Bitmap b=BitmapFactory.decodeStream(in); in.close(); if(b!=null)runOnUiThread(()->v.setImageBitmap(b));
-    }catch(Exception ignored){}}).start(); }
+    // Cache decoded artwork in memory and downloaded artwork on disk. Service
+    // logos use their own executor so poster downloads cannot hold them up.
+    final android.util.LruCache<String,Bitmap> imageMemoryCache =
+            new android.util.LruCache<String,Bitmap>(8 * 1024 * 1024) {
+                @Override protected int sizeOf(String key,Bitmap value) {
+                    return Math.max(1,value.getByteCount());
+                }
+            };
+    final java.util.concurrent.ExecutorService imageExecutor =
+            java.util.concurrent.Executors.newFixedThreadPool(4);
+    final java.util.concurrent.ExecutorService serviceImageExecutor =
+            java.util.concurrent.Executors.newFixedThreadPool(3);
+
+    void loadImage(ImageView v,String url){ loadImage(v,url,false); }
+
+    void loadImage(ImageView v,String url,boolean serviceLogo){
+        if(url==null||url.trim().isEmpty())return;
+        final String key=url.trim();
+        Bitmap cached=imageMemoryCache.get(key);
+        if(cached!=null){ v.setImageBitmap(cached); return; }
+        final java.lang.ref.WeakReference<ImageView> target=new java.lang.ref.WeakReference<>(v);
+        java.util.concurrent.ExecutorService executor=serviceLogo?serviceImageExecutor:imageExecutor;
+        executor.execute(()->{
+            Bitmap bitmap=null;
+            try{
+                File dir=new File(getCacheDir(),"skyflix-image-cache");
+                if(!dir.exists())dir.mkdirs();
+                String hash;
+                try{
+                    java.security.MessageDigest md=java.security.MessageDigest.getInstance("MD5");
+                    byte[] bytes=md.digest(key.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    StringBuilder hex=new StringBuilder();
+                    for(byte b:bytes)hex.append(String.format(java.util.Locale.ROOT,"%02x",b&0xff));
+                    hash=hex.toString();
+                }catch(Exception e){hash=Integer.toHexString(key.hashCode());}
+                File cacheFile=new File(dir,hash+".img");
+                if(cacheFile.isFile()&&cacheFile.length()>0)
+                    bitmap=BitmapFactory.decodeFile(cacheFile.getAbsolutePath());
+                if(bitmap==null){
+                    HttpURLConnection connection=(HttpURLConnection)new URL(key).openConnection();
+                    connection.setConnectTimeout(5000);
+                    connection.setReadTimeout(7000);
+                    connection.setInstanceFollowRedirects(true);
+                    try{
+                        connection.connect();
+                        try(InputStream in=connection.getInputStream();
+                            ByteArrayOutputStream out=new ByteArrayOutputStream()){
+                            byte[] buffer=new byte[8192]; int count;
+                            while((count=in.read(buffer))!=-1)out.write(buffer,0,count);
+                            byte[] data=out.toByteArray();
+                            bitmap=BitmapFactory.decodeByteArray(data,0,data.length);
+                            if(bitmap!=null){
+                                try(FileOutputStream fileOut=new FileOutputStream(cacheFile)){
+                                    fileOut.write(data);
+                                }
+                            }
+                        }
+                    }finally{connection.disconnect();}
+                }
+                if(bitmap!=null){
+                    imageMemoryCache.put(key,bitmap);
+                    final Bitmap ready=bitmap;
+                    runOnUiThread(()->{
+                        ImageView image=target.get();
+                        if(image!=null&&!isFinishing())image.setImageBitmap(ready);
+                    });
+                }
+            }catch(Exception ignored){}
+        });
+    }
 
     String get(String u)throws Exception{
         HttpURLConnection c=(HttpURLConnection)new URL(u).openConnection(); c.setConnectTimeout(10000); c.setReadTimeout(15000);
